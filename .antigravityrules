@@ -1,0 +1,25 @@
+# Your Space - Antigravity Rules
+
+- Tech stack: React 18 + Vite, Tailwind CSS, Dexie.js (IndexedDB), Supabase, TipTap, dnd-kit, Zustand, Lucide icons, jsPDF, docx, Gemini/OpenAI.
+- Dexie is the local source of truth. UI reads only from Dexie using `useLiveQuery`.
+- Zustand holds UI state only (active workspace, focus mode, theme, selected note ID). Never store persisted notes in Zustand.
+- Components NEVER call Supabase directly. Only `syncEngine.js` communicates with Supabase.
+- Autosave: update React state instantly -> save to Dexie immediately -> debounce Supabase push by 1000ms.
+- No loading spinners for local reads/writes. Only a subtle "Saved" indicator.
+- 3-pane layout: Sidebar (250px, collapsible) | Grid/List Pane | Editor Pane (slides in from right in 200ms).
+- Locked Palette:
+  - `--bg-primary`: Light #FFFFFF | Dark #121212
+  - `--bg-sidebar`: Light #F8F9FA | Dark #1A1A1A
+  - `--text-primary`: Light #202124 | Dark #FFFFFF
+  - `--text-muted`: Light #5F6368 | Dark #B0B0B0
+  - `--active-nav-bg`: Light #FFF9C4 | Dark #3A371D
+  - `--card-default`: Light #FFFFFF | Dark #1E1E1E
+  - `--card-yellow`: Light #FFF9C4 | Dark #3A371D
+  - `--card-red`: Light #FFCDD2 | Dark #3A2323
+  - `--card-blue`: Light #B3E5FC | Dark #1D3038
+  - `--card-green`: Light #C8E6C9 | Dark #233A26
+- Motion: opacity/transform transitions only, max 200ms duration, ease-in-out or ease-out. No spring/bounce.
+- Dark Mode is first-class with dedicated color tokens.
+- Archive hides items; Trash soft-deletes with visible 7-day countdown before auto-purging.
+- AI is user-triggered only (Auto-Organize, Summarize, Expand Idea). Cache responses in `ai_memory`.
+- Export: PDF (jsPDF), Word (docx), full JSON backup/restore.

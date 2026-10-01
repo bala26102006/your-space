@@ -1,0 +1,80 @@
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  /* Light Mode - Locked Palette */
+  --bg-primary: #FFFFFF;
+  --bg-sidebar: #F8F9FA;
+  --text-primary: #202124;
+  --text-muted: #5F6368;
+  --active-nav-bg: #FFF9C4;
+  --card-default: #FFFFFF;
+  --card-yellow: #FFF9C4;
+  --card-red: #FFCDD2;
+  --card-blue: #B3E5FC;
+  --card-green: #C8E6C9;
+
+  --border-color: rgba(0, 0, 0, 0.08);
+  --hover-bg: rgba(0, 0, 0, 0.04);
+}
+
+.dark {
+  /* Dark Mode - Locked Palette */
+  --bg-primary: #121212;
+  --bg-sidebar: #1A1A1A;
+  --text-primary: #FFFFFF;
+  --text-muted: #B0B0B0;
+  --active-nav-bg: #3A371D;
+  --card-default: #1E1E1E;
+  --card-yellow: #3A371D;
+  --card-red: #3A2323;
+  --card-blue: #1D3038;
+  --card-green: #233A26;
+
+  --border-color: rgba(255, 255, 255, 0.1);
+  --hover-bg: rgba(255, 255, 255, 0.06);
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  overflow-x: hidden;
+  transition: background-color 200ms ease-in-out, color 200ms ease-in-out;
+}
+
+/* Custom scrollbars matching theme */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--text-muted);
+  border-radius: 9999px;
+  opacity: 0.3;
+}
+
+/* TipTap Editor Minimalist Styling */
+.ProseMirror {
+  outline: none !important;
+  min-height: 250px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+.ProseMirror p.is-editor-empty:first-child::before {
+  color: var(--text-muted);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}

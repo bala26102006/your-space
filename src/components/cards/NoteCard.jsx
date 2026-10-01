@@ -1,0 +1,280 @@
+import React, { useState } from 'react';
+import { Pin, MoreVertical, Archive, Trash2, Tag as TagIcon, Calendar, Copy } from 'lucide-react';
+import { COLOR_OPTIONS } from '../shared/ColorPicker';
+import TagPill from '../shared/TagPill';
+import { useLiveQuery } from '../../hooks/useLiveQuery';
+import { db } from '../../lib/db';
+import { getChecklistProgress, getWishlistTotalCost } from '../../lib/queries/cardSummary';
+
+export default function NoteCard({
+  note,
+  isSelected,
+  tags = [],
+  onSelect,
+  onPinToggle,
+  onArchive,
+  onDelete,
+}) {
+  const [showMenu, setShowMenu] = useState(false);
+
+  const checklistItems = useLiveQuery(
+    () => {
+      if (note.workspace_id === 'checklists') {
+        return db.checklist_items.where('note_id').equals(note.id).toArray();
+      }
+      return [];
+    },
+    [note.id, note.workspace_id]
+  );
+
+  const getPreviewText = () => {
+    if (!note.content) return '';
+    if (typeof note.content === 'string') return note.content;
+    
+    if (note.workspace_id === 'checklists') {
+      if ((!checklistItems || checklistItems.length === 0) && note.content?.items?.length > 0) {
+        let total = 0;
+        let checked = 0;
+        note.content.items.forEach(item => {
+          total++;
+          if (item.checked) checked++;
+          (item.subItems || []).forEach(sub => {
+            total++;
+            if (sub.checked) checked++;
+          });
+        });
+        if (total === 0) return 'Empty checklist';
+        return `Progress: ${checked}/${total} tasks (${Math.round((checked / total) * 100)}%)`;
+      }
+
+      if (!checklistItems || checklistItems.length === 0) return 'Empty checklist';
+      const tasks = checklistItems.filter(i => i.item_type === 'task' || !i.item_type);
+      const total = tasks.length;
+      if (total === 0) return 'No tasks yet';
+      const checked = tasks.filter(i => i.is_completed).length;
+      return `${checked}/${total} tasks`;
+    }
+
+    if (note.workspace_id === 'wishlist') {
+      return note.content?.note || '';
+    }
+
+    // Parse TipTap JSON
+    const extractText = (node) => {
+      if (!node) return '';
+      if (node.text) return node.text;
+      if (node.content && Array.isArray(node.content)) {
+        return node.content.map(extractText).join(' ');
+      }
+      return '';
+    };
+
+    const text = extractText(note.content);
+    return text.trim();
+  };
+
+  const previewText = getPreviewText();
+
+  const checklistProgress = useLiveQuery(() => 
+    note.workspace_id === 'checklists' ? getChecklistProgress(note.id) : null
+  , [note.id, note.workspace_id]);
+
+  const wishlistTotalCost = useLiveQuery(() => 
+    note.workspace_id === 'wishlist' ? getWishlistTotalCost(note.id) : null
+  , [note.id, note.workspace_id]);
+
+  let earliestDueDate = null;
+  if (note.workspace_id === 'checklists' && checklistItems?.length > 0) {
+    const dates = checklistItems
+      .filter(i => i.item_type === 'task' || !i.item_type)
+      .map(i => i.due_date)
+      .filter(Boolean)
+      .sort();
+    if (dates.length > 0) {
+      earliestDueDate = dates[0];
+    }
+  }
+
+  // Find color style
+  const colorToken = note.color || 'default';
+
+  const getColorClasses = (color) => {
+    switch (color) {
+      case 'yellow':
+        return 'bg-card-yellow border-yellow-200/50 dark:border-yellow-900/30';
+      case 'red':
+        return 'bg-card-red border-red-200/50 dark:border-red-900/30';
+      case 'blue':
+        return 'bg-card-blue border-blue-200/50 dark:border-blue-900/30';
+      case 'green':
+        return 'bg-card-green border-green-200/50 dark:border-green-900/30';
+      default:
+        return 'bg-card-default border-black/5 dark:border-white/10';
+    }
+  };
+
+  return (
+    <div
+      onClick={onSelect}
+      className={`group relative rounded-card p-4 border transition-all duration-200 cursor-pointer hover:shadow-card-hover dark:hover:shadow-card-hover-dark ${getColorClasses(
+        colorToken
+      )} ${isSelected ? 'ring-2 ring-text-primary/40 shadow-card-hover' : ''}`}
+    >
+      {/* Card Header: Color Indicator dot + Pin + Actions */}
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          {colorToken !== 'default' && (
+            <span
+              className="w-2.5 h-2.5 rounded-full inline-block"
+              style={{
+                backgroundColor: COLOR_OPTIONS.find((c) => c.id === colorToken)?.border || '#E5E7EB',
+              }}
+            />
+          )}
+          {note.is_pinned && (
+            <Pin className="w-3.5 h-3.5 text-amber-500 fill-amber-500 transform rotate-45" />
+          )}
+        </div>
+
+        {/* Hover Menu Trigger */}
+        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center gap-1">
+          {onPinToggle && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onPinToggle(note.id);
+              }}
+              title={note.is_pinned ? 'Unpin' : 'Pin note'}
+              className="p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 text-text-muted hover:text-text-primary"
+            >
+              <Pin className={`w-3.5 h-3.5 ${note.is_pinned ? 'fill-current' : ''}`} />
+            </button>
+          )}
+
+          <div className="relative">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowMenu(!showMenu);
+              }}
+              className="p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 text-text-muted hover:text-text-primary"
+            >
+              <MoreVertical className="w-3.5 h-3.5" />
+            </button>
+
+            {showMenu && (
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="absolute right-0 top-6 z-20 w-36 py-1 bg-bg-primary rounded-button shadow-lg border border-black/10 dark:border-white/10 text-xs"
+              >
+                {note.workspace_id === 'checklists' && (
+                  <button
+                    onClick={async () => {
+                      const newId = crypto.randomUUID();
+                      const newNote = {
+                        ...note,
+                        id: newId,
+                        title: `${note.title || 'Checklist'} (Copy)`,
+                        content: { ...(note.content || {}), isTemplate: false },
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString(),
+                      };
+                      await db.notes.add(newNote);
+                      const items = await db.checklist_items.where('note_id').equals(note.id).toArray();
+                      const dbItems = items.map(item => ({
+                        ...item,
+                        id: crypto.randomUUID(),
+                        note_id: newId,
+                        is_completed: false,
+                      }));
+                      await db.checklist_items.bulkAdd(dbItems);
+                      setShowMenu(false);
+                      if (onSelect) onSelect(newId); // Select the newly created checklist
+                    }}
+                    className="w-full text-left px-3 py-1.5 flex items-center gap-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                    <span>Duplicate & Reset</span>
+                  </button>
+                )}
+                {onArchive && (
+                  <button
+                    onClick={() => {
+                      onArchive(note.id);
+                      setShowMenu(false);
+                    }}
+                    className="w-full text-left px-3 py-1.5 flex items-center gap-2 hover:bg-hover-bg text-text-primary"
+                  >
+                    <Archive className="w-3.5 h-3.5" />
+                    <span>{note.is_archived ? 'Unarchive' : 'Archive'}</span>
+                  </button>
+                )}
+                {onDelete && (
+                  <button
+                    onClick={() => {
+                      onDelete(note.id);
+                      setShowMenu(false);
+                    }}
+                    className="w-full text-left px-3 py-1.5 flex items-center gap-2 hover:bg-red-50 dark:hover:bg-red-950/30 text-red-600 dark:text-red-400"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Move to Trash</span>
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Card Title */}
+      <h3 className="font-semibold text-base text-text-primary mb-1 line-clamp-1">
+        {note.title || 'Untitled Note'}
+      </h3>
+
+      {/* Card Content Preview (up to 3 lines) */}
+      <p className="text-sm text-text-muted line-clamp-3 leading-relaxed min-h-[3rem]">
+        {previewText || 'Empty note...'}
+      </p>
+
+      {/* Actionable Metadata (Progress Bar / Total Cost) */}
+      {note.workspace_id === 'checklists' && checklistProgress?.total > 0 && (
+        <div className="mt-3">
+          <div className="flex items-center justify-between text-[10px] font-medium text-text-muted mb-1.5 uppercase tracking-wider">
+            <span>Progress</span>
+            <span>{checklistProgress.completed}/{checklistProgress.total} done</span>
+          </div>
+          <div className="w-full h-1.5 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-green-500 rounded-full transition-all duration-500" 
+              style={{ width: `${checklistProgress.percent}%` }}
+            />
+          </div>
+        </div>
+      )}
+
+      {note.workspace_id === 'wishlist' && wishlistTotalCost != null && wishlistTotalCost > 0 && (
+        <div className="mt-3 flex items-center gap-1.5 w-max px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+          <span>Total Cost: ${wishlistTotalCost.toFixed(2)}</span>
+        </div>
+      )}
+
+      {/* Due Date Badge (Checklists) */}
+      {earliestDueDate && (
+        <div className="mt-3 flex items-center gap-1 w-max px-2 py-0.5 rounded text-[10px] font-medium bg-amber-500/10 text-amber-600 border border-amber-500/20">
+          <Calendar className="w-3 h-3" />
+          <span>Due: {earliestDueDate}</span>
+        </div>
+      )}
+
+      {/* Tags Footer */}
+      {tags.length > 0 && (
+        <div className="mt-3 pt-2 flex flex-wrap gap-1 border-t border-black/5 dark:border-white/5">
+          {tags.map((tag) => (
+            <TagPill key={tag.id} label={tag.label} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
