@@ -23,7 +23,7 @@ export async function pushToCloud() {
           return resolve({ success: false, error: 'No session' });
         }
 
-        const queue = await db.sync_queue.toArray();
+        const queue = await db.syncQueue.toArray();
         if (queue.length === 0) {
           return resolve({ success: true, message: 'Nothing to sync' });
         }
@@ -37,10 +37,13 @@ export async function pushToCloud() {
                 .from(item.table_name)
                 .upsert(record);
               if (!error) {
-                await db.sync_queue.delete(item.id);
+                await db.syncQueue.delete(item.id);
               } else {
                 console.error('Sync upsert error:', error);
               }
+            } else {
+              // Record no longer exists locally, safe to remove from queue
+              await db.syncQueue.delete(item.id);
             }
           } else if (item.action === 'DELETE') {
             const { error } = await supabase
@@ -48,7 +51,7 @@ export async function pushToCloud() {
               .delete()
               .eq('id', item.record_id);
             if (!error) {
-              await db.sync_queue.delete(item.id);
+              await db.syncQueue.delete(item.id);
             }
           }
         }
@@ -72,17 +75,46 @@ export async function pullFromCloud() {
       return { success: false, error: 'No session' };
     }
 
-    const tablesToSync = ['projects', 'subprojects', 'notes', 'tags', 'note_tags', 'attachments', 'checklist_items', 'wishlist_items', 'routine_entries'];
+    const tablesToSync = ['projects', 'subprojects', 'notes', 'tags', 'note_tags', 'checklist_items', 'wishlist_items', 'routine_entries'];
+    const userId = session.session.user.id;
     
     for (const table of tablesToSync) {
-      // Simplistic pull: grab everything updated since local max updated_at
+      // Simplistic pull: grab everything for the user
+      // A more robust implementation would fetch only items since last_synced_at
       const { data, error } = await supabase.from(table).select('*');
       if (error) {
         console.error(`Error pulling ${table}:`, error);
         continue;
       }
+      
       if (data && data.length > 0) {
-        await db[table].bulkPut(data);
+        // Implement Conflict resolution: Last-write-wins by updated_at timestamp
+        const localRecords = await db[table].toArray();
+        const localMap = new Map(localRecords.map(r => [r.id || r.note_id + '-' + r.tag_id, r]));
+        
+        const recordsToUpdate = [];
+        
+        for (const cloudRecord of data) {
+          const key = cloudRecord.id || cloudRecord.note_id + '-' + cloudRecord.tag_id;
+          const localRecord = localMap.get(key);
+          
+          if (!localRecord) {
+            recordsToUpdate.push(cloudRecord);
+          } else if (cloudRecord.updated_at && localRecord.updated_at) {
+            const cloudDate = new Date(cloudRecord.updated_at);
+            const localDate = new Date(localRecord.updated_at);
+            if (cloudDate > localDate) {
+              recordsToUpdate.push(cloudRecord);
+            }
+          } else {
+            // No updated_at field, favor cloud data by default
+            recordsToUpdate.push(cloudRecord);
+          }
+        }
+        
+        if (recordsToUpdate.length > 0) {
+          await db[table].bulkPut(recordsToUpdate);
+        }
       }
     }
 

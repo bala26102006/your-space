@@ -6,6 +6,7 @@ import GridListPane from './components/layout/GridListPane';
 import EditorPane from './components/layout/EditorPane';
 import AuthScreen from './components/auth/AuthScreen';
 import { supabase } from './lib/supabaseClient';
+import { pullFromCloud } from './lib/sync/syncEngine';
 
 export default function App() {
   const { focusMode, theme, selectedNoteId, selectedSubprojectId } = useUIStore();
@@ -13,9 +14,24 @@ export default function App() {
   const [authChecking, setAuthChecking] = useState(true);
 
   useEffect(() => {
-    // Temp auth bypass for preview
-    setSession({ user: { id: 'preview_user' } });
-    setAuthChecking(false);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session) {
+        pullFromCloud();
+      }
+      setAuthChecking(false);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (session) {
+        pullFromCloud();
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   useEffect(() => {

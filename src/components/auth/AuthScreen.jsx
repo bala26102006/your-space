@@ -36,6 +36,7 @@ export default function AuthScreen({ onLogin }) {
             placeholder="Enter your email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            autoComplete="email"
             className="p-3 rounded-lg bg-bg-primary border border-border-light focus:outline-none focus:border-brand-blue"
             required
           />
