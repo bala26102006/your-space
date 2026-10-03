@@ -37,6 +37,7 @@
 - [x] **Backend Phase 2 completed:** Centralized Zustand Store. Scaled `uiStore.js` to comprehensively track visual state (`activePane`, `isFocusMode`, `activeModal`) globally, decoupling it from localized UI components while retaining strict cross-workspace preference syncing.
 - [x] **Backend Phase 3 completed:** Service Layer & Queries. Extracted all raw database logic from React components into dedicated service modules (`noteService`, `checklistService`, `wishlistService`, `dashboardService`) to ensure decoupled architecture, predictable state updates, and safe error handling.
 - [x] **Backend Phase 4 completed:** Autosave Engine. Verified `useDebouncedSave` and implemented the `useAutoSaveNote` hook. Confirmed immediate Dexie writes preventing data loss mid-keystroke, while effectively debouncing the Supabase sync pushes to exactly 1000ms.
+- [x] **Backend Phase A (Service Layer + Zustand Store) completed:** Rebuilt Dexie schema to `db.version(1)`, rebuilt `uiStore.js`, and created service files for decoupled logic.
 - Awaiting user approval to begin **Stage 3.5.4: Routines Workspace**.
 
 ## ⏭️ Next Up

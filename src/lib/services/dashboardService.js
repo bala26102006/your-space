@@ -1,35 +1,39 @@
 import { db } from '../db';
 
-export async function getTodayDashboardData() {
-  try {
-    const todayStr = new Date().toISOString().split('T')[0];
-
-    const [dueTasks, routines, allNotes] = await Promise.all([
-      db.checklist_items.where('due_date').equals(todayStr).toArray(),
-      db.routine_entries.where('entry_date').equals(todayStr).toArray(),
-      db.notes.toArray()
-    ]);
-
-    const tasksDueToday = dueTasks.filter(i => (i.item_type === 'task' || !i.item_type) && !i.is_completed);
-    
-    const routinesForToday = routines;
-
-    const recentNotes = allNotes
-      .filter(n => !n.is_archived && !n.is_deleted && !n.content?.isStarterKit)
-      .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
-      .slice(0, 3);
-
-    return {
-      tasksDueToday,
-      routinesForToday,
-      recentNotes
-    };
-  } catch (error) {
-    console.error('Error fetching today dashboard data:', error);
-    return {
-      tasksDueToday: [],
-      routinesForToday: [],
-      recentNotes: []
-    };
+export const dashboardService = {
+  async getTodayDashboardData() {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      
+      // Tasks due today (checklist items)
+      // Note: Needs index on due_date or simple filtering
+      const checklistItems = await db.checklist_items.toArray();
+      const tasksDueToday = checklistItems.filter(
+        item => item.due_date && item.due_date.startsWith(today) && !item.is_completed
+      );
+        
+      // Routines for today
+      const allRoutines = await db.routine_entries.toArray();
+      const routines = allRoutines.filter(
+        entry => entry.entry_date && entry.entry_date.startsWith(today)
+      );
+        
+      // Recent notes
+      const recentNotes = await db.notes
+        .orderBy('updated_at')
+        .reverse()
+        .filter(note => !note.is_deleted && !note.is_archived)
+        .limit(5)
+        .toArray();
+        
+      return {
+        tasksDueToday,
+        routines,
+        recentNotes
+      };
+    } catch (error) {
+      console.error('Error getting dashboard data:', error);
+      throw error;
+    }
   }
-}
+};

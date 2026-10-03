@@ -3,24 +3,24 @@ import { create } from 'zustand';
 export const useUIStore = create((set) => ({
   activeWorkspace: 'quicknotes',
   activePane: 'grid', // 'sidebar', 'grid', 'editor'
+  viewMode: 'grid',
+  sortBy: 'date',
+  sortOrder: 'desc',
+  isFocusMode: false,
+  isSidebarCollapsed: false,
+  theme: localStorage.getItem('theme') || 'light',
   activeModal: null,
   
-  // Backward compatibility fields
+  // Backward compatibility fields so UI components do not break
   selectedNoteId: null,
   selectedProjectId: null,
   selectedSubprojectId: null,
   focusMode: false,
-  isFocusMode: false,
-  theme: localStorage.getItem('theme') || 'light',
   searchQuery: '',
   activeTagId: null,
   sidebarOpen: true,
-  isSidebarCollapsed: false,
   selectedChecklistCategory: null,
   selectedWishlistFolderId: null,
-  sortBy: 'date',
-  sortOrder: 'desc',
-  viewMode: 'grid',
 
   setActiveWorkspace: (workspaceId) =>
     set({

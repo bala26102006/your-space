@@ -1,60 +1,63 @@
 import { db } from '../db';
+import { v4 as uuidv4 } from 'uuid';
 
-export async function createNote(workspaceId, type = 'text', initialData = {}) {
-  try {
-    const newId = crypto.randomUUID();
-    const note = {
-      id: newId,
-      workspace_id: workspaceId,
-      note_type: type,
-      is_pinned: false,
-      is_archived: false,
-      is_deleted: false,
-      updated_at: new Date().toISOString(),
-      ...initialData
-    };
-    await db.notes.add(note);
-    return newId;
-  } catch (error) {
-    console.error('Error creating note:', error);
-    throw error;
-  }
-}
+export const noteService = {
+  async createNote(noteData) {
+    try {
+      const id = uuidv4();
+      const now = new Date().toISOString();
+      const newNote = {
+        id,
+        is_archived: 0,
+        is_deleted: 0,
+        updated_at: now,
+        ...noteData
+      };
+      await db.notes.add(newNote);
+      return newNote;
+    } catch (error) {
+      console.error('Error creating note:', error);
+      throw error;
+    }
+  },
 
-export async function updateNote(noteId, updates) {
-  try {
-    const updatedData = {
-      ...updates,
-      updated_at: new Date().toISOString()
-    };
-    await db.notes.update(noteId, updatedData);
-  } catch (error) {
-    console.error(`Error updating note ${noteId}:`, error);
-    throw error;
-  }
-}
+  async updateNote(id, updates) {
+    try {
+      updates.updated_at = new Date().toISOString();
+      await db.notes.update(id, updates);
+      return await db.notes.get(id);
+    } catch (error) {
+      console.error('Error updating note:', error);
+      throw error;
+    }
+  },
 
-export async function softDeleteNote(noteId) {
-  try {
-    await db.notes.update(noteId, {
-      is_deleted: true,
-      deleted_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    });
-  } catch (error) {
-    console.error(`Error soft deleting note ${noteId}:`, error);
-    throw error;
-  }
-}
+  async softDeleteNote(id) {
+    try {
+      const updates = {
+        is_deleted: 1,
+        deleted_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      await db.notes.update(id, updates);
+      return await db.notes.get(id);
+    } catch (error) {
+      console.error('Error soft deleting note:', error);
+      throw error;
+    }
+  },
 
-export async function archiveNote(noteId) {
-  try {
-    await db.notes.update(noteId, {
-      is_archived: true,
-      updated_at: new Date().toISOString()
-    });
-  } catch (error) {
-    console.error(`Error archiving note ${noteId}:`, error);
-    throw error;
+  async archiveNote(id) {
+    try {
+      const updates = {
+        is_archived: 1,
+        updated_at: new Date().toISOString()
+      };
+      await db.notes.update(id, updates);
+      return await db.notes.get(id);
+    } catch (error) {
+      console.error('Error archiving note:', error);
+      throw error;
+    }
   }
-}
+};

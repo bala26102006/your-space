@@ -1,32 +1,37 @@
 import { db } from '../db';
+import { v4 as uuidv4 } from 'uuid';
 
-export async function addWishlistItem(noteId, itemData) {
-  try {
-    const newId = crypto.randomUUID();
-    const item = {
-      id: newId,
-      folder_id: noteId,
-      note_id: noteId, // backward compatibility
-      is_completed: false,
-      sort_order: Date.now(),
-      ...itemData
-    };
-    await db.wishlist_items.add(item);
-    return newId;
-  } catch (error) {
-    console.error(`Error adding wishlist item to folder ${noteId}:`, error);
-    throw error;
-  }
-}
+export const wishlistService = {
+  async addWishlistItem(itemData) {
+    try {
+      const id = uuidv4();
+      const newItem = {
+        id,
+        is_completed: 0,
+        ...itemData
+      };
+      await db.wishlist_items.add(newItem);
+      return newItem;
+    } catch (error) {
+      console.error('Error adding wishlist item:', error);
+      throw error;
+    }
+  },
 
-export async function getWishlistTotalCost(noteId) {
-  try {
-    const items = await db.wishlist_items.where('folder_id').equals(noteId).toArray();
-    return items
-      .filter(item => !item.is_completed)
-      .reduce((sum, item) => sum + (Number(item.price) || 0), 0);
-  } catch (error) {
-    console.error(`Error getting wishlist total cost for folder ${noteId}:`, error);
-    return 0;
+  async getWishlistTotalCost(folderId = null) {
+    try {
+      let items;
+      if (folderId) {
+        items = await db.wishlist_items.where('folder_id').equals(folderId).toArray();
+      } else {
+        items = await db.wishlist_items.toArray();
+      }
+      
+      const total = items.reduce((sum, item) => sum + (Number(item.price) || 0), 0);
+      return total;
+    } catch (error) {
+      console.error('Error calculating wishlist total cost:', error);
+      throw error;
+    }
   }
-}
+};
