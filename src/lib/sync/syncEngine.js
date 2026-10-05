@@ -17,16 +17,28 @@ export async function pushToCloud() {
   return new Promise((resolve) => {
     pushTimer = setTimeout(async () => {
       try {
-        // Hardcoded bypass for auth
-        const session = { session: { user: { id: 'local-user-123' } } };
+        const isConfigured =
+          import.meta.env.VITE_SUPABASE_URL &&
+          !import.meta.env.VITE_SUPABASE_URL.includes('placeholder') &&
+          import.meta.env.VITE_SUPABASE_ANON_KEY &&
+          !import.meta.env.VITE_SUPABASE_ANON_KEY.includes('placeholder');
+
+        if (!isConfigured) {
+          return resolve({ success: true, message: 'Local-first offline mode' });
+        }
 
         const queue = await db.syncQueue.toArray();
         if (queue.length === 0) {
           return resolve({ success: true, message: 'Nothing to sync' });
         }
 
-        // Process queue (simplified: in a real app, group by table/action)
+        // Process queue
         for (const item of queue) {
+          if (!db[item.table_name]) {
+            await db.syncQueue.delete(item.id);
+            continue;
+          }
+
           if (item.action === 'INSERT' || item.action === 'UPDATE') {
             const record = await db[item.table_name].get(item.record_id);
             if (record) {
@@ -36,7 +48,7 @@ export async function pushToCloud() {
               if (!error) {
                 await db.syncQueue.delete(item.id);
               } else {
-                console.error('Sync upsert error:', error);
+                console.warn('Sync upsert warning:', error.message || error);
               }
             } else {
               // Record no longer exists locally, safe to remove from queue
@@ -55,7 +67,7 @@ export async function pushToCloud() {
         
         resolve({ success: true });
       } catch (error) {
-        console.error('Push to cloud error:', error);
+        console.warn('Push to cloud warning:', error.message || error);
         resolve({ success: false, error });
       }
     }, PUSH_DEBOUNCE_MS);
@@ -67,11 +79,17 @@ export async function pushToCloud() {
  */
 export async function pullFromCloud() {
   try {
-    // Hardcoded bypass for auth
-    const session = { session: { user: { id: 'local-user-123' } } };
+    const isConfigured =
+      import.meta.env.VITE_SUPABASE_URL &&
+      !import.meta.env.VITE_SUPABASE_URL.includes('placeholder') &&
+      import.meta.env.VITE_SUPABASE_ANON_KEY &&
+      !import.meta.env.VITE_SUPABASE_ANON_KEY.includes('placeholder');
 
-    const tablesToSync = ['projects', 'subprojects', 'notes', 'tags', 'note_tags', 'checklist_items', 'wishlist_items', 'routine_entries'];
-    const userId = session.session.user.id;
+    if (!isConfigured) {
+      return { success: true, message: 'Local-first offline mode' };
+    }
+
+    const tablesToSync = ['projects', 'subprojects', 'notes', 'tags', 'note_tags', 'checklist_items', 'wishlist_items', 'wishlist_folders', 'routine_entries', 'attachments'];
     
     for (const table of tablesToSync) {
       // Simplistic pull: grab everything for the user
