@@ -44,18 +44,39 @@ export default function WishListView() {
   // Initialize folders
   useEffect(() => {
     const init = async () => {
-      await db.transaction('rw', db.wishlist_folders, async () => {
-        const count = await db.wishlist_folders.count();
-        if (count === 0) {
-          const toAdd = DEFAULT_FOLDERS.map((name, index) => ({
-            id: crypto.randomUUID(),
-            name,
-            sort_order: index
-          }));
-          await db.wishlist_folders.bulkAdd(toAdd);
-        }
-      });
-      setIsInitializing(false);
+      try {
+        await db.transaction('rw', db.wishlist_folders, async () => {
+          // Clean up duplicates
+          const all = await db.wishlist_folders.orderBy('sort_order').toArray();
+          const seen = new Set();
+          const toDelete = [];
+          for (const f of all) {
+            if (seen.has(f.name)) {
+              toDelete.push(f.id);
+            } else {
+              seen.add(f.name);
+            }
+          }
+          if (toDelete.length > 0) {
+            await db.wishlist_folders.bulkDelete(toDelete);
+          }
+
+          // Seed default folders if none exist
+          const count = await db.wishlist_folders.count();
+          if (count === 0) {
+            const toAdd = DEFAULT_FOLDERS.map((name, index) => ({
+              id: `default-folder-${index}`,
+              name,
+              sort_order: index
+            }));
+            await db.wishlist_folders.bulkAdd(toAdd);
+          }
+        });
+      } catch (err) {
+        console.error("Wishlist init error:", err);
+      } finally {
+        setIsInitializing(false);
+      }
     };
     init();
   }, []);
@@ -92,8 +113,9 @@ export default function WishListView() {
   const handleCreateFolder = async (e) => {
     e.preventDefault();
     if (!newFolderName.trim()) return;
+    const id = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString();
     await db.wishlist_folders.add({
-      id: crypto.randomUUID(),
+      id,
       name: newFolderName.trim(),
       sort_order: Date.now()
     });
@@ -123,7 +145,8 @@ export default function WishListView() {
     if (editingItem) {
       await db.wishlist_items.update(editingItem.id, itemData);
     } else {
-      await db.wishlist_items.add({ ...itemData, id: crypto.randomUUID() });
+      const id = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString();
+      await db.wishlist_items.add({ ...itemData, id });
     }
 
     resetItemForm();

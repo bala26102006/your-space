@@ -16,10 +16,12 @@ import {
   Tag as TagIcon,
   PanelLeftClose,
   PanelLeftOpen,
+  Settings,
 } from 'lucide-react';
 import { useUIStore } from '../../store/uiStore';
 import { useLiveQuery } from '../../hooks/useLiveQuery';
 import { db } from '../../lib/db';
+import { supabase } from '../../lib/supabaseClient';
 import TagPill from '../shared/TagPill';
 
 const WORKSPACE_NAV_ITEMS = [
@@ -35,6 +37,7 @@ const WORKSPACE_NAV_ITEMS = [
 const UTILITY_NAV_ITEMS = [
   { id: 'archive', label: 'Archive', icon: Archive },
   { id: 'trash', label: 'Trash', icon: Trash2 },
+  { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
 export default function Sidebar() {
@@ -79,7 +82,7 @@ export default function Sidebar() {
     <>
       {/* Desktop Sidebar (250px) */}
       <aside
-        className={`hidden md:flex flex-col h-screen w-[250px] min-w-[250px] bg-bg-sidebar border-r border-black/5 dark:border-white/10 transition-all duration-200 ${
+        className={`flex flex-col h-screen w-[250px] min-w-[250px] bg-bg-sidebar border-r border-black/5 dark:border-white/10 transition-all duration-200 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full absolute z-30'
         }`}
       >
@@ -210,6 +213,8 @@ export default function Sidebar() {
               </button>
             );
           })}
+
+
         </div>
       </aside>
 
@@ -218,40 +223,13 @@ export default function Sidebar() {
         <button
           onClick={toggleSidebar}
           title="Open sidebar"
-          className="hidden md:flex fixed left-3 top-3 z-30 p-2 bg-bg-sidebar border border-black/10 dark:border-white/10 rounded-button shadow-md text-text-muted hover:text-text-primary"
+          className="flex fixed left-3 top-3 z-30 p-2 bg-bg-sidebar border border-black/10 dark:border-white/10 rounded-button shadow-md text-text-muted hover:text-text-primary"
         >
           <PanelLeftOpen className="w-4 h-4" />
         </button>
       )}
 
-      {/* Mobile Bottom Navigation Bar (< 768px) */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-bg-sidebar border-t border-black/10 dark:border-white/10 flex items-center justify-around h-14 px-2">
-        {WORKSPACE_NAV_ITEMS.slice(0, 5).map((item) => {
-          const Icon = item.icon;
-          const isActive = activeWorkspace === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => setActiveWorkspace(item.id)}
-              className={`flex flex-col items-center justify-center py-1 px-2 rounded-button ${
-                isActive ? 'text-text-primary font-semibold' : 'text-text-muted'
-              }`}
-            >
-              <Icon className="w-5 h-5" />
-              <span className="text-[10px] mt-0.5">{item.label.split(' ')[0]}</span>
-            </button>
-          );
-        })}
-        <button
-          onClick={() => setActiveWorkspace('archive')}
-          className={`flex flex-col items-center justify-center py-1 px-2 rounded-button ${
-            activeWorkspace === 'archive' || activeWorkspace === 'trash' ? 'text-text-primary' : 'text-text-muted'
-          }`}
-        >
-          <Archive className="w-5 h-5" />
-          <span className="text-[10px] mt-0.5">More</span>
-        </button>
-      </nav>
+
     </>
   );
 }

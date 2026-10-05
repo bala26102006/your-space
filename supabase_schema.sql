@@ -90,7 +90,8 @@ CREATE TABLE attachments (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   note_id uuid REFERENCES notes(id) ON DELETE CASCADE,
   type text NOT NULL,
-  storage_path text NOT NULL,
+  storage_path text,
+  image_data text,
   thumbnail_data text,
   created_at timestamptz DEFAULT now()
 );
@@ -99,33 +100,46 @@ CREATE TABLE attachments (
 CREATE TABLE checklist_items (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   note_id uuid REFERENCES notes(id) ON DELETE CASCADE,
+  item_type text DEFAULT 'task',
+  parent_item_id uuid,
   label text NOT NULL,
-  is_checked boolean DEFAULT false,
+  is_completed boolean DEFAULT false,
+  due_date date,
   sort_order integer
 );
 
--- 9. Wishlist Items
+-- 9. Wishlist Folders
+CREATE TABLE wishlist_folders (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  sort_order integer
+);
+
+-- 10. Wishlist Items
 CREATE TABLE wishlist_items (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   note_id uuid REFERENCES notes(id) ON DELETE CASCADE,
-  label text NOT NULL,
+  folder_id uuid REFERENCES wishlist_folders(id) ON DELETE SET NULL,
+  name text NOT NULL,
   price numeric,
-  is_checked boolean DEFAULT false,
+  priority text,
+  is_completed boolean DEFAULT false,
   url text,
   sort_order integer
 );
 
--- 10. Routine Entries
+-- 11. Routine Entries
 CREATE TABLE routine_entries (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   note_id uuid REFERENCES notes(id) ON DELETE CASCADE,
   period text NOT NULL,
   entry_date date NOT NULL,
   is_completed boolean DEFAULT false,
-  streak_count integer DEFAULT 0
+  streak_count integer DEFAULT 0,
+  habit_note text
 );
 
--- 11. AI Memory
+-- 12. AI Memory
 CREATE TABLE ai_memory (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -169,6 +183,12 @@ CREATE POLICY "Users can manage their own checklist_items" ON checklist_items FO
   EXISTS (SELECT 1 FROM notes WHERE id = note_id AND user_id = auth.uid())
 );
 
+ALTER TABLE wishlist_folders ENABLE ROW LEVEL SECURITY;
+-- Folders don't have a user_id currently, but usually they'd be global or per user. If global, just allow all or authenticated.
+-- Assuming global folders for the wishlist since there is no user_id or note_id linked strictly to the user in the folder table.
+CREATE POLICY "Wishlist folders are viewable by everyone" ON wishlist_folders FOR SELECT USING (true);
+CREATE POLICY "Authenticated users can manage wishlist_folders" ON wishlist_folders FOR ALL USING (auth.uid() IS NOT NULL);
+
 ALTER TABLE wishlist_items ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can manage their own wishlist_items" ON wishlist_items FOR ALL USING (
   EXISTS (SELECT 1 FROM notes WHERE id = note_id AND user_id = auth.uid())
@@ -190,5 +210,6 @@ alter publication supabase_realtime add table tags;
 alter publication supabase_realtime add table note_tags;
 alter publication supabase_realtime add table attachments;
 alter publication supabase_realtime add table checklist_items;
+alter publication supabase_realtime add table wishlist_folders;
 alter publication supabase_realtime add table wishlist_items;
 alter publication supabase_realtime add table routine_entries;

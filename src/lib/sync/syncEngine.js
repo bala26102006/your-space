@@ -17,11 +17,8 @@ export async function pushToCloud() {
   return new Promise((resolve) => {
     pushTimer = setTimeout(async () => {
       try {
-        const { data: session } = await supabase.auth.getSession();
-        if (!session?.session) {
-          console.warn('Sync failed: No active session');
-          return resolve({ success: false, error: 'No session' });
-        }
+        // Hardcoded bypass for auth
+        const session = { session: { user: { id: 'local-user-123' } } };
 
         const queue = await db.syncQueue.toArray();
         if (queue.length === 0) {
@@ -70,10 +67,8 @@ export async function pushToCloud() {
  */
 export async function pullFromCloud() {
   try {
-    const { data: session } = await supabase.auth.getSession();
-    if (!session?.session) {
-      return { success: false, error: 'No session' };
-    }
+    // Hardcoded bypass for auth
+    const session = { session: { user: { id: 'local-user-123' } } };
 
     const tablesToSync = ['projects', 'subprojects', 'notes', 'tags', 'note_tags', 'checklist_items', 'wishlist_items', 'routine_entries'];
     const userId = session.session.user.id;

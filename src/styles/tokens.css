@@ -1,4 +1,7 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
 
 /* Browser Autofill Fix */
 input:-webkit-autofill,
@@ -9,23 +12,23 @@ input:-webkit-autofill:active{
     -webkit-text-fill-color: var(--text-primary) !important;
     transition: background-color 5000s ease-in-out 0s;
 }
-@import "tailwindcss/components";
-@import "tailwindcss/utilities";
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+/* --- OLD GOOGLE KEEP PALETTE --- */
+/* App BG: #F8F9FA, Yellow: #FFF9C4, Blue: #B3E5FC, Green: #C8E6C9, Red: #FFCDD2 */
+/* ------------------------------- */
 
 :root {
-  /* Light Mode - Locked Palette */
-  --bg-primary: #FFFFFF;
-  --bg-sidebar: #F8F9FA;
-  --text-primary: #202124;
-  --text-muted: #5F6368;
-  --active-nav-bg: #FFF9C4;
+  /* Light Mode - Soft Organic Palette */
+  --bg-primary: #F7F6F2;
+  --bg-sidebar: #EBE9E4;
+  --text-primary: #2C2A28;
+  --text-muted: #7A7570;
+  --active-nav-bg: #DCD8D0;
   --card-default: #FFFFFF;
-  --card-yellow: #FFF9C4;
-  --card-red: #FFCDD2;
-  --card-blue: #B3E5FC;
-  --card-green: #C8E6C9;
+  --card-yellow: #E6DAB9;
+  --card-red: #E8C9C1;
+  --card-blue: #B9C8D6;
+  --card-green: #C5D1C0;
+  --card-purple: #D6CCE0;
 
   --border-color: rgba(0, 0, 0, 0.08);
   --hover-bg: rgba(0, 0, 0, 0.04);

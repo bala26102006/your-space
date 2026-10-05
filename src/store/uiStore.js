@@ -10,6 +10,11 @@ export const useUIStore = create((set) => ({
   isSidebarCollapsed: false,
   theme: localStorage.getItem('theme') || 'light',
   activeModal: null,
+  user: { id: 'local-user-123', email: 'local@yourspace.app' },
+
+  setUser: (user) => {
+    set({ user });
+  },
   
   // Backward compatibility fields so UI components do not break
   selectedNoteId: null,

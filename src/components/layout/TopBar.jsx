@@ -22,6 +22,7 @@ export default function TopBar() {
     setSortOrder,
     viewMode,
     setViewMode,
+    setSelectedNoteId,
   } = useUIStore();
 
   // Fetch names for breadcrumbs
@@ -56,6 +57,7 @@ export default function TopBar() {
         } else if (activeWorkspace === 'wishlist') {
           setSelectedWishlistFolderId(null);
         }
+        setSelectedNoteId(null);
       }
     });
   };
@@ -69,7 +71,10 @@ export default function TopBar() {
       if (activeProject) {
         breadcrumbs.push({
           label: activeProject.title,
-          onClick: () => setSelectedSubprojectId(null)
+          onClick: () => {
+            setSelectedSubprojectId(null);
+            setSelectedNoteId(null);
+          }
         });
       }
       if (activeSubproject) {

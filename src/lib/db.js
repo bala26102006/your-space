@@ -12,7 +12,38 @@ db.version(1).stores({
   checklist_items: 'id, note_id, item_type, parent_item_id, sort_order, due_date, is_completed',
   wishlist_items: 'id, note_id, name, price, priority, is_completed, folder_id',
   routine_entries: 'id, note_id, entry_date, is_completed, streak_count',
-  ai_memory: 'id, scope_id, action',
+  ai_memory: 'id, input_hash, action, scope_id',
+  syncQueue: '++id, table_name, record_id, action, created_at'
+});
+
+db.version(2).stores({
+  workspaces: 'id, label, icon, sort_order',
+  projects: 'id, title, color, is_archived, is_deleted, deleted_at, sort_order, updated_at',
+  subprojects: 'id, project_id, title, sort_order, is_deleted, deleted_at',
+  notes: 'id, workspace_id, subproject_id, note_type, title, is_pinned, is_archived, is_deleted, deleted_at, updated_at',
+  tags: 'id, label, color',
+  note_tags: '[note_id+tag_id], note_id, tag_id',
+  checklist_items: 'id, note_id, item_type, parent_item_id, sort_order, due_date, is_completed',
+  wishlist_items: 'id, note_id, name, price, priority, is_completed, folder_id',
+  wishlist_folders: 'id, name, sort_order',
+  routine_entries: 'id, note_id, entry_date, is_completed, streak_count',
+  ai_memory: 'id, input_hash, action, scope_id',
+  syncQueue: '++id, table_name, record_id, action, created_at'
+});
+
+db.version(3).stores({
+  workspaces: 'id, label, icon, sort_order',
+  projects: 'id, title, color, is_archived, is_deleted, deleted_at, sort_order, updated_at',
+  subprojects: 'id, project_id, title, sort_order, is_deleted, deleted_at',
+  notes: 'id, workspace_id, subproject_id, note_type, title, is_pinned, is_archived, is_deleted, deleted_at, updated_at',
+  tags: 'id, label, color',
+  note_tags: '[note_id+tag_id], note_id, tag_id',
+  checklist_items: 'id, note_id, item_type, parent_item_id, sort_order, due_date, is_completed',
+  wishlist_items: 'id, note_id, name, price, priority, is_completed, folder_id',
+  wishlist_folders: 'id, name, sort_order',
+  routine_entries: 'id, note_id, period, entry_date, is_completed, streak_count, habit_note',
+  attachments: 'id, note_id, type, created_at',
+  ai_memory: 'id, input_hash, action, scope_id',
   syncQueue: '++id, table_name, record_id, action, created_at'
 });
 
@@ -45,7 +76,7 @@ export async function initWorkspaces() {
 
 const SYNCED_TABLES = [
   'projects', 'subprojects', 'notes', 'tags', 'note_tags',
-  'checklist_items', 'wishlist_items', 'routine_entries'
+  'checklist_items', 'wishlist_items', 'wishlist_folders', 'routine_entries', 'attachments'
 ];
 
 SYNCED_TABLES.forEach(tableName => {

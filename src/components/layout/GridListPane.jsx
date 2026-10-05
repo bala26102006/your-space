@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Plus, StickyNote, Archive, Trash2, Pin, FolderKanban, Folder } from 'lucide-react';
 import { useUIStore } from '../../store/uiStore';
 import { useLiveQuery } from '../../hooks/useLiveQuery';
@@ -8,7 +8,12 @@ import ProjectsView from '../projects/ProjectsView';
 import JournalView from '../journal/JournalView';
 import WishListView from '../wishlist/WishListView';
 import ChecklistsView from '../checklists/ChecklistsView';
+import SettingsView from '../settings/SettingsView';
+import RoutinesView from '../routines/RoutinesView';
+import SketchView from '../sketch/SketchView';
 import TopBar from './TopBar';
+import { autoOrganize } from '../../lib/ai/autoOrganize';
+import { Sparkles, Loader2, Check } from 'lucide-react';
 
 export default function GridListPane() {
   const {
@@ -25,6 +30,9 @@ export default function GridListPane() {
     sortOrder,
     viewMode,
   } = useUIStore();
+
+  const [isOrganizing, setIsOrganizing] = useState(false);
+  const [organizeSuggestion, setOrganizeSuggestion] = useState(null);
 
   // Fetch notes
   const notes = useLiveQuery(async () => {
@@ -137,23 +145,28 @@ export default function GridListPane() {
   const handleSelectNote = async (note) => {
     if (searchQuery.trim() || activeTagId) {
       // Global navigation intercept
-      setActiveWorkspace(note.workspace_id);
-      
+      let projectId = null;
+      let subprojectId = null;
       if (note.workspace_id === 'projects' && note.subproject_id) {
         const sp = await db.subprojects.get(note.subproject_id);
         if (sp) {
-          setSelectedProjectId(sp.project_id);
-          setSelectedSubprojectId(note.subproject_id);
+          projectId = sp.project_id;
+          subprojectId = note.subproject_id;
         }
-      } else {
-        setSelectedProjectId(null);
-        setSelectedSubprojectId(null);
       }
-      
-      setSearchQuery('');
-      setActiveTagId(null);
+
+      // Synchronous batch update
+      useUIStore.setState({
+        activeWorkspace: note.workspace_id,
+        selectedProjectId: projectId,
+        selectedSubprojectId: subprojectId,
+        selectedNoteId: note.id,
+        searchQuery: '',
+        activeTagId: null,
+      });
+    } else {
+      setSelectedNoteId(note.id);
     }
-    setSelectedNoteId(note.id);
   };
 
   // Actions
@@ -241,6 +254,69 @@ export default function GridListPane() {
     }
   };
 
+  const handleAutoOrganize = async () => {
+    if (unpinnedNotes.length === 0) return;
+    setIsOrganizing(true);
+    setOrganizeSuggestion(null);
+    try {
+      const suggestions = await autoOrganize(unpinnedNotes);
+      if (suggestions && suggestions.length > 0) {
+        setOrganizeSuggestion(suggestions);
+      } else {
+        alert('Could not find any obvious organization. Your notes might already be organized!');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('AI Error: ' + e.message);
+    } finally {
+      setIsOrganizing(false);
+    }
+  };
+
+  const applyOrganization = async () => {
+    if (!organizeSuggestion) return;
+    
+    // We'll create a project for each category and move notes into it
+    // If we can't find a matching project, we'll create one. 
+    // Actually, simple implementation: just create a new Project and Subproject for each category.
+    for (const group of organizeSuggestion) {
+      const projectId = crypto.randomUUID();
+      await db.projects.add({
+        id: projectId,
+        title: group.category || 'Organized Project',
+        color: 'default',
+        is_archived: false,
+        is_deleted: false,
+        deleted_at: null,
+        sort_order: Date.now(),
+        updated_at: new Date().toISOString()
+      });
+
+      const subprojectId = crypto.randomUUID();
+      await db.subprojects.add({
+        id: subprojectId,
+        project_id: projectId,
+        title: 'Notes',
+        sort_order: Date.now(),
+        is_deleted: false,
+        deleted_at: null
+      });
+
+      for (const noteId of group.noteIds) {
+        const note = await db.notes.get(noteId);
+        if (note) {
+          await db.notes.update(noteId, {
+            workspace_id: 'projects',
+            subproject_id: subprojectId,
+            updated_at: new Date().toISOString()
+          });
+        }
+      }
+    }
+    
+    setOrganizeSuggestion(null);
+  };
+
   // Restore & Purge Project
   const handleRestoreProject = async (id) => {
     await db.projects.update(id, {
@@ -281,6 +357,9 @@ export default function GridListPane() {
     if (activeWorkspace === 'journal' && !isGlobalView) return <JournalView />;
     if (activeWorkspace === 'wishlist' && !isGlobalView) return <WishListView />;
     if (activeWorkspace === 'checklists' && !isGlobalView) return <ChecklistsView />;
+    if (activeWorkspace === 'routines' && !isGlobalView) return <RoutinesView />;
+    if (activeWorkspace === 'sketch' && !isGlobalView) return <SketchView />;
+    if (activeWorkspace === 'settings') return <SettingsView />;
 
     return (
       <>
@@ -310,7 +389,51 @@ export default function GridListPane() {
               <span>New Note</span>
             </button>
           )}
+          {activeWorkspace === 'quicknotes' && unpinnedNotes.length > 0 && !isGlobalView && (
+            <button
+              onClick={handleAutoOrganize}
+              disabled={isOrganizing}
+              className="flex items-center gap-1.5 px-3 py-2 ml-2 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-button text-xs font-medium hover:bg-purple-500/20 transition-colors shadow-sm disabled:opacity-50"
+              title="Suggest Projects for these notes"
+            >
+              {isOrganizing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+              <span>Auto-Organize</span>
+            </button>
+          )}
         </div>
+
+        {organizeSuggestion && (
+          <div className="mb-6 border border-purple-500/20 bg-purple-50/50 dark:bg-purple-900/10 rounded-card p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2 text-purple-700 dark:text-purple-300 font-medium text-sm">
+                <Sparkles className="w-4 h-4" />
+                AI Auto-Organize Suggestion
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => setOrganizeSuggestion(null)} className="px-3 py-1.5 text-xs text-text-muted hover:bg-black/5 dark:hover:bg-white/10 rounded">
+                  Discard
+                </button>
+                <button onClick={applyOrganization} className="flex items-center gap-1 px-3 py-1.5 text-xs bg-purple-600 text-white rounded hover:bg-purple-700">
+                  <Check className="w-3.5 h-3.5" />
+                  Accept & Move Notes
+                </button>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {organizeSuggestion.map((group, i) => (
+                <div key={i} className="bg-bg-primary border border-black/5 dark:border-white/10 p-3 rounded">
+                  <div className="font-semibold text-sm mb-2">{group.category}</div>
+                  <div className="text-xs text-text-muted space-y-1">
+                    {group.noteIds.map(nid => {
+                      const n = notes?.find(x => x.id === nid);
+                      return n ? <div key={nid} className="truncate">• {n.title || 'Untitled Note'}</div> : null;
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Main Grid View */}
         {filteredNotes.length === 0 &&
@@ -336,12 +459,19 @@ export default function GridListPane() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {archivedOrDeletedProjects.map((proj) => (
-                    <div key={proj.id} className="p-4 bg-card-default border border-black/5 dark:border-white/10 rounded-card">
+                    <div
+                      key={proj.id}
+                      onClick={() => {
+                        useUIStore.setState({ selectedProjectId: proj.id, selectedSubprojectId: null, selectedNoteId: null });
+                      }}
+                      className="p-4 bg-card-default border border-black/5 dark:border-white/10 rounded-card cursor-pointer hover:shadow-card-hover"
+                    >
                       <div className="flex items-center justify-between mb-2">
                         <span className="font-semibold text-sm text-text-primary">{proj.title}</span>
                         {activeWorkspace === 'archive' && (
                           <button
-                            onClick={async () => {
+                            onClick={async (e) => {
+                              e.stopPropagation();
                               await db.projects.update(proj.id, { is_archived: false });
                             }}
                             className="text-xs text-text-primary hover:underline"
@@ -357,10 +487,10 @@ export default function GridListPane() {
                             Purges in {getTrashDaysRemaining(proj.deleted_at)}d
                           </span>
                           <div className="flex gap-2">
-                            <button onClick={() => handleRestoreProject(proj.id)} className="text-text-primary hover:underline">
+                            <button onClick={(e) => { e.stopPropagation(); handleRestoreProject(proj.id); }} className="text-text-primary hover:underline">
                               Restore
                             </button>
-                            <button onClick={() => handlePurgeProject(proj.id)} className="text-red-500 hover:underline">
+                            <button onClick={(e) => { e.stopPropagation(); handlePurgeProject(proj.id); }} className="text-red-500 hover:underline">
                               Purge
                             </button>
                           </div>
@@ -381,12 +511,19 @@ export default function GridListPane() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {archivedOrDeletedSubprojects.map((sp) => (
-                    <div key={sp.id} className="p-4 bg-card-default border border-black/5 dark:border-white/10 rounded-card">
+                    <div
+                      key={sp.id}
+                      onClick={() => {
+                        useUIStore.setState({ selectedProjectId: null, selectedSubprojectId: sp.id, selectedNoteId: null });
+                      }}
+                      className="p-4 bg-card-default border border-black/5 dark:border-white/10 rounded-card cursor-pointer hover:shadow-card-hover"
+                    >
                       <div className="flex items-center justify-between mb-2">
                         <span className="font-semibold text-sm text-text-primary">{sp.title}</span>
                         {activeWorkspace === 'archive' && (
                           <button
-                            onClick={async () => {
+                            onClick={async (e) => {
+                              e.stopPropagation();
                               await db.subprojects.update(sp.id, { is_archived: false });
                             }}
                             className="text-xs text-text-primary hover:underline"
@@ -401,12 +538,14 @@ export default function GridListPane() {
                             Purges in {getTrashDaysRemaining(sp.deleted_at)}d
                           </span>
                           <div className="flex gap-2">
-                            <button onClick={async () => {
+                            <button onClick={async (e) => {
+                              e.stopPropagation();
                               await db.subprojects.update(sp.id, { is_deleted: false, deleted_at: null });
                             }} className="text-text-primary hover:underline">
                               Restore
                             </button>
-                            <button onClick={async () => {
+                            <button onClick={async (e) => {
+                              e.stopPropagation();
                               await db.subprojects.delete(sp.id);
                             }} className="text-red-500 hover:underline">
                               Purge

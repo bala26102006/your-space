@@ -11,6 +11,8 @@ import ColorPicker, { getCardColorStyle } from '../shared/ColorPicker';
 import TipTapEditor from '../editor/TipTapEditor';
 import ChecklistEditor from '../editor/ChecklistEditor';
 import WishlistEditor from '../editor/WishlistEditor';
+import RoutinesEditor from '../routines/RoutinesEditor';
+import SketchEditor from '../sketch/SketchEditor';
 import TagPill from '../shared/TagPill';
 import TodayDashboard from './TodayDashboard';
 import { STARTER_KITS, getStarterKitItems } from '../../lib/starterKits';
@@ -78,6 +80,7 @@ export default function EditorPane() {
   const [newTagInput, setNewTagInput] = useState('');
   const [showSendMenu, setShowSendMenu] = useState(false);
   const [isAILoading, setIsAILoading] = useState(false);
+  const [aiSuggestion, setAiSuggestion] = useState(null);
 
   // Fetch all projects/subprojects for "Send to Project" menu
   const allProjects = useLiveQuery(() => db.projects.toArray(), []) || [];
@@ -228,12 +231,10 @@ export default function EditorPane() {
   };
 
   const handleAISummarize = async () => {
-    // If not a plain note with tiptap, just ignore (or we can extract text from JSON content)
-    // For simplicity, we just extract raw text if we can, or just mock it.
     if (!content) return;
     setIsAILoading(true);
+    setAiSuggestion(null);
     
-    // Quick and dirty way to extract text from ProseMirror JSON
     let text = '';
     const extractText = (node) => {
       if (node.type === 'text') text += node.text + ' ';
@@ -244,21 +245,11 @@ export default function EditorPane() {
     try {
       const summary = await summarizeText(text, selectedNoteId);
       if (summary) {
-        const newContent = {
-          ...content,
-          content: [
-            ...content.content,
-            { type: 'paragraph', content: [{ type: 'text', text: summary }] }
-          ]
-        };
-        setContent(newContent);
-        triggerSave(async () => {
-          await db.notes.update(selectedNoteId, {
-            content: newContent,
-            updated_at: new Date().toISOString(),
-          });
-        });
+        setAiSuggestion({ type: 'summarize', text: summary });
       }
+    } catch (e) {
+      console.error(e);
+      alert('AI Error: ' + e.message);
     } finally {
       setIsAILoading(false);
     }
@@ -267,6 +258,7 @@ export default function EditorPane() {
   const handleAIExpand = async () => {
     if (!content) return;
     setIsAILoading(true);
+    setAiSuggestion(null);
     
     let text = '';
     const extractText = (node) => {
@@ -278,24 +270,38 @@ export default function EditorPane() {
     try {
       const expanded = await expandIdea(text, selectedNoteId);
       if (expanded) {
-        const newContent = {
-          ...content,
-          content: [
-            ...content.content,
-            { type: 'paragraph', content: [{ type: 'text', text: expanded }] }
-          ]
-        };
-        setContent(newContent);
-        triggerSave(async () => {
-          await db.notes.update(selectedNoteId, {
-            content: newContent,
-            updated_at: new Date().toISOString(),
-          });
-        });
+        setAiSuggestion({ type: 'expand', text: expanded });
       }
+    } catch (e) {
+      console.error(e);
+      alert('AI Error: ' + e.message);
     } finally {
       setIsAILoading(false);
     }
+  };
+
+  const applyAISuggestion = () => {
+    if (!aiSuggestion || !content) return;
+    
+    const newContent = {
+      ...content,
+      content: [
+        ...content.content,
+        { type: 'paragraph', content: [{ type: 'text', text: aiSuggestion.type === 'summarize' ? `**Summary:**\n${aiSuggestion.text}` : aiSuggestion.text }] }
+      ]
+    };
+    setContent(newContent);
+    setAiSuggestion(null);
+    triggerSave(async () => {
+      await db.notes.update(selectedNoteId, {
+        content: newContent,
+        updated_at: new Date().toISOString(),
+      });
+    });
+  };
+
+  const rejectAISuggestion = () => {
+    setAiSuggestion(null);
   };
 
   // Handle Pin Toggle
@@ -407,6 +413,30 @@ export default function EditorPane() {
         } translate-x-full md:translate-x-0`}
       >
         <TodayDashboard />
+      </aside>
+    );
+  }
+
+  if (note?.workspace_id === 'routines') {
+    return (
+      <aside
+        className={`fixed md:relative right-0 top-0 bottom-0 z-30 h-screen transition-transform duration-200 ease-in-out bg-bg-primary border-l border-black/10 dark:border-white/10 flex flex-col ${
+          focusMode ? 'w-full max-w-3xl mx-auto border-none' : 'w-full md:w-[480px] lg:w-[540px]'
+        } translate-x-0`}
+      >
+        <RoutinesEditor note={note} onClose={() => setSelectedNoteId(null)} />
+      </aside>
+    );
+  }
+
+  if (note?.workspace_id === 'sketch') {
+    return (
+      <aside
+        className={`fixed md:relative right-0 top-0 bottom-0 z-30 h-screen transition-transform duration-200 ease-in-out bg-bg-primary border-l border-black/10 dark:border-white/10 flex flex-col ${
+          focusMode ? 'w-full max-w-3xl mx-auto border-none' : 'w-full md:w-[480px] lg:w-[540px]'
+        } translate-x-0`}
+      >
+        <SketchEditor note={note} onClose={() => setSelectedNoteId(null)} />
       </aside>
     );
   }
@@ -659,6 +689,26 @@ export default function EditorPane() {
           </div>
         )}
       </div>
+
+      {aiSuggestion && (
+        <div className="border-t border-black/10 dark:border-white/10 p-4 bg-purple-50/50 dark:bg-purple-900/10 flex flex-col gap-2">
+          <div className="flex items-center gap-2 text-purple-700 dark:text-purple-300 font-medium text-sm">
+            <Sparkles className="w-4 h-4" />
+            AI Suggestion ({aiSuggestion.type === 'summarize' ? 'Summary' : 'Expansion'}):
+          </div>
+          <div className="text-sm text-text-primary bg-bg-primary p-3 rounded border border-black/10 dark:border-white/10 max-h-40 overflow-y-auto whitespace-pre-wrap">
+            {aiSuggestion.text}
+          </div>
+          <div className="flex gap-2 justify-end mt-2">
+            <button onClick={rejectAISuggestion} className="px-3 py-1.5 text-xs text-text-muted hover:bg-black/5 dark:hover:bg-white/10 rounded">
+              Discard
+            </button>
+            <button onClick={applyAISuggestion} className="px-3 py-1.5 text-xs bg-purple-600 text-white rounded hover:bg-purple-700">
+              Add to Note
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Starter Kit Use Template Bar */}
       {activeItem?.content?.isStarterKit && (

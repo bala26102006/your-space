@@ -18,13 +18,14 @@ export default {
         'card-red': 'var(--card-red)',
         'card-blue': 'var(--card-blue)',
         'card-green': 'var(--card-green)',
+        'card-purple': 'var(--card-purple)',
       },
       borderRadius: {
         'card': '12px',
         'button': '8px',
       },
       boxShadow: {
-        'card-hover': '0 2px 8px rgba(0,0,0,0.05)',
+        'card-hover': '0 2px 8px rgba(0,0,0,0.04)',
         'card-hover-dark': '0 2px 8px rgba(0,0,0,0.3)',
       },
       fontFamily: {
