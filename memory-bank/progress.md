@@ -2,8 +2,8 @@
 
 > Update this file at the end of every stage.
 
-**Last updated:** 2026-09-29
-**Current stage:** Stage 5 — Testing & QA (COMPLETED)
+**Last updated:** 2026-10-09
+**Current stage:** Stage 5 — Testing & QA: Journal Panel Bug Fix Phase (COMPLETED, Awaiting User Approval for Phase 5 Final QA)
 
 ---
 
@@ -49,11 +49,42 @@
 - [x] **Auth Removal & Layout Shift Phase:** Permanently stripped Supabase authentication from the app, hardcoded local user fallback, and completely refactored the layout to permanently pin the Sidebar to the left on all devices (bypassing the mobile bottom nav).
 - [x] **Alternative Soft Color Palette Phase:** Applied "Soft Organic" color tokens globally to replace the Google Keep pastel colors. Added muted earthy tones (Terracotta, Sage, Dusty Blue, Lavender, Mustard). Softened box-shadows.
 - [x] **Master Stabilization Phase 1 (Wish List Bug Fix):** Repaired `WishListView.jsx` default folder initialization to prevent duplicate seeding (used transaction deduplication and deterministic IDs). Replaced `crypto.randomUUID()` with environment-safe fallbacks for folder and item creation to guarantee Dexie writes, and verified `Total Cost` accurately calculates strictly against unchecked items.
-- [x] **Master Stabilization Phase 2 (Routines Workspace):** Validated Stage 3.4 Routines Workspace functionality and ensured database schema matches requirements for habit tracking.
-- [x] **Master Stabilization Phase 3 (Sketch Workspace):** Built `SketchView` and `SketchEditor` with an HTML5 canvas drawing tool, Base64 image saving to the `attachments` table, and a "Save to Note" dropdown attachment feature.
-- Awaiting user approval to begin **Master Stabilization Phase 4: Dynamic Data Accuracy**.
+- [x] **Stage 3.5 (Sketch Workspace) completed:**
+  - Upgraded Dexie schema to `db.version(4)` indexing `attachments` table with `id`, `note_id`, `type`, `title`, and `created_at` (storing `image_data`, `description`, `strokes`).
+  - Built Grid pane (`SketchView.jsx`) displaying sketch cards with dynamic Base64 thumbnails, title, "Created on [date]", "+ New Sketch" flow, and an empty state.
+  - Built Editor pane (`SketchEditor.jsx`) with HTML5 infinite canvas supporting pan, zoom via `Ctrl + scroll wheel`, Spacebar pan, and touch gestures (pinch-zoom).
+  - Implemented locked pastel palette (Charcoal, Terracotta, Sage, Dusty Blue, Mustard, Lavender) with fine/medium/broad stroke widths, eraser mode, and clear canvas confirmation modal.
+  - Added "Title" field above canvas, "Description" field below canvas, and instant Base64 persistence to Dexie `attachments` and `notes`.
+  - Built Cross-Workspace "Save to Note" modal (`AttachToNoteModal.jsx`) allowing instant sketch linking to any Quick Note, Journal entry, or Project note.
+- [x] **Pre-Sketch Polish & Upgrade — Phase 1: Global UX & Micro-Interactions (COMPLETED):**
+  - **Command Palette (`Ctrl/Cmd + K`):** Built centered modal (`CommandPalette.jsx`) with quick workspace jumping, instant Quick Note creation, instant new sketch action, dark/light mode toggle, and live note searching across all workspaces. Added keyboard navigation (`↑`, `↓`, `Enter`, `Esc`) and `⌘K` trigger badge in Sidebar search bar.
+  - **Micro-Interactions:**
+    - Cards across all workspaces (`NoteCard`, `ProjectsView`, `SketchView`, `ChecklistsView`, `WishListView`, `RoutinesView`, and `SortableSubprojectItem`) upgraded with soft shadow and `1.02x` scale-up on hover (`hover:scale-[1.02] hover:shadow-lg dark:hover:shadow-black/40 transition-all duration-200 ease-out`).
+    - Editor pane upgraded to a smooth 150ms ease-out slide-in animation (`transition-all duration-150 ease-out`).
+    - Buttons globally styled with a soft, quick fade on hover (`transition: color 150ms ease-out, background-color 150ms ease-out, opacity 150ms ease-out, box-shadow 150ms ease-out`).
+  - **Dark Mode Polish:** Added `--card-purple: #2E2538;` and neutral `--active-nav-bg: #282828;` to `.dark` palette; updated `ColorPicker.jsx` and `NoteCard.jsx` with full Soft Organic muted pastel tokens; ensured high contrast text readability across all workspace cards.
+- [x] **Pre-Sketch Polish & Upgrade — Phase 2: Dynamic Data & Smart Defaults (COMPLETED):**
+  - **Projects Progress Bar:** Replaced hardcoded progress with dynamic calculation from Dexie based on completed notes vs. total notes across all subprojects.
+  - **Journal Streak:** Implemented real consecutive-day calculation counting consecutive days written from local Dexie entries.
+  - **Today Dashboard:** Replaced mock static placeholders with live Dexie queries for tasks due today (with complete toggle), routines to complete (with one-click check), and recently updated notes.
+  - **Wish List "Total Cost" & Indicator:** Added thin visual progress bar for "Bought vs. Wanted" with item counts and total cost calculation.
+  - **Routines Calendar Tooltips:** Added sleek hover tooltips to calendar days showing habit notes or "Completed ✓" feedback.
+  - **Checklists Upgrades:** Added collapsible section headers with chevron indicators and hidden items count badges, alongside intuitive tactile drag handles (`GripVertical`) on all checklist items.
+- [x] **Pre-Sketch Polish & Upgrade — Phase 3: Sketch Workspace with Upgraded Polish (COMPLETED):**
+  - Built Grid pane (`SketchView.jsx`) displaying sketch cards with dynamic Base64 thumbnails, title, "Created on [date]", "+ New Sketch" flow, and an empty state.
+  - Built Editor pane (`SketchEditor.jsx`) with HTML5 infinite canvas supporting pan, zoom via `Ctrl + scroll wheel`, Spacebar pan, and touch gestures (pinch-zoom).
+  - Implemented locked pastel palette (Charcoal, Terracotta, Sage, Dusty Blue, Mustard, Lavender) with fine/medium/broad stroke widths, eraser mode, and clear canvas confirmation modal.
+  - Added "Title" field above canvas, "Description" field below canvas, and instant Base64 persistence to Dexie `attachments` and `notes`.
+  - Built Cross-Workspace "Save to Note" modal (`AttachToNoteModal.jsx`) allowing instant sketch linking to any Quick Note, Journal entry, or Project note.
+- [x] **Journal Panel Bug Fix Phase (COMPLETED):**
+  - **Fixed Journal Header Overlap:** Restructured header into `flex justify-between items-center w-full mb-6` with "Journal" title on the left and grouped streak badge + "Write Today" button on the right with `gap-3`. Added `whitespace-nowrap` and `shrink-0` to eliminate wrapping and element collisions across viewports.
+  - **Corrected Mood History Heatmap Colors:** Replaced heatmap colors with the exact requested palette: Calm = Soft Blue (`#3B82F6`), Restless = Soft Amber (`#F59E0B`), Grateful = Soft Green (`#10B981`), Tired = Soft Purple (`#8B5CF6`), Empty days = Dark neutral (`#22262E`), Today = Rose ring (`#F43F5E`). Ensured 6x5 grid cells are strictly square (`aspect-square`) with proper internal padding so they never touch card edges.
+  - **Dark Mode Contrast Polish:** Enforced the dark surface token (`#1A1D23`) on Journal cards, containers, and empty states. Maintained Rose accent (`#FB7185` / `#F43F5E`) at 15% opacity with rose icon for the active sidebar state. Enforced sharp text contrast with `#ECEEF2` (primary) and `#A7ADBA` (secondary).
+  - **Consistent Spacing:** Applied uniform 24px padding and margins across the Journal content area, entry list cards, and empty state.
 
 ## ⏭️ Next Up
+- **Phase 5: Final QA** — Awaiting user sign-off.
+- **Stage 4: Cloud Sync & AI** — Supabase Cloud Sync and AI power-up workflows.
 - **Stage 6: Deploy & Ship** — Final build generation, hosting configuration, environment variable lock down, and production handoff.
 
 ## ⚠️ Known Issues / Tech Debt
@@ -62,6 +93,7 @@
 ## 🧭 Decisions Log
 | Date | Date | Decision | Reason |
 |---|---|---|---|
+| 2026-10-09 | 2026-10-09 | Fixed Journal Header Overlap & Heatmap Palette | Restructured header to `flex justify-between items-center w-full mb-6` with `gap-3` button grouping; updated heatmap to accurate mood tokens (#3B82F6, #F59E0B, #10B981, #8B5CF6, #22262E, #F43F5E) with #1A1D23 surface contrast. |
 | 2026-09-28 | 2026-09-28 | Integrated `@dnd-kit` into `ProjectsView` with touch activation constraint | Ensures smooth drag handles on both desktop mouse and touch screens |
 | 2026-09-29 | 2026-09-29 | Added Stage 2.1 Hierarchy Fixes | Resolved 3-pane navigation flow; Grid accurately shows nested notes, Editor correctly allows editing Sub-project titles/descriptions natively alongside standard Notes. |
 | 2026-09-29 | 2026-09-29 | Added Stage 2.2 Navigation Fixes | Patched `uiStore` reset flows, enabled global note search interception via `activeTagId` and `searchQuery`, added Sub-projects support in Archive/Trash panes. |
