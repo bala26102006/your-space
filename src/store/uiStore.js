@@ -10,7 +10,14 @@ export const useUIStore = create((set) => ({
   isSidebarCollapsed: false,
   theme: localStorage.getItem('theme') || 'light',
   activeModal: null,
+  isCommandPaletteOpen: false,
   user: { id: 'local-user-123', email: 'local@yourspace.app' },
+
+  setIsCommandPaletteOpen: (open) => set((state) => ({ 
+    isCommandPaletteOpen: typeof open === 'boolean' ? open : !state.isCommandPaletteOpen 
+  })),
+  openCommandPalette: () => set({ isCommandPaletteOpen: true }),
+  closeCommandPalette: () => set({ isCommandPaletteOpen: false }),
 
   setUser: (user) => {
     set({ user });
