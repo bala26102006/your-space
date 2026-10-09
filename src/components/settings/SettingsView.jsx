@@ -40,10 +40,10 @@ export default function SettingsView() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-8">
+    <div className="max-w-2xl mx-auto p-8 w-full min-w-0 overflow-x-hidden">
       <div className="flex items-center gap-3 mb-8">
         <Settings className="w-8 h-8 text-text-primary" />
-        <h1 className="text-3xl font-bold text-text-primary">Settings</h1>
+        <h1 className="text-[28px] sm:text-[32px] font-bold tracking-tight text-text-primary leading-tight">Settings</h1>
       </div>
 
       <div className="space-y-8">

@@ -51,6 +51,17 @@ db.version(4).stores({
   attachments: 'id, note_id, type, title, created_at'
 });
 
+db.version(5).stores({
+  projects: 'id, title, color, is_archived, is_deleted, deleted_at, archivedAt, deletedAt, deletedFrom, sort_order, updated_at',
+  subprojects: 'id, project_id, title, sort_order, is_deleted, deleted_at, archivedAt, deletedAt, deletedFrom',
+  notes: 'id, workspace_id, subproject_id, note_type, title, is_pinned, is_archived, is_deleted, deleted_at, archivedAt, deletedAt, deletedFrom, updated_at',
+  activityLog: 'id, itemId, workspace, action, timestamp'
+});
+
+db.version(6).stores({
+  notes: 'id, workspace_id, subproject_id, note_type, title, is_pinned, is_archived, is_deleted, deleted_at, archivedAt, deletedAt, deletedFrom, category, status, priority, updated_at'
+});
+
 db.on('populate', () => {
   db.workspaces.bulkAdd([
     { id: 'quicknotes', label: 'Quick Notes', icon: 'StickyNote', sort_order: 1 },

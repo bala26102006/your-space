@@ -1,13 +1,62 @@
 # Memory Bank — Progress Tracker
 
 > Update this file at the end of every stage.
-
 **Last updated:** 2026-10-09
-**Current stage:** Stage 5 — Testing & QA: Journal Panel Bug Fix Phase (COMPLETED, Awaiting User Approval for Phase 5 Final QA)
+**Current stage:** UI Fix Phase 4 — Dark Mode Redesign (COMPLETED)
 
 ---
 
 ## ✅ What's Built
+- **UI Fix Phase 4 (Dark Mode Redesign) completed:**
+  - **Design Tokens (CSS Variables, no hard-coded colors):**
+    - Backgrounds: app `#0F1115`, sidebar `#14171C`, surface/card `#1A1D23`, raised/hover `#22262E`.
+    - Borders: `rgba(255,255,255,0.08)`. Dividers: `rgba(255,255,255,0.06)`.
+    - Text: primary `#ECEEF2`, secondary `#A7ADBA`, muted `#7C8392`. Never pure `#FFF` on pure `#000`.
+  - **Accents in Dark Mode (Lighter Tints):**
+    - Amber `#FBBF24`, Indigo `#818CF8`, Rose `#FB7185`, Emerald `#34D399`, Violet `#A78BFA`, Sky `#38BDF8`, Orange `#FB923C`.
+    - Active sidebar item: accent at 15% opacity background (`rgba(..., 0.15)`) + accent-colored icon.
+  - **Component Pass Across All Panels:**
+    - Sidebar: Updated to `#14171C`, aligned borders, and active item 15% opacity tint with accent icon.
+    - Header & TopBar: Smooth 200ms transitions, clean breadcrumbs, and card-surface dropdowns.
+    - Search & Command Palette: `#1A1D23` modal surface, 200ms transition, high contrast active item highlighting.
+    - Quick Notes Cards: Deep desaturated card backgrounds (`--card-yellow: #2A2619`, `--card-red: #2B1D1D`, `--card-blue: #18252E`, `--card-green: #192A1D`, `--card-purple: #241C2B`).
+    - Projects & Checklists: Dark surface cards with clean border tokens, progress bars, and metadata.
+    - Journal: Heatmap cells colored by mood, hover tooltips styled with `#1A1D23` card surface, and streak counter.
+    - Wish List: Violet-tinted surface, quick-add bar, summary strip, and modal dialogs.
+    - Routines: Accent-tinted dark surfaces (`bg-sky-500/5 dark:bg-sky-950/25 dark:border-sky-800/30`).
+    - Sketch Editor: Dark canvas `#1A1D23`, white-ish pen (`#ECEEF2`) as default in dark mode, off-white palette swatch, and dark thumbnail exports.
+    - Modals & Dropdowns: Centralized `DeleteConfirmModal.jsx` and menus rendered on surface card `#1A1D23`.
+    - TipTap Editor: Headings, blockquotes, lists, and code blocks styled with `--text-primary` and dark borders.
+    - Scrollbars: Custom themed scrollbars with `--text-muted` thumb and hover highlighting.
+  - **Theme Behavior & Persistence:**
+    - Instant theme switching with smooth 200ms CSS transitions on all panels, containers, and interactive elements.
+    - Multi-mode support for Light, Dark, and System modes with live `matchMedia` listener in `App.jsx`.
+    - Interactive 3-way cycling theme toggle button in `Sidebar.jsx` with `Sun`, `Moon`, and `Monitor` icons.
+    - Stored locally in `localStorage`, applied before first paint via an inline script in `<head>` of `index.html` preventing theme flash.
+  - **Verification:**
+    - Body text contrast >= 4.5:1 (Primary `#ECEEF2` on `#0F1115` has 16.5:1, on `#1A1D23` has 14.8:1; Secondary `#A7ADBA` has 8.5:1; Muted `#7C8392` has 4.75:1).
+    - Icon contrast >= 3:1 across all panels.
+    - Production build verification (`npm run build`) passed with code 0 in 8.07s.
+  - **Header & Visual Identity:** Styled page header with title "Wish List", violet underline `#8B5CF6`, descriptive subtitle, and "New Wish" primary button (`bg-[#8B5CF6] text-white hover:bg-[#7C3AED]`).
+  - **Comprehensive Fields & Additive Migration:** Bupmed Dexie schema to `db.version(6)` indexing `category`, `status`, `priority` on `notes`. Supports title (required), category (Buy, Learn, Watch, Place, Other), priority (Low, Medium, High), estimated price, link, notes, cover image, target date, and status (Wishing, Planned, Got it).
+  - **Views (Grid & List):** Built seamless view mode toggle between Grid view (cards with cover image / gradient on top) and List view (compact rows with thumbnails, titles, metadata, and quick actions).
+  - **Cards & Styling:** Implemented equal-height cards with zero overflow, 2-line title clamp, category chips with soft tints, priority dots (Red, Amber, Emerald), price displays, and cover images with preset violet gradients.
+  - **Quick Add:** Added top bar single input ("Add a wish and press Enter") creating instant wishes directly in Dexie.
+  - **Filters & Sorting:** Implemented multi-dimensional filtering by Category (Buy, Learn, Watch, Place, Other), Priority (High, Medium, Low), and Status (Wishing, Planned, Got it), with sorting by Newest, Priority, and Price.
+  - **Summary Strip:** Built live statistics strip showing Total Wishes count, Total Estimated Cost of active wishes, and Achieved Wishes This Month.
+  - **"Got it" Interaction:** Added checkmark pop animation; toggling "Got it" updates status, sets `got_it_at` timestamp, and moves item to the "Achieved & Got It" section with strike-through styling.
+  - **Right Pane Editor:** Upgraded `WishlistEditor.jsx` rendered inside `EditorPane` with debounced autosave, "Saved ✓" indicator, and controls for all 8 wish fields.
+  - **Empty State & Deletion:** Designed violet empty-state with sparkles illustration and friendly prompt. Wired Phase 2 confirmation dialogs (`openSoftDelete`, `openPermanentDelete`, `archiveItem`).
+  - **Dark Mode & Responsive:** Validated 4.5:1 WCAG AA contrast in dark mode and responsive layout across 360px, 768px, 1280px, and 1920px viewports.
+
+- **UI Fix Phase 2 (Delete / Archive / Trash System) completed:**
+  - **Data & Additive Migration:** Bumped Dexie schema to `db.version(5)` adding `activityLog: 'id, itemId, workspace, action, timestamp'` table and additive fields `archivedAt`, `deletedAt`, `deletedFrom` on `notes`, `projects`, and `subprojects`. Created `trashService.js` handling activity logging, soft delete, restore, permanent cascade delete, archive, unarchive, and auto-purge.
+  - **Confirmation Dialogs:** Implemented centralized `DeleteConfirmModal.jsx` and `confirmStore.js`. Soft delete prompts "Move '<title>' to Trash? You can restore it for 7 days." Permanent delete prompts "Permanently delete <N> items? This cannot be undone." and strictly requires typing "DELETE" into a confirmation input before enabling the button. Wired across all panels (`NoteCard`, `EditorPane`, `ProjectsView`, `SortableSubprojectItem`, `ChecklistsView`, `JournalView`, `SketchView`, `RoutinesView`, `WishListView`).
+  - **Trash Page:** Created `TrashView.jsx` with workspace badges (icon + accent color), deleted date, and "X days left" dynamic countdown. Equipped with per-item "Restore" and "Delete forever", bulk selection checkboxes, "Restore selected", "Delete selected", and "Empty Trash". Wired `autoPurgeOldTrash` on app load in `App.jsx` to purge items older than 7 days.
+  - **Deletion History:** Added "History" tab at top of Trash page showing a vertical timeline of `activityLog` entries with action badges, item titles, workspace tags, and timestamps.
+  - **Archive Page:** Created `ArchiveView.jsx` grouping archived items by their original workspace with header counts, item previews, "Unarchive", and "Move to Trash" actions.
+  - **Sidebar Badges:** Added reactive live query badges on Archive and Trash navigation items in `Sidebar.jsx` showing item counts.
+
 - **Stage 0: Design & Docs** — All 7 documentation files confirmed, parsed, and initialized in the workspace.
 - **Stage 1: Foundation & Quick Notes** — Full local-first infrastructure, design tokens, 3-pane shell, Quick Notes CRUD, debounced save, tag manager, global search, mobile bottom nav.
 - **Stage 2: Projects & Hierarchy** — 3-Tier Creative Structure:
@@ -25,10 +74,40 @@
   - **Stage 3.2 completed:** Advanced Checklists Workspace. Built custom specialized editors and grid views for Checklists. Added Template Modes, Sub-tasks, etc.
   - **Stage 3.3 completed:** Wish List Workspace. Built `WishListView` with 10 default Folders, rich Item Cards, URL pasting (mock auto-fill), Priority/Price metadata, Tag filters, "Why I Want This" notes, "Total Cost" summaries, and a "Got It" completion flow. Upgraded Dexie schema to `v4` for `wishlist_items` and `wishlist_folders`.
   - **Checklists Refactor (Stage 3.2 Extended):** Built `ChecklistsView` with Categories (Folders) structure. Upgraded Dexie schema to `v2` to support `checklist_items` table with `parent_item_id`, `due_date`, and `sort_order`. Re-wrote `ChecklistEditor` to use live queries, dnd-kit for flat-list reordering, indentation via Tab key, Template Mode, and Duplicate & Reset.
-
   - **Stage 3.4 (Routines Workspace) completed:** Built the Routines workspace UI with Dexie `routine_entries` integration. Implemented calm habit tracking including a "Visual Streak Calendar" (monthly/weekly toggles), "Streak Count", "Streak Freeze", and "Habit Notes" field. Added subtle completion grid and gentle end-of-day reminders.
   - **Stage 3.4.1 (Routines UI Polish & Edit Feature) completed:** Enhanced Routines workspace UI. Added card action menu ("..." with Edit, Duplicate, Archive, Delete), top-bar Edit button (pencil icon), and a clean centered Edit Modal to modify routine title, frequency (Daily/Weekly/Monthly), and pastel color with instant Dexie updates. Redesigned Routine cards to be compact with 18px semi-bold titles, dynamic streak calculation, and soft, clear completion dots. Fixed grid scrolling with 16px gap and 24px padding. De-cluttered the detail view with a centered max-w-[720px] canvas, 32px padding, clean weekly/monthly toggles, and soft streak freeze controls. Polished header and empty state.
   - **Stage 3.5 completed:** Project Enhancements & AI Power-Ups. Added Project Templates (Movie Script, YouTube Video, Novel) for quick hierarchy creation. Added Project color coding and a dynamic subproject completion progress bar. Added a "Send to Project" quick-move flow in the Quick Notes editor. Created mock AI wrappers (Summarize, Expand Idea, Auto-Organize) using `indexedDB` caching in the `ai_memory` table and integrated them into the Editor toolbar. Built an Export Engine for Projects to PDF (`jsPDF`) and Word (`docx`).
+  - **UI Polish Phase 1 (Global Color System & Layout Foundation) completed:**
+    - Defined CSS variables for per-workspace accent colors in Light & Dark modes: Quick Notes (#F59E0B Amber), Projects (#6366F1 Indigo), Journal (#F43F5E Rose), Checklists (#10B981 Emerald), Wish List (#8B5CF6 Violet), Routines (#0EA5E9 Sky), Sketch (#F97316 Orange).
+    - Applied accents to active sidebar items (12-15% tint background + icon color), workspace badges/titles, primary buttons (`bg-[var(--workspace-accent)] text-white`), and empty state icon badges (`bg-[var(--workspace-accent-bg)] text-[var(--workspace-accent)]`).
+    - Fixed global flex/grid layout bounds: added `min-width: 0` (`min-w-0`) and `overflow-x: hidden` / `overflow: hidden` on root containers and flex children to eliminate all horizontal scrollbars.
+    - Ensured internal sidebar scrolling (`overflow-y: auto`) with zero outer layout shifts.
+  - **UI Polish Phase 2 (Interactive Polish & Cross-Platform Reliability) completed:**
+    - Upgraded `NoteCard` selection rings to dynamic workspace accents (`ring-2 ring-[var(--workspace-accent)] shadow-card-hover`).
+    - Synced `NoteCard` checklist progress bar with `var(--workspace-accent)`.
+    - Enhanced `TagPill` active state with workspace-accent background and border tint.
+    - Upgraded `TopBar` active sort selection with workspace-accent highlight.
+    - Universalized environment-safe UUID generation with `generateUUID()` fallback across all components, editors, and services (`ProjectsView`, `GridListPane`, `EditorPane`, `TodayDashboard`, `CommandPalette`, `ChecklistsView`, `ChecklistEditor`, `RoutinesView`, `RoutinesEditor`, `WishListView`, `Sidebar`, `JournalView`, `sketchService`).
+    - Updated `taskbreakdown.md` checking off Phase 1, 2, 3, 4 deliverables.
+    - Verified clean production build with Vite (0 errors).
+  - **UI Polish Phase 3 (Journal Panel Redesign) completed:**
+    - **Layout:** Rebuilt layout into a responsive 2-column grid (`grid-cols-1 lg:grid-cols-12`) that stacks cleanly on small viewports with zero horizontal scrolling.
+    - **Header:** Placed "Journal" title on one line with streak counter and "Write Today" action button strictly aligned right on the same row.
+    - **Empty State:** Designed an aesthetic zero-state with a floating BookOpen badge, encouraging message, and large "Write your first entry" button.
+    - **Entry Cards:** Built custom journal entry cards featuring formatted Date chips (Today/Yesterday/Date), mood emoji badges (Calm 😌, Restless 🏃, Grateful 🙏, Tired 😴), title, 2-line preview, tag pills, and action menus.
+    - **Mood History Heatmap:** Implemented a real GitHub-style 35-day commit-like heatmap with days colored by mood (Calm blue, Restless amber, Grateful green, Tired purple, and today ring outline) equipped with interactive hover tooltips displaying date, mood, emoji, and entry title.
+    - **Daily Prompt Card:** Added an interactive Daily Prompt card featuring 30 rotating reflections, an animated Shuffle button, and a "Use this prompt" action button.
+  - **UI Fix Phase 1 (Bug Fixes + Sketch Fullscreen) completed:**
+    - **Sketch Layout:** Constrained list pane with `min-w-[320px]`, converted header to `flex flex-wrap items-start justify-between gap-3`, capped description at `max-w-prose`, updated sketch cards to `grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-4`, set title to single-line ellipsis and date to single-line `truncate whitespace-nowrap`, and removed nested scrollbars.
+    - **Sketch Fullscreen + Navigation:** Added Fullscreen toggle button (`Maximize2` / `Minimize2`) in toolbar, bound `F` keyboard shortcut (safely disabled inside text inputs), expanded editor in fullscreen to `fixed inset-0 z-50 w-screen h-screen` via `EditorPane`, configured `Esc` key to exit fullscreen first before closing editor, added "← Back to sketches" button with left arrow icon, autosaved canvas strokes and metadata prior to close, and purged empty/blank sketches on close so blank entries are never saved.
+    - **Routines:** Fixed "Routines & Habits" title positioning under sticky top bar with proper container padding, formatted streak text with `whitespace-nowrap shrink-0`, and converted all routine card backgrounds to soft tints of sky accent (`bg-sky-500/5 hover:bg-sky-500/10 border-sky-500/20 dark:bg-sky-950/25 dark:border-sky-800/30`).
+    - **Journal:** Styled heatmap cells according to mood (Calm blue, Restless amber, Grateful green, Tired purple), added rose ring around Today (`ring-2 ring-rose-500 ring-offset-1`), reoriented tooltips downward (`top-full mt-1.5`) so they never occlude section titles, and removed nested scrollbars from the right-hand column.
+    - **Projects:** Set project card grid to `items-stretch` and cards to `flex flex-col justify-between h-full` for equal row height, clamped titles to 2 lines (`line-clamp-2`) with fallback "Untitled project", hid "No description provided." placeholder entirely when description is empty, and anchored the completion progress bar to the bottom (`mt-auto pt-3 border-t`).
+    - **Checklists:** Implemented auto-removal for empty, untitled checklist items on blur, and added unmount cleanup in `ChecklistEditor` to automatically discard empty items when navigating away.
+    - **Quick Notes:** Added `break-words` and `overflow-hidden` across note card roots, titles, and preview bodies in `NoteCard.jsx` to prevent overflow and text blowout.
+
+## ⏭️ Next Up
+- **Stage 6: Deploy & Ship** — Final build generation, hosting configuration, environment variable lock down, and production handoff.
 
 ## 🚧 In Progress
 - [x] **Stage 3.5.1 completed:** Top Bar & View Controls. Added global persistent header to the Grid pane. Implemented dynamic breadcrumbs, a sort dropdown (Date/Name/Priority), List/Grid view toggle, and a Focus Mode icon. Breadcrumbs correctly reflect active workspaces and hierarchy paths (e.g. Projects, Checklists).
@@ -80,10 +159,17 @@
   - **Fixed Journal Header Overlap:** Restructured header into `flex justify-between items-center w-full mb-6` with "Journal" title on the left and grouped streak badge + "Write Today" button on the right with `gap-3`. Added `whitespace-nowrap` and `shrink-0` to eliminate wrapping and element collisions across viewports.
   - **Corrected Mood History Heatmap Colors:** Replaced heatmap colors with the exact requested palette: Calm = Soft Blue (`#3B82F6`), Restless = Soft Amber (`#F59E0B`), Grateful = Soft Green (`#10B981`), Tired = Soft Purple (`#8B5CF6`), Empty days = Dark neutral (`#22262E`), Today = Rose ring (`#F43F5E`). Ensured 6x5 grid cells are strictly square (`aspect-square`) with proper internal padding so they never touch card edges.
   - **Dark Mode Contrast Polish:** Enforced the dark surface token (`#1A1D23`) on Journal cards, containers, and empty states. Maintained Rose accent (`#FB7185` / `#F43F5E`) at 15% opacity with rose icon for the active sidebar state. Enforced sharp text contrast with `#ECEEF2` (primary) and `#A7ADBA` (secondary).
-  - **Consistent Spacing:** Applied uniform 24px padding and margins across the Journal content area, entry list cards, and empty state.
+  - [x] **UI Polish Phase 4 (Final Polish & Micro-Interactions) completed:**
+    - **Micro-Interactions & Transitions:** Enforced 150-200ms ease-out transitions for hover, focus, and active states globally across all buttons, inputs, selects, sidebar items, and cards (`hover:scale-[1.02] hover:shadow-lg active:scale-98`).
+    - **Typography Hierarchy:** Standardized page headers to 28-32px font-bold tracking-tight (`text-[28px] sm:text-[32px] font-bold tracking-tight text-text-primary capitalize leading-tight`), section labels to 12px uppercase (`text-xs font-semibold text-text-muted uppercase tracking-wider`), and body text to 14-15px.
+    - **Skeleton Loaders:** Created reusable `SkeletonLoader.jsx` with `GridSkeleton`, `TimelineSkeleton`, `WidgetSkeleton`, and `CardSkeleton` components. Integrated them across all panels (`GridListPane`, `ProjectsView`, `JournalView`, `ChecklistsView`, `WishListView`, `RoutinesView`, `SketchView`, `TodayDashboard`) displaying seamless skeleton animations while Dexie live queries resolve.
+    - **Command Palette (`Ctrl+K`):** Polished Command Palette modal to be cleanly centered with backdrop blur, role dialog, aria-modal, keyboard shortcuts, and full a11y support.
+    - **Dark Mode Verification:** Confirmed rich contrast across all panels using dark tokens (`#121212` background, `#1E1E1E` / `#1A1D23` surfaces, `#FFFFFF` / `#ECEEF2` text, `#B0B0B0` muted text), ensuring comfortable compliance above the 4.5:1 WCAG AA threshold.
+    - **Accessibility (a11y):** Added universal visible focus rings (`*:focus-visible { outline: 2px solid var(--workspace-accent) !important; outline-offset: 2px !important; }`), explicit `aria-label`s on icon-only buttons (`TopBar`, `Sidebar`, `NoteCard`, views), and WCAG AA contrast.
+    - **App Running Live:** Production build verified passing with 0 errors (`npm run build`) and Vite dev server launched and running live on `http://localhost:3000/`.
 
 ## ⏭️ Next Up
-- **Phase 5: Final QA** — Awaiting user sign-off.
+- **Stage 6: Deploy & Ship** — Final build generation, hosting configuration, environment variable lock down, and production handoff.
 - **Stage 4: Cloud Sync & AI** — Supabase Cloud Sync and AI power-up workflows.
 - **Stage 6: Deploy & Ship** — Final build generation, hosting configuration, environment variable lock down, and production handoff.
 
@@ -92,7 +178,10 @@
 
 ## 🧭 Decisions Log
 | Date | Date | Decision | Reason |
-|---|---|---|---|
+| 2026-10-09 | 2026-10-09 | UI Fix Phase 3 — Wish List Page | Built Wish List experience: Violet #8B5CF6 theme with underline; 8 comprehensive fields with Dexie v6 additive migration; Grid & List view toggle; equal-height cards with gradient placeholders; quick-add bar; multi-dimensional filters & sorting; live summary strip (wishes, cost, achieved this month); animated "Got it" completion flow; right-pane WishlistEditor with autosave; Phase 2 confirmation dialogs; WCAG AA dark mode & responsive down to 360px. |
+| 2026-10-09 | 2026-10-09 | UI Fix Phase 2 — Delete / Archive / Trash System | Additive Dexie v5 migration with activityLog table and archivedAt/deletedAt/deletedFrom fields; centralized DeleteConfirmModal with soft delete ("7 days") and permanent delete (typed "DELETE" confirmation); rebuilt dedicated TrashView with bulk actions, countdown & History timeline; rebuilt ArchiveView grouped by workspace; added count badges to Sidebar. |
+| 2026-10-09 | 2026-10-09 | UI Fix Phase 1 — Bug Fixes + Sketch Fullscreen | Resolved 7 UI issues: Sketch min-w/header wrap/prose/auto-fill grid & fullscreen toggle with F/Esc shortcuts and back button; Routines sticky title padding & sky tint cards; Journal mood heatmap colors & tooltip collision fix; Projects equal-height cards & 2-line title clamp; Checklists auto-removal of empty untitled items; Quick Notes break-words & overflow-hidden. |
+| 2026-10-09 | 2026-10-09 | UI Polish Phase 4 — Final Polish & Micro-Interactions | Enforced universal 150-200ms transitions, 28-32px page headers, 12px uppercase section labels, responsive skeleton loaders across all panels, centered accessible Command Palette modal, WCAG AA compliant contrast in Dark Mode, and visible focus rings. |
 | 2026-10-09 | 2026-10-09 | Fixed Journal Header Overlap & Heatmap Palette | Restructured header to `flex justify-between items-center w-full mb-6` with `gap-3` button grouping; updated heatmap to accurate mood tokens (#3B82F6, #F59E0B, #10B981, #8B5CF6, #22262E, #F43F5E) with #1A1D23 surface contrast. |
 | 2026-09-28 | 2026-09-28 | Integrated `@dnd-kit` into `ProjectsView` with touch activation constraint | Ensures smooth drag handles on both desktop mouse and touch screens |
 | 2026-09-29 | 2026-09-29 | Added Stage 2.1 Hierarchy Fixes | Resolved 3-pane navigation flow; Grid accurately shows nested notes, Editor correctly allows editing Sub-project titles/descriptions natively alongside standard Notes. |

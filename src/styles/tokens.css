@@ -32,38 +32,314 @@ input:-webkit-autofill:active{
 
   --border-color: rgba(0, 0, 0, 0.08);
   --hover-bg: rgba(0, 0, 0, 0.04);
+
+  --text-secondary: #57534E;
+  --surface-card: #FFFFFF;
+  --bg-raised: #F0EDE6;
+  --divider-color: rgba(0, 0, 0, 0.06);
+
+  /* Per-Workspace Accent Colors (Light Mode) */
+  --accent-quicknotes: #F59E0B;
+  --accent-quicknotes-rgb: 245, 158, 11;
+  --accent-quicknotes-bg: rgba(245, 158, 11, 0.12);
+  --accent-quicknotes-hover: rgba(245, 158, 11, 0.20);
+  --accent-quicknotes-text: #FFFFFF;
+
+  --accent-projects: #6366F1;
+  --accent-projects-rgb: 99, 102, 241;
+  --accent-projects-bg: rgba(99, 102, 241, 0.12);
+  --accent-projects-hover: rgba(99, 102, 241, 0.20);
+  --accent-projects-text: #FFFFFF;
+
+  --accent-journal: #F43F5E;
+  --accent-journal-rgb: 244, 63, 94;
+  --accent-journal-bg: rgba(244, 63, 94, 0.12);
+  --accent-journal-hover: rgba(244, 63, 94, 0.20);
+  --accent-journal-text: #FFFFFF;
+
+  --accent-checklists: #10B981;
+  --accent-checklists-rgb: 16, 185, 129;
+  --accent-checklists-bg: rgba(16, 185, 129, 0.12);
+  --accent-checklists-hover: rgba(16, 185, 129, 0.20);
+  --accent-checklists-text: #FFFFFF;
+
+  --accent-wishlist: #8B5CF6;
+  --accent-wishlist-rgb: 139, 92, 246;
+  --accent-wishlist-bg: rgba(139, 92, 246, 0.12);
+  --accent-wishlist-hover: rgba(139, 92, 246, 0.20);
+  --accent-wishlist-text: #FFFFFF;
+
+  --accent-routines: #0EA5E9;
+  --accent-routines-rgb: 14, 165, 233;
+  --accent-routines-bg: rgba(14, 165, 233, 0.12);
+  --accent-routines-hover: rgba(14, 165, 233, 0.20);
+  --accent-routines-text: #FFFFFF;
+
+  --accent-sketch: #F97316;
+  --accent-sketch-rgb: 249, 115, 22;
+  --accent-sketch-bg: rgba(249, 115, 22, 0.12);
+  --accent-sketch-hover: rgba(249, 115, 22, 0.20);
+  --accent-sketch-text: #FFFFFF;
+
+  --accent-archive: #78716C;
+  --accent-archive-rgb: 120, 113, 108;
+  --accent-archive-bg: rgba(120, 113, 108, 0.12);
+  --accent-archive-hover: rgba(120, 113, 108, 0.20);
+  --accent-archive-text: #FFFFFF;
+
+  --accent-trash: #EF4444;
+  --accent-trash-rgb: 239, 68, 68;
+  --accent-trash-bg: rgba(239, 68, 68, 0.12);
+  --accent-trash-hover: rgba(239, 68, 68, 0.20);
+  --accent-trash-text: #FFFFFF;
+
+  --accent-settings: #64748B;
+  --accent-settings-rgb: 100, 116, 139;
+  --accent-settings-bg: rgba(100, 116, 139, 0.12);
+  --accent-settings-hover: rgba(100, 116, 139, 0.20);
+  --accent-settings-text: #FFFFFF;
+
+  /* Default Active Accent Fallback */
+  --workspace-accent: var(--accent-quicknotes);
+  --workspace-accent-rgb: var(--accent-quicknotes-rgb);
+  --workspace-accent-bg: var(--accent-quicknotes-bg);
+  --workspace-accent-hover: var(--accent-quicknotes-hover);
+  --workspace-accent-text: var(--accent-quicknotes-text);
 }
 
 .dark {
-  /* Dark Mode - Locked Palette */
-  --bg-primary: #121212;
-  --bg-sidebar: #1A1A1A;
-  --text-primary: #FFFFFF;
-  --text-muted: #B0B0B0;
-  --active-nav-bg: #282828;
-  --card-default: #1E1E1E;
-  --card-yellow: #3A371D;
-  --card-red: #3A2323;
-  --card-blue: #1D3038;
-  --card-green: #233A26;
-  --card-purple: #2E2538;
+  /* Dark Mode - Redesigned Exact Design Tokens */
+  --bg-primary: #0F1115;
+  --bg-sidebar: #14171C;
+  --card-default: #1A1D23;
+  --surface-card: #1A1D23;
+  --bg-raised: #22262E;
+  --hover-bg: #22262E;
 
-  --border-color: rgba(255, 255, 255, 0.1);
-  --hover-bg: rgba(255, 255, 255, 0.06);
+  --border-color: rgba(255, 255, 255, 0.08);
+  --divider-color: rgba(255, 255, 255, 0.06);
+
+  --text-primary: #ECEEF2;
+  --text-secondary: #A7ADBA;
+  --text-muted: #7C8392;
+  --active-nav-bg: rgba(255, 255, 255, 0.06);
+
+  /* Deep desaturated Quick Notes cards */
+  --card-yellow: #2A2619;
+  --card-red: #2B1D1D;
+  --card-blue: #18252E;
+  --card-green: #192A1D;
+  --card-purple: #241C2B;
+
+  /* Workspace Accents in Dark Mode (Lighter Tints) */
+  --accent-quicknotes: #FBBF24;
+  --accent-quicknotes-rgb: 251, 191, 36;
+  --accent-quicknotes-bg: rgba(251, 191, 36, 0.15);
+  --accent-quicknotes-hover: rgba(251, 191, 36, 0.25);
+  --accent-quicknotes-text: #ECEEF2;
+
+  --accent-projects: #818CF8;
+  --accent-projects-rgb: 129, 140, 248;
+  --accent-projects-bg: rgba(129, 140, 248, 0.15);
+  --accent-projects-hover: rgba(129, 140, 248, 0.25);
+  --accent-projects-text: #ECEEF2;
+
+  --accent-journal: #FB7185;
+  --accent-journal-rgb: 251, 113, 133;
+  --accent-journal-bg: rgba(251, 113, 133, 0.15);
+  --accent-journal-hover: rgba(251, 113, 133, 0.25);
+  --accent-journal-text: #ECEEF2;
+
+  --accent-checklists: #34D399;
+  --accent-checklists-rgb: 52, 211, 153;
+  --accent-checklists-bg: rgba(52, 211, 153, 0.15);
+  --accent-checklists-hover: rgba(52, 211, 153, 0.25);
+  --accent-checklists-text: #ECEEF2;
+
+  --accent-wishlist: #A78BFA;
+  --accent-wishlist-rgb: 167, 139, 250;
+  --accent-wishlist-bg: rgba(167, 139, 250, 0.15);
+  --accent-wishlist-hover: rgba(167, 139, 250, 0.25);
+  --accent-wishlist-text: #ECEEF2;
+
+  --accent-routines: #38BDF8;
+  --accent-routines-rgb: 56, 189, 248;
+  --accent-routines-bg: rgba(56, 189, 248, 0.15);
+  --accent-routines-hover: rgba(56, 189, 248, 0.25);
+  --accent-routines-text: #ECEEF2;
+
+  --accent-sketch: #FB923C;
+  --accent-sketch-rgb: 251, 146, 60;
+  --accent-sketch-bg: rgba(251, 146, 60, 0.15);
+  --accent-sketch-hover: rgba(251, 146, 60, 0.25);
+  --accent-sketch-text: #ECEEF2;
+
+  --accent-archive: #A8A29E;
+  --accent-archive-rgb: 168, 162, 158;
+  --accent-archive-bg: rgba(168, 162, 158, 0.15);
+  --accent-archive-hover: rgba(168, 162, 158, 0.25);
+  --accent-archive-text: #ECEEF2;
+
+  --accent-trash: #F87171;
+  --accent-trash-rgb: 248, 113, 113;
+  --accent-trash-bg: rgba(248, 113, 113, 0.15);
+  --accent-trash-hover: rgba(248, 113, 113, 0.25);
+  --accent-trash-text: #ECEEF2;
+
+  --accent-settings: #94A3B8;
+  --accent-settings-rgb: 148, 163, 184;
+  --accent-settings-bg: rgba(148, 163, 184, 0.15);
+  --accent-settings-hover: rgba(148, 163, 184, 0.25);
+  --accent-settings-text: #ECEEF2;
 }
 
-body {
+/* Dynamic Workspace Context Selectors */
+[data-workspace="quicknotes"] {
+  --workspace-accent: var(--accent-quicknotes);
+  --workspace-accent-rgb: var(--accent-quicknotes-rgb);
+  --workspace-accent-bg: var(--accent-quicknotes-bg);
+  --workspace-accent-hover: var(--accent-quicknotes-hover);
+}
+
+[data-workspace="projects"] {
+  --workspace-accent: var(--accent-projects);
+  --workspace-accent-rgb: var(--accent-projects-rgb);
+  --workspace-accent-bg: var(--accent-projects-bg);
+  --workspace-accent-hover: var(--accent-projects-hover);
+}
+
+[data-workspace="journal"] {
+  --workspace-accent: var(--accent-journal);
+  --workspace-accent-rgb: var(--accent-journal-rgb);
+  --workspace-accent-bg: var(--accent-journal-bg);
+  --workspace-accent-hover: var(--accent-journal-hover);
+}
+
+[data-workspace="checklists"] {
+  --workspace-accent: var(--accent-checklists);
+  --workspace-accent-rgb: var(--accent-checklists-rgb);
+  --workspace-accent-bg: var(--accent-checklists-bg);
+  --workspace-accent-hover: var(--accent-checklists-hover);
+}
+
+[data-workspace="wishlist"] {
+  --workspace-accent: var(--accent-wishlist);
+  --workspace-accent-rgb: var(--accent-wishlist-rgb);
+  --workspace-accent-bg: var(--accent-wishlist-bg);
+  --workspace-accent-hover: var(--accent-wishlist-hover);
+}
+
+[data-workspace="routines"] {
+  --workspace-accent: var(--accent-routines);
+  --workspace-accent-rgb: var(--accent-routines-rgb);
+  --workspace-accent-bg: var(--accent-routines-bg);
+  --workspace-accent-hover: var(--accent-routines-hover);
+}
+
+[data-workspace="sketch"] {
+  --workspace-accent: var(--accent-sketch);
+  --workspace-accent-rgb: var(--accent-sketch-rgb);
+  --workspace-accent-bg: var(--accent-sketch-bg);
+  --workspace-accent-hover: var(--accent-sketch-hover);
+}
+
+[data-workspace="archive"] {
+  --workspace-accent: var(--accent-archive);
+  --workspace-accent-rgb: var(--accent-archive-rgb);
+  --workspace-accent-bg: var(--accent-archive-bg);
+  --workspace-accent-hover: var(--accent-archive-hover);
+}
+
+[data-workspace="trash"] {
+  --workspace-accent: var(--accent-trash);
+  --workspace-accent-rgb: var(--accent-trash-rgb);
+  --workspace-accent-bg: var(--accent-trash-bg);
+  --workspace-accent-hover: var(--accent-trash-hover);
+}
+
+[data-workspace="settings"] {
+  --workspace-accent: var(--accent-settings);
+  --workspace-accent-rgb: var(--accent-settings-rgb);
+  --workspace-accent-bg: var(--accent-settings-bg);
+  --workspace-accent-hover: var(--accent-settings-hover);
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  max-width: 100vw;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body,
+aside,
+main,
+nav,
+header,
+[role="dialog"] {
   margin: 0;
   padding: 0;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   background-color: var(--bg-primary);
   color: var(--text-primary);
-  overflow-x: hidden;
-  transition: background-color 200ms ease-in-out, color 200ms ease-in-out;
+  transition: background-color 200ms ease-in-out, border-color 200ms ease-in-out, color 200ms ease-in-out;
+  font-size: 14.5px;
+  line-height: 1.6;
 }
 
-button {
+/* Accessible visible focus ring on all interactive elements */
+*:focus-visible {
+  outline: 2px solid var(--workspace-accent, #6366F1) !important;
+  outline-offset: 2px !important;
+}
+
+/* Micro-interaction transitions across all buttons, cards, and interactive controls */
+button, a, input, select, textarea {
   transition: color 150ms ease-out, background-color 150ms ease-out, border-color 150ms ease-out, opacity 150ms ease-out, transform 150ms ease-out, box-shadow 150ms ease-out;
+}
+
+button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+/* Typography Hierarchy Standards */
+.page-title {
+  font-size: 28px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--text-primary);
+}
+
+@media (min-width: 640px) {
+  .page-title {
+    font-size: 32px;
+  }
+}
+
+.section-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.body-text {
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--text-primary);
 }
 
 /* Custom scrollbars matching theme */
@@ -79,12 +355,15 @@ button {
   border-radius: 9999px;
   opacity: 0.3;
 }
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
 
 /* TipTap Editor Minimalist Styling */
 .ProseMirror {
   outline: none !important;
   min-height: 250px;
-  font-size: 14px;
+  font-size: 14.5px;
   line-height: 1.6;
   color: var(--text-primary);
 }
@@ -95,4 +374,45 @@ button {
   float: left;
   height: 0;
   pointer-events: none;
+}
+
+.ProseMirror h1 {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.ProseMirror h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-top: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.ProseMirror ul {
+  list-style-type: disc;
+  padding-left: 1.25rem;
+}
+
+.ProseMirror ol {
+  list-style-type: decimal;
+  padding-left: 1.25rem;
+}
+
+.ProseMirror blockquote {
+  border-left: 3px solid var(--border-color);
+  padding-left: 0.75rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.ProseMirror code {
+  background-color: var(--hover-bg);
+  color: var(--text-primary);
+  padding: 0.15rem 0.35rem;
+  border-radius: 4px;
+  font-size: 0.875em;
 }

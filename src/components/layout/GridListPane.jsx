@@ -11,9 +11,15 @@ import ChecklistsView from '../checklists/ChecklistsView';
 import SettingsView from '../settings/SettingsView';
 import RoutinesView from '../routines/RoutinesView';
 import SketchView from '../sketch/SketchView';
+import ArchiveView from '../archive/ArchiveView';
+import TrashView from '../trash/TrashView';
 import TopBar from './TopBar';
 import { autoOrganize } from '../../lib/ai/autoOrganize';
 import { Sparkles, Loader2, Check } from 'lucide-react';
+import { generateUUID } from '../../lib/uuid';
+import { GridSkeleton } from '../shared/SkeletonLoader';
+import { softDeleteItem, restoreItem, permanentDeleteItem, archiveItem, unarchiveItem } from '../../lib/services/trashService';
+import { useConfirmStore } from '../../store/confirmStore';
 
 export default function GridListPane() {
   const {
@@ -30,6 +36,8 @@ export default function GridListPane() {
     sortOrder,
     viewMode,
   } = useUIStore();
+
+  const { openSoftDelete, openPermanentDelete } = useConfirmStore();
 
   const [isOrganizing, setIsOrganizing] = useState(false);
   const [organizeSuggestion, setOrganizeSuggestion] = useState(null);
@@ -171,7 +179,7 @@ export default function GridListPane() {
 
   // Actions
   const handleCreateNote = async () => {
-    const newId = crypto.randomUUID();
+    const newId = generateUUID();
     let initialContent = { type: 'doc', content: [] };
     if (activeWorkspace === 'checklists') {
       initialContent = { isTemplate: false, items: [] };
@@ -217,41 +225,70 @@ export default function GridListPane() {
   const handleArchiveNote = async (noteId) => {
     const note = await db.notes.get(noteId);
     if (note) {
-      await db.notes.update(noteId, {
-        is_archived: !note.is_archived,
-        updated_at: new Date().toISOString(),
-      });
+      if (note.is_archived) {
+        await unarchiveItem({
+          id: note.id,
+          type: 'note',
+          title: note.title || 'Untitled note',
+          workspace: note.workspace_id || activeWorkspace,
+        });
+      } else {
+        await archiveItem({
+          id: note.id,
+          type: 'note',
+          title: note.title || 'Untitled note',
+          workspace: note.workspace_id || activeWorkspace,
+        });
+      }
     }
   };
 
   const handleDeleteNote = async (noteId) => {
     const note = await db.notes.get(noteId);
     if (note) {
-      await db.notes.update(noteId, {
-        is_deleted: true,
-        deleted_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+      openSoftDelete({
+        title: note.title || 'Untitled note',
+        onConfirm: async () => {
+          await softDeleteItem({
+            id: note.id,
+            type: 'note',
+            title: note.title || 'Untitled note',
+            workspace: note.workspace_id || activeWorkspace,
+          });
+          if (selectedNoteId === noteId) {
+            setSelectedNoteId(null);
+          }
+        },
       });
-      if (selectedNoteId === noteId) {
-        setSelectedNoteId(null);
-      }
     }
   };
 
   const handleRestoreNote = async (noteId) => {
-    await db.notes.update(noteId, {
-      is_deleted: false,
-      is_archived: false,
-      deleted_at: null,
-      updated_at: new Date().toISOString(),
+    const note = await db.notes.get(noteId);
+    await restoreItem({
+      id: noteId,
+      type: 'note',
+      title: note?.title || 'Untitled note',
+      workspace: note?.workspace_id || activeWorkspace,
     });
   };
 
   const handlePermanentDelete = async (noteId) => {
-    await db.notes.delete(noteId);
-    if (selectedNoteId === noteId) {
-      setSelectedNoteId(null);
-    }
+    const note = await db.notes.get(noteId);
+    openPermanentDelete({
+      title: note?.title || 'Untitled note',
+      onConfirm: async () => {
+        await permanentDeleteItem({
+          id: noteId,
+          type: 'note',
+          title: note?.title || 'Untitled note',
+          workspace: note?.workspace_id || activeWorkspace,
+        });
+        if (selectedNoteId === noteId) {
+          setSelectedNoteId(null);
+        }
+      },
+    });
   };
 
   const handleAutoOrganize = async () => {
@@ -280,7 +317,7 @@ export default function GridListPane() {
     // If we can't find a matching project, we'll create one. 
     // Actually, simple implementation: just create a new Project and Subproject for each category.
     for (const group of organizeSuggestion) {
-      const projectId = crypto.randomUUID();
+      const projectId = generateUUID();
       await db.projects.add({
         id: projectId,
         title: group.category || 'Organized Project',
@@ -292,7 +329,7 @@ export default function GridListPane() {
         updated_at: new Date().toISOString()
       });
 
-      const subprojectId = crypto.randomUUID();
+      const subprojectId = generateUUID();
       await db.subprojects.add({
         id: subprojectId,
         project_id: projectId,
@@ -348,6 +385,8 @@ export default function GridListPane() {
       if (activeWorkspace === 'journal') return 'overflow-hidden';
       if (activeWorkspace === 'wishlist') return 'overflow-hidden';
       if (activeWorkspace === 'checklists') return 'overflow-hidden';
+      if (activeWorkspace === 'archive') return 'overflow-hidden';
+      if (activeWorkspace === 'trash') return 'overflow-hidden';
     }
     return 'overflow-y-auto';
   };
@@ -359,17 +398,33 @@ export default function GridListPane() {
     if (activeWorkspace === 'checklists' && !isGlobalView) return <ChecklistsView />;
     if (activeWorkspace === 'routines' && !isGlobalView) return <RoutinesView />;
     if (activeWorkspace === 'sketch' && !isGlobalView) return <SketchView />;
+    if (activeWorkspace === 'archive' && !isGlobalView) return <ArchiveView />;
+    if (activeWorkspace === 'trash' && !isGlobalView) return <TrashView />;
     if (activeWorkspace === 'settings') return <SettingsView />;
 
     return (
       <>
         {/* Pane Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-xl font-semibold capitalize text-text-primary">
-              {isGlobalView ? (searchQuery ? `Search: "${searchQuery}"` : 'Tag Filter') : activeWorkspace}
-            </h1>
-            <p className="text-xs text-text-muted mt-0.5">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-6 min-w-0">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2.5">
+              <h1 className="text-[28px] sm:text-[32px] font-bold tracking-tight text-text-primary capitalize leading-tight">
+                {isGlobalView
+                  ? (searchQuery ? `Search: "${searchQuery}"` : 'Tag Filter')
+                  : (activeWorkspace === 'quicknotes'
+                      ? 'Quick Notes'
+                      : activeWorkspace === 'wishlist'
+                      ? 'Wish List'
+                      : activeWorkspace)}
+              </h1>
+              {!isGlobalView && (
+                <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-[var(--workspace-accent-bg)] text-[var(--workspace-accent)] border border-[var(--workspace-accent)]/20 uppercase tracking-wider">
+                  Workspace
+                </span>
+              )}
+            </div>
+            <div className="h-0.5 w-8 rounded-full bg-[var(--workspace-accent)] mt-1.5" />
+            <p className="text-xs text-text-muted mt-1">
               {activeWorkspace === 'quicknotes' && 'Instant thoughts & fast color-coded cards'}
               {activeWorkspace === 'archive' && 'Hidden notes and projects'}
               {activeWorkspace === 'trash' && 'Soft-deleted items (auto-purged after 7 days)'}
@@ -380,26 +435,29 @@ export default function GridListPane() {
             </p>
           </div>
 
-          {activeWorkspace !== 'archive' && activeWorkspace !== 'trash' && (
-            <button
-              onClick={handleCreateNote}
-              className="flex items-center gap-1.5 px-3 py-2 bg-text-primary text-bg-primary rounded-button text-xs font-medium hover:opacity-90 transition-opacity shadow-sm"
-            >
-              <Plus className="w-4 h-4" />
-              <span>New Note</span>
-            </button>
-          )}
-          {activeWorkspace === 'quicknotes' && unpinnedNotes.length > 0 && !isGlobalView && (
-            <button
-              onClick={handleAutoOrganize}
-              disabled={isOrganizing}
-              className="flex items-center gap-1.5 px-3 py-2 ml-2 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-button text-xs font-medium hover:bg-purple-500/20 transition-colors shadow-sm disabled:opacity-50"
-              title="Suggest Projects for these notes"
-            >
-              {isOrganizing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-              <span>Auto-Organize</span>
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {activeWorkspace !== 'archive' && activeWorkspace !== 'trash' && (
+              <button
+                onClick={handleCreateNote}
+                aria-label="Create New Note"
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-[var(--workspace-accent)] text-white rounded-button text-xs font-medium hover:opacity-90 active:scale-95 transition-all shadow-sm"
+              >
+                <Plus className="w-4 h-4" />
+                <span>New Note</span>
+              </button>
+            )}
+            {activeWorkspace === 'quicknotes' && unpinnedNotes.length > 0 && !isGlobalView && (
+              <button
+                onClick={handleAutoOrganize}
+                disabled={isOrganizing}
+                className="flex items-center gap-1.5 px-3 py-2 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-button text-xs font-medium hover:bg-purple-500/20 transition-colors shadow-sm disabled:opacity-50"
+                title="Suggest Projects for these notes"
+              >
+                {isOrganizing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                <span>Auto-Organize</span>
+              </button>
+            )}
+          </div>
         </div>
 
         {organizeSuggestion && (
@@ -436,17 +494,32 @@ export default function GridListPane() {
         )}
 
         {/* Main Grid View */}
-        {filteredNotes.length === 0 &&
+        {notes === undefined ? (
+          <div className="pt-2">
+            <GridSkeleton count={viewMode === 'list' ? 4 : 6} />
+          </div>
+        ) : filteredNotes.length === 0 &&
         archivedOrDeletedProjects.length === 0 &&
         archivedOrDeletedSubprojects.length === 0 ? (
-          <div className="h-64 flex flex-col items-center justify-center text-text-muted border border-dashed border-black/10 dark:border-white/10 rounded-card p-8 text-center">
-            <StickyNote className="w-10 h-10 mb-3 opacity-30" />
-            <p className="text-sm font-medium">No items here yet</p>
+          <div className="h-64 flex flex-col items-center justify-center text-text-muted border border-dashed border-black/10 dark:border-white/10 rounded-card p-8 text-center min-w-0">
+            <div className="w-12 h-12 rounded-2xl bg-[var(--workspace-accent-bg)] text-[var(--workspace-accent)] flex items-center justify-center mb-3">
+              <StickyNote className="w-6 h-6" />
+            </div>
+            <p className="text-sm font-medium text-text-primary">No items here yet</p>
             <p className="text-xs opacity-70 mt-1 max-w-xs">
               {activeWorkspace === 'quicknotes'
                 ? 'Click "+ New Note" to capture your first thought.'
                 : 'Items will appear here as you create or archive/trash them.'}
             </p>
+            {activeWorkspace === 'quicknotes' && (
+              <button
+                onClick={handleCreateNote}
+                className="mt-4 flex items-center gap-1.5 px-4 py-2 bg-[var(--workspace-accent)] text-white rounded-button text-xs font-medium hover:opacity-90 active:scale-95 transition-all shadow-sm"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>+ New Note</span>
+              </button>
+            )}
           </div>
         ) : (
           <div className="space-y-6">
@@ -637,9 +710,9 @@ export default function GridListPane() {
   };
 
   return (
-    <main className="flex-1 h-screen flex flex-col bg-bg-primary transition-all duration-200 overflow-hidden">
+    <main className="flex-1 min-w-[320px] h-screen flex flex-col bg-bg-primary transition-all duration-200 overflow-hidden">
       <TopBar />
-      <div className={`flex-1 p-6 relative ${getOverflowClass()}`}>
+      <div className={`flex-1 min-w-0 p-4 sm:p-6 relative overflow-x-hidden ${getOverflowClass()}`}>
         {renderContent()}
       </div>
     </main>

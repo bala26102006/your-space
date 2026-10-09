@@ -1,10 +1,9 @@
 import { db } from '../db';
+import { generateUUID } from '../uuid';
 
 const generateId = (prefix = '') => {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-    return prefix ? `${prefix}_${crypto.randomUUID()}` : crypto.randomUUID();
-  }
-  return `${prefix ? `${prefix}_` : ''}${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const uid = generateUUID();
+  return prefix ? `${prefix}_${uid}` : uid;
 };
 
 /**
@@ -129,3 +128,68 @@ export async function deleteSketchNote(noteId) {
     updated_at: now,
   });
 }
+
+/**
+ * Finds an existing blank, untitled sketch note with no strokes or attachments.
+ */
+export async function findExistingBlankSketch() {
+  const sketches = await db.notes
+    .where('workspace_id')
+    .equals('sketch')
+    .filter(n => !n.is_archived && !n.is_deleted)
+    .reverse()
+    .sortBy('created_at');
+
+  for (const sketch of sketches) {
+    const hasStrokes = Array.isArray(sketch.content?.strokes) && sketch.content.strokes.length > 0;
+    const isDefaultTitle = !sketch.title || sketch.title.trim() === 'Untitled Sketch';
+    const hasNoDesc = !sketch.content?.description?.trim();
+
+    if (!hasStrokes && isDefaultTitle && hasNoDesc) {
+      const att = await db.attachments
+        .where('note_id')
+        .equals(sketch.id)
+        .filter(a => a.type === 'sketch')
+        .first();
+
+      const hasAttStrokes = att && Array.isArray(att.strokes) && att.strokes.length > 0;
+      const hasAttImage = att && att.image_data && att.image_data.length > 100;
+      if (!hasAttStrokes && !hasAttImage) {
+        return sketch.id;
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Automatically purges an empty, blank sketch note if it has no strokes and default title.
+ */
+export async function deleteEmptySketchIfBlank(noteId) {
+  if (!noteId) return false;
+  const note = await db.notes.get(noteId);
+  if (!note || note.workspace_id !== 'sketch') return false;
+
+  const hasStrokes = Array.isArray(note.content?.strokes) && note.content.strokes.length > 0;
+  const isDefaultTitle = !note.title || note.title.trim() === 'Untitled Sketch';
+  const hasNoDesc = !note.content?.description?.trim();
+
+  const att = await db.attachments
+    .where('note_id')
+    .equals(noteId)
+    .filter(a => a.type === 'sketch')
+    .first();
+  const hasAttStrokes = att && Array.isArray(att.strokes) && att.strokes.length > 0;
+  const hasAttImage = att && att.image_data && att.image_data.length > 100;
+
+  if (!hasStrokes && !hasAttStrokes && !hasAttImage && isDefaultTitle && hasNoDesc) {
+    await db.notes.delete(noteId);
+    if (att) {
+      await db.attachments.delete(att.id);
+    }
+    return true;
+  }
+  return false;
+}
+

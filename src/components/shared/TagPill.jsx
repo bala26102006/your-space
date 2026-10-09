@@ -7,7 +7,7 @@ export default function TagPill({ label, active = false, onClick, onRemove }) {
       onClick={onClick}
       className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full cursor-pointer transition-colors duration-150 ${
         active
-          ? 'bg-active-nav-bg text-text-primary border border-yellow-300/40'
+          ? 'bg-[var(--workspace-accent-bg)] text-[var(--workspace-accent)] border border-[var(--workspace-accent)]/30'
           : 'bg-black/5 dark:bg-white/10 text-text-muted hover:text-text-primary'
       }`}
     >

@@ -15,8 +15,13 @@ import { db } from '../../lib/db';
 import { COLOR_OPTIONS } from '../shared/ColorPicker';
 import SortableSubprojectItem from './SortableSubprojectItem';
 import SortableNoteItem from './SortableNoteItem';
+import { generateUUID } from '../../lib/uuid';
+import { GridSkeleton } from '../shared/SkeletonLoader';
+import { softDeleteItem, archiveItem } from '../../lib/services/trashService';
+import { useConfirmStore } from '../../store/confirmStore';
 
 export default function ProjectsView() {
+  const { openSoftDelete } = useConfirmStore();
   const [showTemplates, setShowTemplates] = useState(false);
   const {
     selectedProjectId,
@@ -97,7 +102,7 @@ export default function ProjectsView() {
 
   // Actions: Create Project
   const handleCreateProject = async (template = null) => {
-    const projectId = crypto.randomUUID();
+    const projectId = generateUUID();
     const newProject = {
       id: projectId,
       user_id: 'local_user',
@@ -121,7 +126,7 @@ export default function ProjectsView() {
       else if (template === 'Novel') subNames = ['Part 1', 'Part 2', 'World Building', 'Character Arcs'];
 
       const subs = subNames.map((title, idx) => ({
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         project_id: projectId,
         title,
         sort_order: Date.now() + idx,
@@ -145,7 +150,7 @@ export default function ProjectsView() {
     if (e) e.preventDefault();
     if (!selectedProjectId) return;
 
-    const subprojectId = crypto.randomUUID();
+    const subprojectId = generateUUID();
     const newSubproject = {
       id: subprojectId,
       project_id: selectedProjectId,
@@ -167,7 +172,7 @@ export default function ProjectsView() {
   const handleCreateSubprojectNote = async () => {
     if (!selectedProjectId || !selectedSubprojectId) return;
 
-    const noteId = crypto.randomUUID();
+    const noteId = generateUUID();
     const newNote = {
       id: noteId,
       user_id: 'local_user',
@@ -243,37 +248,57 @@ export default function ProjectsView() {
 
   // Archive / Delete handlers
   const handleArchiveProject = async (id) => {
-    await db.projects.update(id, {
-      is_archived: true,
-      updated_at: new Date().toISOString(),
+    const proj = await db.projects.get(id);
+    await archiveItem({
+      id,
+      type: 'project',
+      title: proj?.title || 'Untitled project',
+      workspace: 'projects',
     });
     if (selectedProjectId === id) setSelectedProjectId(null);
   };
 
   const handleDeleteProject = async (id) => {
-    await db.projects.update(id, {
-      is_deleted: true,
-      deleted_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+    const proj = await db.projects.get(id);
+    openSoftDelete({
+      title: proj?.title || 'Untitled project',
+      onConfirm: async () => {
+        await softDeleteItem({
+          id,
+          type: 'project',
+          title: proj?.title || 'Untitled project',
+          workspace: 'projects',
+        });
+        if (selectedProjectId === id) setSelectedProjectId(null);
+      },
     });
-    if (selectedProjectId === id) setSelectedProjectId(null);
   };
 
   const handleArchiveSubproject = async (id) => {
-    await db.subprojects.update(id, {
-      is_archived: true,
-      updated_at: new Date().toISOString(),
+    const sp = await db.subprojects.get(id);
+    await archiveItem({
+      id,
+      type: 'subproject',
+      title: sp?.title || 'Untitled section',
+      workspace: 'projects',
     });
     if (selectedSubprojectId === id) setSelectedSubprojectId(null);
   };
 
   const handleDeleteSubproject = async (id) => {
-    await db.subprojects.update(id, {
-      is_deleted: true,
-      deleted_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+    const sp = await db.subprojects.get(id);
+    openSoftDelete({
+      title: sp?.title || 'Untitled section',
+      onConfirm: async () => {
+        await softDeleteItem({
+          id,
+          type: 'subproject',
+          title: sp?.title || 'Untitled section',
+          workspace: 'projects',
+        });
+        if (selectedSubprojectId === id) setSelectedSubprojectId(null);
+      },
     });
-    if (selectedSubprojectId === id) setSelectedSubprojectId(null);
   };
 
   // RENDER LEVEL 3: Notes inside Sub-project
@@ -281,13 +306,13 @@ export default function ProjectsView() {
     return (
       <div className="space-y-4">
 
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-4 min-w-0">
           <h2 className="text-lg font-semibold text-text-primary">
             Notes / Scenes
           </h2>
           <button
             onClick={handleCreateSubprojectNote}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-text-primary text-bg-primary rounded-button text-xs font-medium hover:opacity-90 transition-opacity"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-[var(--workspace-accent)] text-white rounded-button text-xs font-medium hover:opacity-90 active:scale-95 transition-all shadow-sm"
           >
             <Plus className="w-4 h-4" />
             <span>New Scene/Note</span>
@@ -295,9 +320,11 @@ export default function ProjectsView() {
         </div>
 
         {subprojectNotes.length === 0 ? (
-          <div className="h-48 flex flex-col items-center justify-center text-text-muted border border-dashed border-black/10 dark:border-white/10 rounded-card p-6 text-center">
-            <FileText className="w-8 h-8 mb-2 opacity-30" />
-            <p className="text-xs font-medium">No scenes or notes in this section yet.</p>
+          <div className="h-48 flex flex-col items-center justify-center text-text-muted border border-dashed border-black/10 dark:border-white/10 rounded-card p-6 text-center min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-[var(--workspace-accent-bg)] text-[var(--workspace-accent)] flex items-center justify-center mb-2">
+              <FileText className="w-5 h-5" />
+            </div>
+            <p className="text-xs font-medium text-text-primary">No scenes or notes in this section yet.</p>
             <p className="text-[11px] opacity-70 mt-1">Click "+ New Scene/Note" to start writing.</p>
           </div>
         ) : (
@@ -315,11 +342,18 @@ export default function ProjectsView() {
                       await db.notes.update(id, { is_pinned: !note.is_pinned });
                     }}
                     onArchive={async (id) => {
-                      await db.notes.update(id, { is_archived: true });
+                      const n = await db.notes.get(id);
+                      await archiveItem({ id, type: 'note', title: n?.title || 'Untitled note', workspace: 'projects' });
                     }}
                     onDelete={async (id) => {
-                      await db.notes.update(id, { is_deleted: true, deleted_at: new Date().toISOString() });
-                      if (selectedNoteId === id) setSelectedNoteId(null);
+                      const n = await db.notes.get(id);
+                      openSoftDelete({
+                        title: n?.title || 'Untitled note',
+                        onConfirm: async () => {
+                          await softDeleteItem({ id, type: 'note', title: n?.title || 'Untitled note', workspace: 'projects' });
+                          if (selectedNoteId === id) setSelectedNoteId(null);
+                        },
+                      });
                     }}
                   />
                 ))}
@@ -334,15 +368,15 @@ export default function ProjectsView() {
   // RENDER LEVEL 2: Sub-projects inside selected Project
   if (selectedProjectId) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-4 min-w-0">
 
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-4 min-w-0">
           <h2 className="text-lg font-semibold text-text-primary">
             Sub-projects / Sections (Acts, Characters, Bibles)
           </h2>
           <button
             onClick={handleCreateSubproject}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-text-primary text-bg-primary rounded-button text-xs font-medium hover:opacity-90 transition-opacity"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-[var(--workspace-accent)] text-white rounded-button text-xs font-medium hover:opacity-90 active:scale-95 transition-all shadow-sm"
           >
             <Plus className="w-4 h-4" />
             <span>New Section</span>
@@ -350,9 +384,11 @@ export default function ProjectsView() {
         </div>
 
         {subprojects.length === 0 ? (
-          <div className="h-48 flex flex-col items-center justify-center text-text-muted border border-dashed border-black/10 dark:border-white/10 rounded-card p-6 text-center">
-            <Folder className="w-8 h-8 mb-2 opacity-30" />
-            <p className="text-xs font-medium">No sections created yet.</p>
+          <div className="h-48 flex flex-col items-center justify-center text-text-muted border border-dashed border-black/10 dark:border-white/10 rounded-card p-6 text-center min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-[var(--workspace-accent-bg)] text-[var(--workspace-accent)] flex items-center justify-center mb-2">
+              <Folder className="w-5 h-5" />
+            </div>
+            <p className="text-xs font-medium text-text-primary">No sections created yet.</p>
             <p className="text-[11px] opacity-70 mt-1">Create sections like "Act 1", "Act 2", or "Character Bibles".</p>
           </div>
         ) : (
@@ -379,13 +415,19 @@ export default function ProjectsView() {
 
   // RENDER LEVEL 1: Top-level Projects List
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h2 className="text-lg font-semibold text-text-primary">
-            Projects
-          </h2>
-          <p className="text-xs text-text-muted">
+    <div className="space-y-4 min-w-0">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6 min-w-0">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2.5">
+            <h2 className="text-[28px] sm:text-[32px] font-bold tracking-tight text-text-primary capitalize leading-tight">
+              Projects
+            </h2>
+            <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-[var(--workspace-accent-bg)] text-[var(--workspace-accent)] border border-[var(--workspace-accent)]/20 uppercase tracking-wider">
+              Workspace
+            </span>
+          </div>
+          <div className="h-0.5 w-8 rounded-full bg-[var(--workspace-accent)] mt-1.5" />
+          <p className="text-xs text-text-muted mt-1">
             3-Tier creative structure (Project → Sub-project → Scene/Note)
           </p>
         </div>
@@ -393,7 +435,7 @@ export default function ProjectsView() {
         <div className="relative">
           <button
             onClick={() => setShowTemplates(!showTemplates)}
-            className="flex items-center gap-1.5 px-3 py-2 bg-text-primary text-bg-primary rounded-button text-xs font-medium hover:opacity-90 transition-opacity shadow-sm"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-[var(--workspace-accent)] text-white rounded-button text-xs font-medium hover:opacity-90 active:scale-95 transition-all shadow-sm"
           >
             <Plus className="w-4 h-4" />
             <span>New Project</span>
@@ -418,16 +460,20 @@ export default function ProjectsView() {
         </div>
       </div>
 
-      {projects.length === 0 ? (
-        <div className="h-64 flex flex-col items-center justify-center text-text-muted border border-dashed border-black/10 dark:border-white/10 rounded-card p-8 text-center">
-          <FolderKanban className="w-10 h-10 mb-3 opacity-30" />
-          <p className="text-sm font-medium">No projects created yet</p>
+      {projects === undefined ? (
+        <GridSkeleton count={4} />
+      ) : projects.length === 0 ? (
+        <div className="h-64 flex flex-col items-center justify-center text-text-muted border border-dashed border-black/10 dark:border-white/10 rounded-card p-8 text-center min-w-0">
+          <div className="w-12 h-12 rounded-2xl bg-[var(--workspace-accent-bg)] text-[var(--workspace-accent)] flex items-center justify-center mb-3">
+            <FolderKanban className="w-6 h-6" />
+          </div>
+          <p className="text-sm font-medium text-text-primary">No projects created yet</p>
           <p className="text-xs opacity-70 mt-1 max-w-xs">
             Build structured scripts, YouTube content calendars, or novels with nested Acts and Scenes.
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch">
           {projects.map((proj) => {
             let colorClasses = 'bg-card-default border-black/5 dark:border-white/10';
             if (proj.color === 'yellow') colorClasses = 'bg-card-yellow border-yellow-200/50 dark:border-yellow-900/30';
@@ -446,55 +492,62 @@ export default function ProjectsView() {
                 setSelectedSubprojectId(null);
                 setSelectedNoteId(null);
               }}
-              className={`group relative rounded-card p-4 border transition-all duration-200 ease-out cursor-pointer hover:scale-[1.02] hover:shadow-lg dark:hover:shadow-black/40 ${colorClasses}`}
+              className={`group relative rounded-card p-4 border transition-all duration-200 ease-out cursor-pointer hover:scale-[1.02] hover:shadow-lg dark:hover:shadow-black/40 flex flex-col justify-between h-full ${colorClasses}`}
             >
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  {proj.color !== 'default' && (
-                    <span
-                      className="w-2.5 h-2.5 rounded-full inline-block"
-                      style={{ backgroundColor: colorData.border }}
-                    />
-                  )}
-                  <FolderKanban className="w-5 h-5 text-text-primary opacity-60" />
-                  <h3 className="font-semibold text-base text-text-primary line-clamp-1">
-                    {proj.title}
-                  </h3>
+              <div>
+                <div className="flex items-start justify-between mb-2 gap-2">
+                  <div className="flex items-start gap-2 flex-1 min-w-0">
+                    {proj.color !== 'default' && (
+                      <span
+                        className="w-2.5 h-2.5 rounded-full inline-block mt-1 shrink-0"
+                        style={{ backgroundColor: colorData.border }}
+                      />
+                    )}
+                    <FolderKanban className="w-5 h-5 text-text-primary opacity-60 mt-0.5 shrink-0" />
+                    <h3 className="font-semibold text-base text-text-primary line-clamp-2 leading-snug">
+                      {proj.title?.trim() || 'Untitled project'}
+                    </h3>
+                  </div>
+
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleArchiveProject(proj.id);
+                      }}
+                      title="Archive project"
+                      aria-label="Archive project"
+                      className="p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 text-text-muted hover:text-text-primary"
+                    >
+                      <Archive className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteProject(proj.id);
+                      }}
+                      title="Delete project"
+                      aria-label="Delete project"
+                      className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-950/30 text-red-600 dark:text-red-400"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
 
-                <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleArchiveProject(proj.id);
-                    }}
-                    title="Archive project"
-                    className="p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 text-text-muted hover:text-text-primary"
-                  >
-                    <Archive className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteProject(proj.id);
-                    }}
-                    title="Delete project"
-                    className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-950/30 text-red-600 dark:text-red-400"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
+                {proj.description?.trim() ? (
+                  <p className="text-xs text-text-muted line-clamp-2 mb-3 leading-relaxed">
+                    {proj.description.trim()}
+                  </p>
+                ) : null}
               </div>
 
-              <p className="text-xs text-text-muted line-clamp-2 min-h-[2.5rem] mb-3">
-                {proj.description || 'No description provided.'}
-              </p>
-
-              <div className="flex items-center gap-2 w-full">
+              {/* Progress bar at the bottom */}
+              <div className="flex items-center gap-2 w-full mt-auto pt-3 border-t border-black/5 dark:border-white/5">
                 <div className="flex-1 h-1.5 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
                   <div className="h-full bg-emerald-500 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
                 </div>
-                <span className="text-[10px] font-mono text-text-muted">
+                <span className="text-[10px] font-mono text-text-muted whitespace-nowrap">
                   {total > 0 ? `${progress}% (${completed}/${total})` : '0%'}
                 </span>
               </div>

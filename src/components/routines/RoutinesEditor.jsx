@@ -12,6 +12,7 @@ import {
 import { db } from '../../lib/db';
 import { useLiveQuery } from '../../hooks/useLiveQuery';
 import RoutineEditModal from './RoutineEditModal';
+import { generateUUID } from '../../lib/uuid';
 
 export default function RoutinesEditor({ note, onClose }) {
   const [viewMode, setViewMode] = useState('monthly'); // 'weekly' or 'monthly'
@@ -49,7 +50,7 @@ export default function RoutinesEditor({ note, onClose }) {
       }
     } else {
       await db.routine_entries.add({
-        id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
+        id: generateUUID(),
         note_id: currentNote.id,
         period: viewMode, // weekly/monthly
         entry_date: dateStr,
@@ -67,7 +68,7 @@ export default function RoutinesEditor({ note, onClose }) {
       await db.routine_entries.update(existing.id, { habit_note: text });
     } else {
       await db.routine_entries.add({
-        id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
+        id: generateUUID(),
         note_id: currentNote.id,
         period: viewMode,
         entry_date: dateStr,

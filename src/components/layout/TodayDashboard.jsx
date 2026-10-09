@@ -4,6 +4,8 @@ import { useLiveQuery } from '../../hooks/useLiveQuery';
 import { useUIStore } from '../../store/uiStore';
 import { db } from '../../lib/db';
 import { getTasksDueToday, getRoutinesStatusForToday, getRecentNotes } from '../../lib/queries/todayDashboard';
+import { generateUUID } from '../../lib/uuid';
+import { WidgetSkeleton } from '../shared/SkeletonLoader';
 
 export default function TodayDashboard() {
   const { setSelectedNoteId, setActiveWorkspace } = useUIStore();
@@ -18,10 +20,12 @@ export default function TodayDashboard() {
   const todayStr = new Date().toISOString().split('T')[0];
 
   // 1. Fetch tasks due today from Dexie
-  const dueTasks = useLiveQuery(() => getTasksDueToday(), []) || [];
+  const rawTasks = useLiveQuery(() => getTasksDueToday(), []);
+  const dueTasks = rawTasks || [];
 
   // 2. Fetch routines status for today from Dexie
-  const routineStatus = useLiveQuery(() => getRoutinesStatusForToday(), []) || {
+  const rawRoutineStatus = useLiveQuery(() => getRoutinesStatusForToday(), []);
+  const routineStatus = rawRoutineStatus || {
     total: 0,
     completedCount: 0,
     pending: [],
@@ -29,7 +33,10 @@ export default function TodayDashboard() {
   };
 
   // 3. Most recently edited notes
-  const recentNotes = useLiveQuery(() => getRecentNotes(4), []) || [];
+  const rawRecentNotes = useLiveQuery(() => getRecentNotes(4), []);
+  const recentNotes = rawRecentNotes || [];
+
+  const isLoading = rawTasks === undefined && rawRecentNotes === undefined;
 
   const handleOpenNote = (note) => {
     setActiveWorkspace(note.workspace_id);
@@ -55,7 +62,7 @@ export default function TodayDashboard() {
       await db.routine_entries.update(existing.id, { is_completed: true });
     } else {
       await db.routine_entries.add({
-        id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
+        id: generateUUID(),
         note_id: routine.id,
         entry_date: todayStr,
         is_completed: true,
@@ -74,11 +81,13 @@ export default function TodayDashboard() {
   return (
     <div className="flex flex-col h-full overflow-y-auto p-6 bg-bg-primary text-text-primary">
       <div className="mb-6 mt-2">
-        <h1 className="text-2xl font-bold mb-1 tracking-tight">{getGreeting()}</h1>
+        <h1 className="text-[28px] sm:text-[32px] font-bold mb-1 tracking-tight leading-tight">{getGreeting()}</h1>
         <p className="text-xs text-text-muted">Here is your live daily overview.</p>
       </div>
 
-      {!hasContent ? (
+      {isLoading ? (
+        <WidgetSkeleton count={3} />
+      ) : !hasContent ? (
         <div className="flex flex-col items-center justify-center flex-1 text-text-muted opacity-60">
           <Sun className="w-12 h-12 mb-4" />
           <p className="text-sm font-medium">Your day is clear. Enjoy the calm.</p>

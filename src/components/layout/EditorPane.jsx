@@ -13,13 +13,19 @@ import ChecklistEditor from '../editor/ChecklistEditor';
 import WishlistEditor from '../editor/WishlistEditor';
 import RoutinesEditor from '../routines/RoutinesEditor';
 import SketchEditor from '../sketch/SketchEditor';
+import JournalEditor from '../journal/JournalEditor';
 import TagPill from '../shared/TagPill';
 import TodayDashboard from './TodayDashboard';
 import { STARTER_KITS, getStarterKitItems } from '../../lib/starterKits';
+import { generateUUID } from '../../lib/uuid';
+import { softDeleteItem, archiveItem, unarchiveItem } from '../../lib/services/trashService';
+import { useConfirmStore } from '../../store/confirmStore';
 
 export default function EditorPane() {
   const { selectedNoteId, setSelectedNoteId, selectedSubprojectId, setSelectedSubprojectId, selectedProjectId, setSelectedProjectId, focusMode, setFocusMode } = useUIStore();
+  const { openSoftDelete } = useConfirmStore();
   const { saveStatus, triggerSave } = useDebouncedSave(1000);
+  const [sketchFullscreen, setSketchFullscreen] = useState(false);
 
   // Fetch current selected note
   const note = useLiveQuery(() => {
@@ -127,7 +133,7 @@ export default function EditorPane() {
     if (!activeItem || !activeItem.content?.isStarterKit) return;
     const kitItems = getStarterKitItems(activeItem.id);
     
-    const newId = crypto.randomUUID();
+    const newId = generateUUID();
     const newNote = {
       ...activeItem,
       id: newId,
@@ -141,7 +147,7 @@ export default function EditorPane() {
     
     const dbItems = kitItems.map(item => ({
       ...item,
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       note_id: newId,
     }));
     await db.checklist_items.bulkAdd(dbItems);
@@ -195,15 +201,32 @@ export default function EditorPane() {
     });
   };
 
-  // Handle TipTap Content Edits
-  const handleEditorChange = ({ json }) => {
+  // Handle Editor Content Edits
+  const handleEditorChange = (newContentOrWrapper) => {
     if (isProject || isSubproject) return;
+    const json = newContentOrWrapper?.json !== undefined ? newContentOrWrapper.json : newContentOrWrapper;
     setContent(json);
     triggerSave(async () => {
-      await db.notes.update(selectedNoteId, {
+      const patch = {
         content: json,
         updated_at: new Date().toISOString(),
-      });
+      };
+      if (note?.workspace_id === 'wishlist' && typeof json === 'object') {
+        if (json.category) patch.category = json.category;
+        if (json.priority) patch.priority = json.priority;
+        if (json.status) {
+          patch.status = json.status;
+          patch.is_completed = json.status === 'Got it';
+          if (json.status === 'Got it') {
+            patch.got_it_at = note?.got_it_at || new Date().toISOString();
+          }
+        }
+        if (json.price !== undefined) patch.price = json.price;
+        if (json.link !== undefined) patch.link = json.link;
+        if (json.image !== undefined) patch.image = json.image;
+        if (json.targetDate !== undefined) patch.target_date = json.targetDate;
+      }
+      await db.notes.update(selectedNoteId, patch);
     });
   };
 
@@ -331,51 +354,70 @@ export default function EditorPane() {
   };
 
   // Handle Soft-Delete
-  const handleDelete = async () => {
-    if (isProject) {
-      await db.projects.update(selectedProjectId, {
-        is_deleted: true,
-        deleted_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      });
-      setSelectedProjectId(null);
-    } else if (isSubproject) {
-      await db.subprojects.update(selectedSubprojectId, {
-        is_deleted: true,
-        deleted_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      });
-      setSelectedSubprojectId(null);
-    } else {
-      await db.notes.update(selectedNoteId, {
-        is_deleted: true,
-        deleted_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      });
-      setSelectedNoteId(null);
-    }
+  const handleDelete = () => {
+    const itemTitle = isProject ? project?.title : isSubproject ? subproject?.title : note?.title;
+    const finalTitle = itemTitle || (isProject ? 'Untitled project' : isSubproject ? 'Untitled section' : 'Untitled note');
+
+    openSoftDelete({
+      title: finalTitle,
+      onConfirm: async () => {
+        if (isProject) {
+          await softDeleteItem({
+            id: selectedProjectId,
+            type: 'project',
+            title: finalTitle,
+            workspace: 'projects',
+          });
+          setSelectedProjectId(null);
+        } else if (isSubproject) {
+          await softDeleteItem({
+            id: selectedSubprojectId,
+            type: 'subproject',
+            title: finalTitle,
+            workspace: 'projects',
+          });
+          setSelectedSubprojectId(null);
+        } else {
+          await softDeleteItem({
+            id: selectedNoteId,
+            type: 'note',
+            title: finalTitle,
+            workspace: note?.workspace_id || 'quicknotes',
+          });
+          setSelectedNoteId(null);
+        }
+      },
+    });
   };
 
   // Handle Archive
   const handleArchive = async () => {
-    if (isProject) {
-      await db.projects.update(selectedProjectId, {
-        is_archived: !activeItem.is_archived,
-        updated_at: new Date().toISOString(),
-      });
-      setSelectedProjectId(null);
-    } else if (isSubproject) {
-      await db.subprojects.update(selectedSubprojectId, {
-        is_archived: !activeItem.is_archived,
-        updated_at: new Date().toISOString(),
-      });
-      setSelectedSubprojectId(null);
+    const itemTitle = isProject ? project?.title : isSubproject ? subproject?.title : note?.title;
+    const finalTitle = itemTitle || (isProject ? 'Untitled project' : isSubproject ? 'Untitled section' : 'Untitled note');
+    const isCurrentlyArchived = activeItem?.is_archived;
+
+    if (isCurrentlyArchived) {
+      if (isProject) {
+        await unarchiveItem({ id: selectedProjectId, type: 'project', title: finalTitle, workspace: 'projects' });
+        setSelectedProjectId(null);
+      } else if (isSubproject) {
+        await unarchiveItem({ id: selectedSubprojectId, type: 'subproject', title: finalTitle, workspace: 'projects' });
+        setSelectedSubprojectId(null);
+      } else {
+        await unarchiveItem({ id: selectedNoteId, type: 'note', title: finalTitle, workspace: note?.workspace_id || 'quicknotes' });
+        setSelectedNoteId(null);
+      }
     } else {
-      await db.notes.update(selectedNoteId, {
-        is_archived: !activeItem.is_archived,
-        updated_at: new Date().toISOString(),
-      });
-      setSelectedNoteId(null);
+      if (isProject) {
+        await archiveItem({ id: selectedProjectId, type: 'project', title: finalTitle, workspace: 'projects' });
+        setSelectedProjectId(null);
+      } else if (isSubproject) {
+        await archiveItem({ id: selectedSubprojectId, type: 'subproject', title: finalTitle, workspace: 'projects' });
+        setSelectedSubprojectId(null);
+      } else {
+        await archiveItem({ id: selectedNoteId, type: 'note', title: finalTitle, workspace: note?.workspace_id || 'quicknotes' });
+        setSelectedNoteId(null);
+      }
     }
   };
 
@@ -396,7 +438,7 @@ export default function EditorPane() {
 
     let tag = await db.tags.where('label').equals(label).first();
     if (!tag) {
-      const tagId = crypto.randomUUID();
+      const tagId = generateUUID();
       tag = { id: tagId, label, color: '#5F6368', created_at: new Date().toISOString() };
       await db.tags.add(tag);
     }
@@ -408,7 +450,7 @@ export default function EditorPane() {
   if (!activeItem) {
     return (
       <aside
-        className={`fixed md:relative right-0 top-0 bottom-0 z-30 h-screen transition-all duration-150 ease-out bg-bg-primary border-l border-black/10 dark:border-white/10 flex flex-col ${
+        className={`fixed md:relative right-0 top-0 bottom-0 z-30 h-screen transition-all duration-150 ease-out bg-bg-primary border-l border-black/10 dark:border-white/10 flex flex-col min-w-0 overflow-hidden ${
           focusMode ? 'w-full max-w-3xl mx-auto border-none' : 'w-full md:w-[480px] lg:w-[540px]'
         } translate-x-full md:translate-x-0`}
       >
@@ -420,7 +462,7 @@ export default function EditorPane() {
   if (note?.workspace_id === 'routines') {
     return (
       <aside
-        className={`fixed md:relative right-0 top-0 bottom-0 z-30 h-screen transition-all duration-150 ease-out bg-bg-primary border-l border-black/10 dark:border-white/10 flex flex-col ${
+        className={`fixed md:relative right-0 top-0 bottom-0 z-30 h-screen transition-all duration-150 ease-out bg-bg-primary border-l border-black/10 dark:border-white/10 flex flex-col min-w-0 overflow-hidden ${
           focusMode ? 'w-full max-w-3xl mx-auto border-none' : 'w-full md:w-[480px] lg:w-[540px]'
         } translate-x-0`}
       >
@@ -432,18 +474,42 @@ export default function EditorPane() {
   if (note?.workspace_id === 'sketch') {
     return (
       <aside
-        className={`fixed md:relative right-0 top-0 bottom-0 z-30 h-screen transition-all duration-150 ease-out bg-bg-primary border-l border-black/10 dark:border-white/10 flex flex-col ${
+        className={`fixed top-0 bottom-0 z-50 h-screen transition-all duration-150 ease-out bg-bg-primary flex flex-col min-w-0 overflow-hidden ${
+          sketchFullscreen
+            ? 'inset-0 w-screen h-screen'
+            : (focusMode 
+                ? 'right-0 md:relative w-full max-w-4xl mx-auto border-none' 
+                : 'right-0 md:relative w-full md:w-[540px] lg:w-[680px] xl:w-[820px] 2xl:flex-1 border-l border-black/10 dark:border-white/10')
+        }`}
+      >
+        <SketchEditor 
+          note={note} 
+          onClose={() => {
+            setSketchFullscreen(false);
+            setSelectedNoteId(null);
+          }}
+          isFullscreen={sketchFullscreen}
+          onToggleFullscreen={() => setSketchFullscreen(prev => !prev)}
+        />
+      </aside>
+    );
+  }
+
+  if (note?.workspace_id === 'journal') {
+    return (
+      <aside
+        className={`fixed md:relative right-0 top-0 bottom-0 z-30 h-screen transition-all duration-150 ease-out bg-bg-primary border-l border-black/10 dark:border-white/10 flex flex-col min-w-0 overflow-hidden ${
           focusMode ? 'w-full max-w-3xl mx-auto border-none' : 'w-full md:w-[480px] lg:w-[540px]'
         } translate-x-0`}
       >
-        <SketchEditor note={note} onClose={() => setSelectedNoteId(null)} />
+        <JournalEditor note={note} onClose={() => setSelectedNoteId(null)} />
       </aside>
     );
   }
 
   return (
     <aside
-      className={`fixed md:relative right-0 top-0 bottom-0 z-30 h-screen transition-all duration-150 ease-out bg-bg-primary border-l border-black/10 dark:border-white/10 flex flex-col ${
+      className={`fixed md:relative right-0 top-0 bottom-0 z-30 h-screen transition-all duration-150 ease-out bg-bg-primary border-l border-black/10 dark:border-white/10 flex flex-col min-w-0 overflow-hidden ${
         focusMode ? 'w-full max-w-3xl mx-auto border-none' : 'w-full md:w-[480px] lg:w-[540px]'
       } translate-x-0`}
     >

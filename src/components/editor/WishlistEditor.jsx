@@ -1,154 +1,321 @@
 import React, { useState, useEffect } from 'react';
-import { Link2, Image as ImageIcon, DollarSign, Flag, CheckCircle } from 'lucide-react';
+import {
+  Link2,
+  Image as ImageIcon,
+  DollarSign,
+  Flag,
+  CheckCircle,
+  Calendar,
+  ExternalLink,
+  Sparkles,
+  ShoppingBag,
+  BookOpen,
+  Film,
+  MapPin,
+  MoreHorizontal,
+  X,
+  FileText,
+} from 'lucide-react';
+
+const CATEGORIES = [
+  { id: 'Buy', label: 'Buy', icon: ShoppingBag, color: 'text-amber-500 bg-amber-500/10 border-amber-500/20' },
+  { id: 'Learn', label: 'Learn', icon: BookOpen, color: 'text-blue-500 bg-blue-500/10 border-blue-500/20' },
+  { id: 'Watch', label: 'Watch', icon: Film, color: 'text-rose-500 bg-rose-500/10 border-rose-500/20' },
+  { id: 'Place', label: 'Place', icon: MapPin, color: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20' },
+  { id: 'Other', label: 'Other', icon: Sparkles, color: 'text-violet-500 bg-violet-500/10 border-violet-500/20' },
+];
+
+const PRIORITIES = [
+  { id: 'Low', label: 'Low', dot: 'bg-emerald-500' },
+  { id: 'Medium', label: 'Medium', dot: 'bg-amber-500' },
+  { id: 'High', label: 'High', dot: 'bg-red-500' },
+];
+
+const STATUSES = [
+  { id: 'Wishing', label: 'Wishing', icon: Sparkles },
+  { id: 'Planned', label: 'Planned', icon: Calendar },
+  { id: 'Got it', label: 'Got it', icon: CheckCircle },
+];
+
+const PRESET_GRADIENTS = [
+  'linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%)',
+  'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)',
+  'linear-gradient(135deg, #3B82F6 0%, #2DD4BF 100%)',
+  'linear-gradient(135deg, #F59E0B 0%, #EF4444 100%)',
+];
 
 export default function WishlistEditor({ content, onChange, readOnly }) {
   const [data, setData] = useState({
-    url: '',
-    price: 0,
-    priority: 'Low', // Low, Medium, High
-    gotIt: false,
+    category: 'Buy',
+    priority: 'Medium',
+    status: 'Wishing',
+    price: '',
+    link: '',
     image: '',
+    targetDate: '',
+    notes: '',
   });
 
   useEffect(() => {
-    if (content && typeof content === 'object' && !content.type) {
+    if (content && typeof content === 'object') {
       setData({
-        url: content.url || '',
-        price: content.price || 0,
-        priority: content.priority || 'Low',
-        gotIt: content.gotIt || false,
+        category: content.category || 'Buy',
+        priority: content.priority || 'Medium',
+        status: content.status || (content.gotIt ? 'Got it' : 'Wishing'),
+        price: content.price !== undefined && content.price !== null ? content.price.toString() : '',
+        link: content.link || content.url || '',
         image: content.image || '',
+        targetDate: content.targetDate || content.target_date || '',
+        notes: content.notes || content.note || '',
       });
     }
   }, [content]);
 
   const handleChange = (field, value) => {
     if (readOnly) return;
-    const newData = { ...data, [field]: value };
-    setData(newData);
-    onChange(newData); // We pass the object directly, EditorPane saves JSON
-  };
+    const nextData = { ...data, [field]: value };
+    setData(nextData);
 
-  const handleUrlPaste = (e) => {
-    if (readOnly) return;
-    const pastedUrl = e.clipboardData.getData('text');
-    if (pastedUrl.startsWith('http')) {
-      // Simulate fetching placeholder image
-      if (!data.image) {
-        // Just a random placeholder image from unsplash for demo purposes
-        handleChange('image', 'https://source.unsplash.com/random/400x300/?product');
-      }
-    }
+    const numericPrice = parseFloat(nextData.price) || 0;
+    const isCompleted = nextData.status === 'Got it';
+
+    onChange({
+      ...nextData,
+      price: numericPrice,
+      gotIt: isCompleted,
+      is_completed: isCompleted,
+    });
   };
 
   return (
-    <div className="flex flex-col gap-6 w-full max-w-lg">
-      
-      {/* Image Preview */}
-      {data.image ? (
-        <div className="w-full aspect-video rounded-lg overflow-hidden bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 relative group">
-          <img src={data.image} alt="Product" className="w-full h-full object-cover" />
-          {!readOnly && (
-            <button 
-              onClick={() => handleChange('image', '')}
-              className="absolute top-2 right-2 p-1.5 bg-black/50 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity"
-            >
-              Remove
-            </button>
-          )}
-        </div>
-      ) : (
-        <div className="w-full aspect-video rounded-lg bg-black/5 dark:bg-white/5 border border-dashed border-black/20 dark:border-white/20 flex flex-col items-center justify-center text-text-muted">
-          <ImageIcon className="w-8 h-8 mb-2 opacity-50" />
-          <p className="text-xs">No image provided</p>
-          {!readOnly && (
-            <button 
-              onClick={() => {
-                const url = window.prompt("Enter image URL:");
-                if (url) handleChange('image', url);
-              }}
-              className="text-xs text-blue-500 hover:underline mt-2"
-            >
-              Add Image URL
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* URL Paste */}
+    <div className="flex flex-col gap-5 w-full max-w-lg pb-10">
+      {/* 1. Category Picker */}
       <div>
-        <label className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2 flex items-center gap-1.5">
-          <Link2 className="w-3.5 h-3.5" /> Product Link
+        <label className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2 block">
+          Category
         </label>
-        <input 
+        <div className="flex flex-wrap gap-1.5">
+          {CATEGORIES.map((cat) => {
+            const Icon = cat.icon;
+            const isSelected = data.category === cat.id;
+            return (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => handleChange('category', cat.id)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-button text-xs font-medium border transition-all ${
+                  isSelected
+                    ? 'bg-violet-500 text-white border-violet-600 shadow-xs'
+                    : 'bg-card-default text-text-muted border-black/10 dark:border-white/10 hover:text-text-primary'
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                <span>{cat.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 2. Status Selector */}
+      <div>
+        <label className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2 block">
+          Status
+        </label>
+        <div className="grid grid-cols-3 gap-2 p-1 bg-black/5 dark:bg-white/5 rounded-button border border-black/5 dark:border-white/10 text-xs">
+          {STATUSES.map((st) => {
+            const Icon = st.icon;
+            const isSelected = data.status === st.id;
+            return (
+              <button
+                key={st.id}
+                type="button"
+                onClick={() => handleChange('status', st.id)}
+                className={`flex items-center justify-center gap-1.5 py-1.5 rounded-button font-medium transition-all ${
+                  isSelected
+                    ? st.id === 'Got it'
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'bg-violet-600 text-white shadow-xs'
+                    : 'text-text-muted hover:text-text-primary'
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                <span>{st.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 3. Image Preview or Gradient */}
+      <div>
+        <label className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2 flex items-center justify-between">
+          <span className="flex items-center gap-1.5">
+            <ImageIcon className="w-3.5 h-3.5" /> Cover Image
+          </span>
+          {data.image && (
+            <button
+              type="button"
+              onClick={() => handleChange('image', '')}
+              className="text-[11px] text-red-500 hover:underline flex items-center gap-1"
+            >
+              <X className="w-3 h-3" /> Remove
+            </button>
+          )}
+        </label>
+
+        {data.image ? (
+          <div className="w-full aspect-video rounded-xl overflow-hidden bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 relative group">
+            {data.image.startsWith('linear-gradient') ? (
+              <div className="w-full h-full" style={{ background: data.image }} />
+            ) : (
+              <img
+                src={data.image}
+                alt="Wish preview"
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                }}
+              />
+            )}
+          </div>
+        ) : (
+          <div className="w-full aspect-video rounded-xl bg-violet-500/5 dark:bg-violet-950/20 border border-dashed border-violet-500/30 flex flex-col items-center justify-center p-4 text-center">
+            <div className="w-10 h-10 rounded-full bg-violet-500/10 text-violet-600 dark:text-violet-400 flex items-center justify-center mb-2">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <p className="text-xs text-text-muted">No image provided</p>
+            <div className="flex items-center gap-2 mt-3">
+              {PRESET_GRADIENTS.map((grad, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => handleChange('image', grad)}
+                  style={{ background: grad }}
+                  className="w-6 h-6 rounded-full border border-white/20 hover:scale-110 transition-transform shadow-xs"
+                  title="Use preset gradient"
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        <input
           type="url"
-          value={data.url}
-          onChange={(e) => handleChange('url', e.target.value)}
-          onPaste={handleUrlPaste}
-          disabled={readOnly}
-          placeholder="Paste URL here..."
-          className="w-full px-3 py-2 text-sm bg-bg-sidebar border border-black/10 dark:border-white/10 rounded-button text-text-primary focus:outline-none focus:border-black/30 dark:focus:border-white/30"
+          value={data.image.startsWith('linear-gradient') ? '' : data.image}
+          onChange={(e) => handleChange('image', e.target.value)}
+          placeholder="Paste image URL..."
+          className="w-full mt-2 px-3 py-1.5 text-xs bg-bg-sidebar border border-black/10 dark:border-white/10 rounded-button text-text-primary focus:outline-none focus:border-violet-500"
         />
       </div>
 
-      <div className="flex gap-4">
-        {/* Price */}
-        <div className="flex-1">
+      {/* 4. Priority & Price Row */}
+      <div className="grid grid-cols-2 gap-3">
+        {/* Priority */}
+        <div>
           <label className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2 flex items-center gap-1.5">
-            <DollarSign className="w-3.5 h-3.5" /> Price
+            <Flag className="w-3.5 h-3.5" /> Priority
+          </label>
+          <div className="flex gap-1">
+            {PRIORITIES.map((p) => {
+              const isSelected = data.priority === p.id;
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => handleChange('priority', p.id)}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-button text-xs font-medium border transition-all ${
+                    isSelected
+                      ? 'bg-card-default text-text-primary border-violet-500 ring-1 ring-violet-500/50 shadow-xs'
+                      : 'bg-card-default text-text-muted border-black/10 dark:border-white/10 hover:text-text-primary'
+                  }`}
+                >
+                  <span className={`w-2 h-2 rounded-full ${p.dot}`} />
+                  <span>{p.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Estimated Price */}
+        <div>
+          <label className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2 flex items-center gap-1.5">
+            <DollarSign className="w-3.5 h-3.5" /> Estimated Price
           </label>
           <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted font-medium">$</span>
-            <input 
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted font-medium text-xs">
+              $
+            </span>
+            <input
               type="number"
               min="0"
               step="0.01"
               value={data.price}
-              onChange={(e) => handleChange('price', parseFloat(e.target.value) || 0)}
-              disabled={readOnly}
-              className="w-full pl-7 pr-3 py-2 text-sm bg-bg-sidebar border border-black/10 dark:border-white/10 rounded-button text-text-primary focus:outline-none"
+              onChange={(e) => handleChange('price', e.target.value)}
+              placeholder="0.00"
+              className="w-full pl-7 pr-3 py-2 text-xs bg-bg-sidebar border border-black/10 dark:border-white/10 rounded-button text-text-primary focus:outline-none focus:border-violet-500"
             />
           </div>
         </div>
+      </div>
 
-        {/* Priority */}
-        <div className="flex-1">
+      {/* 5. Target Date & Product Link */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {/* Target Date */}
+        <div>
           <label className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2 flex items-center gap-1.5">
-            <Flag className="w-3.5 h-3.5" /> Priority
+            <Calendar className="w-3.5 h-3.5" /> Target Date
           </label>
-          <select
-            value={data.priority}
-            onChange={(e) => handleChange('priority', e.target.value)}
-            disabled={readOnly}
-            className="w-full px-3 py-2 text-sm bg-bg-sidebar border border-black/10 dark:border-white/10 rounded-button text-text-primary focus:outline-none"
-          >
-            <option value="Low">Low</option>
-            <option value="Medium">Medium</option>
-            <option value="High">High</option>
-          </select>
+          <input
+            type="date"
+            value={data.targetDate}
+            onChange={(e) => handleChange('targetDate', e.target.value)}
+            className="w-full px-3 py-2 text-xs bg-bg-sidebar border border-black/10 dark:border-white/10 rounded-button text-text-primary focus:outline-none focus:border-violet-500"
+          />
+        </div>
+
+        {/* Product Link */}
+        <div>
+          <label className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2 flex items-center justify-between">
+            <span className="flex items-center gap-1.5">
+              <Link2 className="w-3.5 h-3.5" /> Link
+            </span>
+            {data.link && (
+              <a
+                href={data.link.startsWith('http') ? data.link : `https://${data.link}`}
+                target="_blank"
+                rel="noreferrer"
+                className="text-[11px] text-violet-500 hover:underline flex items-center gap-1"
+              >
+                <span>Visit</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            )}
+          </label>
+          <input
+            type="url"
+            value={data.link}
+            onChange={(e) => handleChange('link', e.target.value)}
+            placeholder="https://..."
+            className="w-full px-3 py-2 text-xs bg-bg-sidebar border border-black/10 dark:border-white/10 rounded-button text-text-primary focus:outline-none focus:border-violet-500"
+          />
         </div>
       </div>
 
-      {/* Got It */}
-      <div className="pt-4 mt-2 border-t border-black/5 dark:border-white/10">
-        <label className="flex items-center gap-3 cursor-pointer group">
-          <input
-            type="checkbox"
-            checked={data.gotIt}
-            onChange={(e) => handleChange('gotIt', e.target.checked)}
-            disabled={readOnly}
-            className="w-5 h-5 rounded border-black/20 dark:border-white/20 text-text-primary focus:ring-0 cursor-pointer"
-          />
-          <div>
-            <div className="font-semibold text-text-primary flex items-center gap-2">
-              <CheckCircle className={`w-4 h-4 ${data.gotIt ? 'text-green-500' : 'text-text-muted'}`} />
-              Got It!
-            </div>
-            <div className="text-xs text-text-muted mt-0.5">Check this off to move it to Completed.</div>
-          </div>
+      {/* 6. Notes & Personal Reflections */}
+      <div>
+        <label className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2 flex items-center gap-1.5">
+          <FileText className="w-3.5 h-3.5" /> Notes & Thoughts
         </label>
+        <textarea
+          rows={4}
+          value={data.notes}
+          onChange={(e) => handleChange('notes', e.target.value)}
+          placeholder="Why do you want this? Specs, colors, location, ideas..."
+          className="w-full px-3 py-2 text-xs bg-bg-sidebar border border-black/10 dark:border-white/10 rounded-button text-text-primary focus:outline-none focus:border-violet-500 resize-y leading-relaxed"
+        />
       </div>
-
     </div>
   );
 }

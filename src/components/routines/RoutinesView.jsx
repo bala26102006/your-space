@@ -18,9 +18,14 @@ import { useUIStore } from '../../store/uiStore';
 import { db } from '../../lib/db';
 import { getCardColorStyle, COLOR_OPTIONS } from '../shared/ColorPicker';
 import RoutineEditModal from './RoutineEditModal';
+import { generateUUID } from '../../lib/uuid';
+import { GridSkeleton } from '../shared/SkeletonLoader';
+import { softDeleteItem, archiveItem } from '../../lib/services/trashService';
+import { useConfirmStore } from '../../store/confirmStore';
 
 export default function RoutinesView() {
   const { selectedNoteId, setSelectedNoteId } = useUIStore();
+  const { openSoftDelete } = useConfirmStore();
   const [newRoutineTitle, setNewRoutineTitle] = useState('');
   const [newRoutineColor, setNewRoutineColor] = useState('default');
   const [newRoutineFrequency, setNewRoutineFrequency] = useState('daily');
@@ -42,11 +47,13 @@ export default function RoutinesView() {
   }, []);
 
   // Fetch routines (notes in 'routines' workspace)
-  const routines = useLiveQuery(() => 
+  const rawRoutines = useLiveQuery(() => 
     db.notes.where('workspace_id').equals('routines')
       .filter(n => !n.is_archived && !n.is_deleted)
       .reverse().sortBy('created_at')
-  , []) || [];
+  , []);
+  const routines = rawRoutines || [];
+  const isLoading = rawRoutines === undefined;
 
   // Fetch all routine entries
   const allEntries = useLiveQuery(() => db.routine_entries.toArray(), []) || [];
@@ -55,7 +62,7 @@ export default function RoutinesView() {
     e.preventDefault();
     if (!newRoutineTitle.trim()) return;
 
-    const newId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString();
+    const newId = generateUUID();
     await db.notes.add({
       id: newId,
       user_id: 'local_user',
@@ -83,7 +90,7 @@ export default function RoutinesView() {
   const handleDuplicate = async (routine, e) => {
     e?.stopPropagation();
     setOpenMenuId(null);
-    const newId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString();
+    const newId = generateUUID();
     await db.notes.add({
       id: newId,
       user_id: 'local_user',
@@ -105,22 +112,33 @@ export default function RoutinesView() {
   const handleArchive = async (routineId, e) => {
     e?.stopPropagation();
     setOpenMenuId(null);
-    await db.notes.update(routineId, {
-      is_archived: true,
-      updated_at: new Date().toISOString(),
+    const note = await db.notes.get(routineId);
+    await archiveItem({
+      id: routineId,
+      type: 'note',
+      title: note?.title || 'Untitled routine',
+      workspace: 'routines',
     });
     if (selectedNoteId === routineId) setSelectedNoteId(null);
   };
 
-  const handleDelete = async (routineId, e) => {
+  const handleDelete = (routineId, e) => {
     e?.stopPropagation();
     setOpenMenuId(null);
-    await db.notes.update(routineId, {
-      is_deleted: true,
-      deleted_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+    db.notes.get(routineId).then((note) => {
+      openSoftDelete({
+        title: note?.title || 'Untitled routine',
+        onConfirm: async () => {
+          await softDeleteItem({
+            id: routineId,
+            type: 'note',
+            title: note?.title || 'Untitled routine',
+            workspace: 'routines',
+          });
+          if (selectedNoteId === routineId) setSelectedNoteId(null);
+        },
+      });
     });
-    if (selectedNoteId === routineId) setSelectedNoteId(null);
   };
 
   const calculateStreak = (routineId) => {
@@ -204,17 +222,22 @@ export default function RoutinesView() {
   };
 
   return (
-    <div className="flex flex-col min-h-full relative">
+    <div className="flex flex-col min-h-full relative min-w-0 overflow-x-hidden">
       {/* Header Polish with 24px padding */}
-      <div className="flex items-center justify-between pb-6 shrink-0">
+      <div className="flex items-center justify-between pb-6 shrink-0 min-w-0">
         <div>
-          <h1 className="text-xl font-semibold capitalize text-text-primary tracking-tight">Routines & Habits</h1>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="w-2.5 h-2.5 rounded-full bg-[var(--workspace-accent)] inline-block"></span>
+            <span className="text-xs font-semibold tracking-wider uppercase text-[var(--workspace-accent)]">Routines Workspace</span>
+          </div>
+          <h1 className="text-[28px] sm:text-[32px] font-bold capitalize text-text-primary tracking-tight leading-tight">Routines & Habits</h1>
           <p className="text-xs text-text-muted mt-1">Calm, sustainable tracking designed for mindful consistency.</p>
         </div>
         
         <button
           onClick={() => setShowNewRoutineForm(true)}
-          className="flex items-center gap-1.5 px-3.5 py-2 bg-text-primary text-bg-primary rounded-button text-xs font-medium hover:opacity-90 transition-all shadow-sm"
+          className="flex items-center gap-1.5 px-3.5 py-2 bg-[var(--workspace-accent)] text-white rounded-button text-xs font-medium hover:opacity-90 active:scale-95 transition-all shadow-sm shrink-0"
+          aria-label="Create new routine"
         >
           <Plus className="w-4 h-4" />
           <span>New Routine</span>
@@ -229,11 +252,13 @@ export default function RoutinesView() {
       )}
 
       {/* Routine Cards Grid with gap: 16px (gap-4) and smooth scrolling */}
-      <div className="flex-1 pb-12">
-        {routines.length === 0 ? (
+      <div className="flex-1 pb-12 min-w-0">
+        {isLoading ? (
+          <GridSkeleton count={4} />
+        ) : routines.length === 0 ? (
           <div className="h-72 flex flex-col items-center justify-center text-text-muted border border-dashed border-black/10 dark:border-white/10 rounded-2xl p-8 text-center bg-card-default max-w-md mx-auto my-12 shadow-sm">
-            <div className="w-12 h-12 rounded-full bg-black/5 dark:bg-white/5 flex items-center justify-center mb-3">
-              <Sparkles className="w-6 h-6 text-text-muted opacity-60" />
+            <div className="w-12 h-12 rounded-2xl bg-[var(--workspace-accent-bg)] text-[var(--workspace-accent)] flex items-center justify-center mb-3">
+              <Sparkles className="w-6 h-6" />
             </div>
             <p className="text-base font-semibold text-text-primary">No routines yet</p>
             <p className="text-xs text-text-muted mt-1.5 max-w-xs leading-relaxed">
@@ -241,7 +266,7 @@ export default function RoutinesView() {
             </p>
             <button
               onClick={() => setShowNewRoutineForm(true)}
-              className="mt-4 flex items-center gap-1.5 px-4 py-2 bg-text-primary text-bg-primary rounded-button text-xs font-medium hover:opacity-90 transition-opacity shadow-sm"
+              className="mt-4 flex items-center gap-1.5 px-4 py-2 bg-[var(--workspace-accent)] text-white rounded-button text-xs font-medium hover:opacity-90 active:scale-95 transition-opacity shadow-sm"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>+ New Routine</span>
@@ -261,10 +286,10 @@ export default function RoutinesView() {
                 <div 
                   key={routine.id} 
                   onClick={() => setSelectedNoteId(routine.id)}
-                  className={`group relative p-4 rounded-card cursor-pointer border transition-all duration-200 ease-out hover:scale-[1.02] flex flex-col justify-between ${getCardColorStyle(cardColor)} ${
+                  className={`group relative p-4 rounded-card cursor-pointer border transition-all duration-200 ease-out hover:scale-[1.02] flex flex-col justify-between bg-sky-500/5 hover:bg-sky-500/10 border-sky-500/20 dark:bg-sky-950/25 dark:border-sky-800/30 ${
                     selectedNoteId === routine.id 
-                      ? 'border-blue-500/70 shadow-md ring-1 ring-blue-500/30' 
-                      : 'border-black/5 dark:border-white/10 hover:shadow-lg dark:hover:shadow-black/40 hover:border-black/15 dark:hover:border-white/20'
+                      ? 'border-sky-500 shadow-md ring-2 ring-sky-500/40' 
+                      : 'hover:shadow-lg dark:hover:shadow-black/40 hover:border-sky-500/40'
                   }`}
                 >
                   {/* Top line with title, streak & action menu */}
@@ -274,12 +299,12 @@ export default function RoutinesView() {
                         <h3 className="text-[18px] font-semibold text-text-primary tracking-tight truncate leading-tight">
                           {routine.title}
                         </h3>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="text-xs text-text-muted font-medium flex items-center gap-1">
-                            <Flame className={`w-3.5 h-3.5 ${streak > 0 ? 'text-amber-500' : 'text-text-muted opacity-40'}`} />
-                            {streak} {streak === 1 ? 'day' : 'days'} streak
+                        <div className="flex items-center gap-2 mt-1 min-w-0">
+                          <span className="text-xs text-text-muted font-medium flex items-center gap-1 whitespace-nowrap shrink-0">
+                            <Flame className={`w-3.5 h-3.5 ${streak > 0 ? 'text-amber-500' : 'text-text-muted opacity-40'} shrink-0`} />
+                            <span className="whitespace-nowrap">{streak} {streak === 1 ? 'day' : 'days'} streak</span>
                           </span>
-                          <span className="text-[10px] uppercase font-semibold text-text-muted/60 bg-black/5 dark:bg-white/5 px-1.5 py-0.5 rounded">
+                          <span className="text-[10px] uppercase font-semibold text-text-muted/60 bg-black/5 dark:bg-white/5 px-1.5 py-0.5 rounded whitespace-nowrap shrink-0">
                             {frequency}
                           </span>
                         </div>
@@ -459,7 +484,7 @@ export default function RoutinesView() {
               </button>
               <button 
                 type="submit" 
-                className="px-5 py-2 text-xs font-semibold bg-text-primary text-bg-primary rounded-button shadow-sm hover:opacity-90 transition-opacity"
+                className="px-5 py-2 text-xs font-semibold bg-[var(--workspace-accent)] text-white rounded-button shadow-sm hover:opacity-90 active:scale-95 transition-all"
               >
                 Create
               </button>

@@ -123,9 +123,9 @@ export default function NoteCard({
   return (
     <div
       onClick={onSelect}
-      className={`group relative rounded-card p-4 border transition-all duration-200 ease-out cursor-pointer hover:scale-[1.02] hover:shadow-lg dark:hover:shadow-black/40 ${getColorClasses(
+      className={`group relative rounded-card p-4 border transition-all duration-200 ease-out cursor-pointer hover:scale-[1.02] hover:shadow-lg dark:hover:shadow-black/40 overflow-hidden break-words ${getColorClasses(
         colorToken
-      )} ${isSelected ? 'ring-2 ring-text-primary/40 shadow-card-hover' : ''}`}
+      )} ${isSelected ? 'ring-2 ring-[var(--workspace-accent)] shadow-card-hover' : ''}`}
     >
       {/* Card Header: Color Indicator dot + Pin + Project complete + Actions */}
       <div className="flex items-center justify-between mb-2">
@@ -151,6 +151,7 @@ export default function NoteCard({
                 note.is_completed ? 'text-emerald-500' : 'text-text-muted hover:text-emerald-500'
               }`}
               title={note.is_completed ? 'Mark scene as pending' : 'Mark scene as complete'}
+              aria-label={note.is_completed ? 'Mark scene as pending' : 'Mark scene as complete'}
             >
               {note.is_completed ? (
                 <CheckCircle2 className="w-4 h-4 text-emerald-500" />
@@ -173,6 +174,7 @@ export default function NoteCard({
                 onPinToggle(note.id);
               }}
               title={note.is_pinned ? 'Unpin' : 'Pin note'}
+              aria-label={note.is_pinned ? 'Unpin note' : 'Pin note'}
               className="p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 text-text-muted hover:text-text-primary"
             >
               <Pin className={`w-3.5 h-3.5 ${note.is_pinned ? 'fill-current' : ''}`} />
@@ -185,6 +187,7 @@ export default function NoteCard({
                 e.stopPropagation();
                 setShowMenu(!showMenu);
               }}
+              aria-label="More note actions"
               className="p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 text-text-muted hover:text-text-primary"
             >
               <MoreVertical className="w-3.5 h-3.5" />
@@ -256,8 +259,8 @@ export default function NoteCard({
       </div>
 
       {/* Card Title */}
-      <div className="flex items-center justify-between gap-2 mb-1">
-        <h3 className={`font-semibold text-base line-clamp-1 ${note.is_completed ? 'line-through text-text-muted opacity-70' : 'text-text-primary'}`}>
+      <div className="flex items-center justify-between gap-2 mb-1 min-w-0">
+        <h3 className={`font-semibold text-base line-clamp-1 break-words overflow-hidden ${note.is_completed ? 'line-through text-text-muted opacity-70' : 'text-text-primary'}`}>
           {note.title || 'Untitled Note'}
         </h3>
         {note.is_completed && note.workspace_id === 'projects' && (
@@ -268,7 +271,7 @@ export default function NoteCard({
       </div>
 
       {/* Card Content Preview (up to 3 lines) */}
-      <p className="text-sm text-text-muted line-clamp-3 leading-relaxed min-h-[3rem]">
+      <p className="text-sm text-text-muted line-clamp-3 leading-relaxed min-h-[3rem] break-words overflow-hidden">
         {previewText || 'Empty note...'}
       </p>
 
@@ -281,7 +284,7 @@ export default function NoteCard({
           </div>
           <div className="w-full h-1.5 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
             <div 
-              className="h-full bg-green-500 rounded-full transition-all duration-500" 
+              className="h-full bg-[var(--workspace-accent)] rounded-full transition-all duration-500" 
               style={{ width: `${checklistProgress.percent}%` }}
             />
           </div>

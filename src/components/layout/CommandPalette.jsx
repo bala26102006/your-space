@@ -13,12 +13,16 @@ import {
   Sun, 
   ArrowRight, 
   X,
-  FileText
+  FileText,
+  Archive,
+  Trash2,
+  Settings
 } from 'lucide-react';
 import { useUIStore } from '../../store/uiStore';
 import { useLiveQuery } from '../../hooks/useLiveQuery';
 import { db } from '../../lib/db';
 import { createSketchNote } from '../../lib/services/sketchService';
+import { generateUUID } from '../../lib/uuid';
 
 export default function CommandPalette() {
   const { 
@@ -76,6 +80,9 @@ export default function CommandPalette() {
     { id: 'wishlist', label: 'Wish List', icon: Sparkles, category: 'Workspaces' },
     { id: 'routines', label: 'Routines', icon: Repeat, category: 'Workspaces' },
     { id: 'sketch', label: 'Sketch', icon: Palette, category: 'Workspaces' },
+    { id: 'archive', label: 'Archive', icon: Archive, category: 'Utilities' },
+    { id: 'trash', label: 'Trash', icon: Trash2, category: 'Utilities' },
+    { id: 'settings', label: 'Settings', icon: Settings, category: 'Utilities' },
   ], []);
 
   // Quick action items
@@ -87,7 +94,7 @@ export default function CommandPalette() {
       icon: Plus,
       category: 'Actions',
       run: async () => {
-        const newId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString();
+        const newId = generateUUID();
         await db.notes.add({
           id: newId,
           user_id: 'local_user',
@@ -105,6 +112,38 @@ export default function CommandPalette() {
           updated_at: new Date().toISOString(),
         });
         setActiveWorkspace('quicknotes');
+        setSelectedNoteId(newId);
+        closeCommandPalette();
+      }
+    },
+    {
+      id: 'action-new-wish',
+      label: 'Create New Wish',
+      sublabel: 'Add item to Wish List',
+      icon: Sparkles,
+      category: 'Actions',
+      run: async () => {
+        const newId = generateUUID();
+        await db.notes.add({
+          id: newId,
+          user_id: 'local_user',
+          workspace_id: 'wishlist',
+          subproject_id: null,
+          note_type: 'wishlist',
+          title: 'Untitled Wish',
+          content: { note: '', price: 0, link: '', image: '', category: 'Buy', priority: 'Medium', status: 'Wishing' },
+          color: 'default',
+          category: 'Buy',
+          priority: 'Medium',
+          status: 'Wishing',
+          is_pinned: false,
+          is_archived: false,
+          is_deleted: false,
+          sort_order: Date.now(),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+        setActiveWorkspace('wishlist');
         setSelectedNoteId(newId);
         closeCommandPalette();
       }
@@ -134,6 +173,33 @@ export default function CommandPalette() {
       }
     }
   ], [theme, setActiveWorkspace, setSelectedNoteId, toggleTheme, closeCommandPalette]);
+
+  // Extract searchable text from content
+  const extractSearchableText = (content) => {
+    if (!content) return '';
+    if (typeof content === 'string') return content;
+    if (typeof content === 'object') {
+      const parts = [];
+      if (content.note) parts.push(content.note);
+      if (content.description) parts.push(content.description);
+      if (content.category) parts.push(content.category);
+      if (content.priority) parts.push(content.priority);
+      if (content.status) parts.push(content.status);
+      if (content.link) parts.push(content.link);
+      if (Array.isArray(content.items)) {
+        content.items.forEach(i => parts.push(i.text || ''));
+      }
+      if (content.content && Array.isArray(content.content)) {
+        const recurse = (node) => {
+          if (node.text) parts.push(node.text);
+          if (node.content && Array.isArray(node.content)) node.content.forEach(recurse);
+        };
+        recurse(content);
+      }
+      return parts.join(' ');
+    }
+    return '';
+  };
 
   // Filtered items based on query
   const filteredItems = useMemo(() => {
@@ -193,12 +259,16 @@ export default function CommandPalette() {
     // 3. Notes search
     const matchedNotes = allNotes.filter(n => {
       const titleMatch = (n.title || '').toLowerCase().includes(q);
-      const contentMatch = typeof n.content === 'string' && n.content.toLowerCase().includes(q);
-      return titleMatch || contentMatch;
-    }).slice(0, 10).map(n => ({
+      const wsMatch = (n.workspace_id || '').toLowerCase().includes(q);
+      const catMatch = (n.category || '').toLowerCase().includes(q);
+      const statusMatch = (n.status || '').toLowerCase().includes(q);
+      const contentText = extractSearchableText(n.content).toLowerCase();
+      const contentMatch = contentText.includes(q);
+      return titleMatch || wsMatch || catMatch || statusMatch || contentMatch;
+    }).slice(0, 12).map(n => ({
       id: `note-${n.id}`,
       label: n.title || 'Untitled Note',
-      sublabel: `Note in ${n.workspace_id}`,
+      sublabel: `${n.workspace_id}${n.category ? ` • ${n.category}` : ''}${n.status ? ` • ${n.status}` : ''}`,
       icon: FileText,
       category: 'Notes',
       run: () => {
@@ -239,16 +309,19 @@ export default function CommandPalette() {
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4 bg-black/40 backdrop-blur-xs animate-in fade-in duration-100"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Command Palette"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/50 dark:bg-black/70 backdrop-blur-sm animate-in fade-in duration-150"
       onClick={closeCommandPalette}
     >
       <div 
-        className="w-full max-w-xl bg-card-default border border-black/10 dark:border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[70vh] animate-in zoom-in-95 duration-150"
+        className="w-full max-w-xl bg-card-default border border-black/10 dark:border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[75vh] animate-in zoom-in-95 duration-150 ring-1 ring-black/5 dark:ring-white/10"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Search Input Bar */}
         <div className="flex items-center px-4 py-3.5 border-b border-black/5 dark:border-white/10 gap-3 shrink-0">
-          <Search className="w-4 h-4 text-text-muted shrink-0" />
+          <Search className="w-4 h-4 text-text-muted shrink-0" aria-hidden="true" />
           <input
             ref={inputRef}
             type="text"
@@ -259,14 +332,16 @@ export default function CommandPalette() {
             }}
             onKeyDown={handleKeyDown}
             placeholder="Type a command, workspace, or search notes..."
-            className="w-full bg-transparent text-sm text-text-primary placeholder:text-text-muted outline-none"
+            aria-label="Search commands, workspaces, or notes"
+            className="w-full bg-transparent text-sm text-text-primary placeholder:text-text-muted outline-none focus:ring-0"
           />
-          <div className="flex items-center gap-1 shrink-0 text-[10px] text-text-muted bg-black/5 dark:bg-white/5 px-2 py-0.5 rounded-md font-mono">
+          <kbd className="flex items-center gap-1 shrink-0 text-[10px] text-text-muted bg-black/5 dark:bg-white/5 px-2 py-0.5 rounded-md font-mono border border-black/5 dark:border-white/5">
             ESC
-          </div>
+          </kbd>
           <button
             onClick={closeCommandPalette}
-            className="p-1 rounded-lg text-text-muted hover:text-text-primary hover:bg-hover-bg transition-colors"
+            aria-label="Close command palette"
+            className="p-1 rounded-lg text-text-muted hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
           >
             <X className="w-4 h-4" />
           </button>

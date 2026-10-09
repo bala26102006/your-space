@@ -150,7 +150,10 @@ export default function TopBar() {
       <div className="flex items-center gap-3">
         {/* Sort Dropdown */}
         <div className="relative group">
-          <button className="flex items-center gap-1.5 px-2 py-1.5 rounded-button text-xs font-medium text-text-muted hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
+          <button 
+            aria-label="Sort options"
+            className="flex items-center gap-1.5 px-2 py-1.5 rounded-button text-xs font-medium text-text-muted hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+          >
             <ArrowDownUp className="w-4 h-4" />
             <span className="capitalize">{sortOrder}</span>
           </button>
@@ -162,7 +165,7 @@ export default function TopBar() {
                 onClick={() => setSortOrder(opt)}
                 className={`w-full text-left px-4 py-2 text-xs transition-colors ${
                   sortOrder === opt 
-                    ? 'bg-active-nav-bg text-text-primary font-medium' 
+                    ? 'bg-[var(--workspace-accent-bg)] text-[var(--workspace-accent)] font-medium' 
                     : 'text-text-muted hover:bg-black/5 dark:hover:bg-white/5 hover:text-text-primary'
                 }`}
               >
@@ -182,6 +185,7 @@ export default function TopBar() {
               viewMode === 'grid' ? 'bg-bg-primary text-text-primary shadow-sm' : 'text-text-muted hover:text-text-primary'
             }`}
             title="Grid View"
+            aria-label="Switch to grid view"
           >
             <LayoutGrid className="w-4 h-4" />
           </button>
@@ -191,6 +195,7 @@ export default function TopBar() {
               viewMode === 'list' ? 'bg-bg-primary text-text-primary shadow-sm' : 'text-text-muted hover:text-text-primary'
             }`}
             title="List View"
+            aria-label="Switch to list view"
           >
             <List className="w-4 h-4" />
           </button>
@@ -203,6 +208,7 @@ export default function TopBar() {
           onClick={() => setFocusMode(!focusMode)}
           className="p-1.5 rounded-button text-text-muted hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
           title={focusMode ? "Exit Focus Mode" : "Enter Focus Mode"}
+          aria-label={focusMode ? "Exit focus mode" : "Enter focus mode"}
         >
           {focusMode ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
         </button>

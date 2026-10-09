@@ -3,6 +3,7 @@ import { Copy, Plus, Trash2, CheckSquare, Square, GripVertical, Type, AlignLeft,
 import { db } from '../../lib/db';
 import { useLiveQuery } from '../../hooks/useLiveQuery';
 import { getStarterKitItems } from '../../lib/starterKits';
+import { generateUUID } from '../../lib/uuid';
 import {
   DndContext,
   closestCenter,
@@ -94,6 +95,11 @@ function SortableItem({
           type="text"
           value={item.text || ''}
           onChange={(e) => onUpdate(item.id, 'text', e.target.value)}
+          onBlur={() => {
+            if (!item.text || !item.text.trim()) {
+              onRemove(item.id);
+            }
+          }}
           onKeyDown={(e) => onKeyDown(e, item)}
           disabled={readOnly}
           placeholder={isHeader ? "Section Header..." : isNote ? "Add a note..." : "Task..."}
@@ -212,7 +218,7 @@ export default function ChecklistEditor({ noteId, content, onChange, readOnly })
         const newItems = [];
         let order = Date.now();
         content.items.forEach(old => {
-          const parentId = crypto.randomUUID();
+          const parentId = generateUUID();
           newItems.push({
             id: parentId,
             note_id: noteId,
@@ -225,7 +231,7 @@ export default function ChecklistEditor({ noteId, content, onChange, readOnly })
           if (old.subItems) {
             old.subItems.forEach(sub => {
               newItems.push({
-                id: crypto.randomUUID(),
+                id: generateUUID(),
                 note_id: noteId,
                 parent_item_id: parentId,
                 text: sub.text,
@@ -243,6 +249,20 @@ export default function ChecklistEditor({ noteId, content, onChange, readOnly })
     };
     migrate();
   }, [noteId, items.length, content]);
+
+  // Auto-remove empty untitled items when the user leaves
+  useEffect(() => {
+    return () => {
+      if (noteId && !readOnly) {
+        db.checklist_items
+          .where('note_id')
+          .equals(noteId)
+          .filter(i => !i.text || !i.text.trim())
+          .delete()
+          .catch(console.error);
+      }
+    };
+  }, [noteId, readOnly]);
 
   const handleTemplateToggle = (checked) => {
     if (readOnly) return;
@@ -265,7 +285,7 @@ export default function ChecklistEditor({ noteId, content, onChange, readOnly })
 
   const addItem = async (type = 'task') => {
     const newItem = {
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       note_id: noteId,
       parent_item_id: null,
       item_type: type,

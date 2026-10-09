@@ -1,559 +1,821 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, Gift, CheckCircle, DollarSign, Folder, ArrowLeft, Link as LinkIcon, Image as ImageIcon, Tag as TagIcon, Trash2, Edit2, ExternalLink } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import {
+  Sparkles,
+  Plus,
+  LayoutGrid,
+  List,
+  CheckCircle2,
+  Circle,
+  DollarSign,
+  Calendar,
+  ExternalLink,
+  Flag,
+  Trash2,
+  Archive,
+  ShoppingBag,
+  BookOpen,
+  Film,
+  MapPin,
+  TrendingUp,
+  Tag,
+  ArrowUpDown,
+  Search,
+} from 'lucide-react';
 import { useLiveQuery } from '../../hooks/useLiveQuery';
 import { useUIStore } from '../../store/uiStore';
 import { db } from '../../lib/db';
+import { generateUUID } from '../../lib/uuid';
+import { useConfirmStore } from '../../store/confirmStore';
+import { softDeleteItem, archiveItem } from '../../lib/services/trashService';
+import { GridSkeleton } from '../shared/SkeletonLoader';
 
-const DEFAULT_FOLDERS = [
-  'Tech & Gadgets', 'Gift Cards', 'Clothing & Accessories',
-  'Beauty & Personal Care', 'Home & Kitchen', 'Experiences & Entertainment',
-  'Hobbies & Fitness', 'Jewelry', 'Books & Media', 'Travel & Luggage'
+const CATEGORIES = [
+  { id: 'All', label: 'All', icon: Sparkles },
+  { id: 'Buy', label: 'Buy', icon: ShoppingBag, color: 'text-amber-500 bg-amber-500/10 border-amber-500/20' },
+  { id: 'Learn', label: 'Learn', icon: BookOpen, color: 'text-blue-500 bg-blue-500/10 border-blue-500/20' },
+  { id: 'Watch', label: 'Watch', icon: Film, color: 'text-rose-500 bg-rose-500/10 border-rose-500/20' },
+  { id: 'Place', label: 'Place', icon: MapPin, color: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20' },
+  { id: 'Other', label: 'Other', icon: Tag, color: 'text-violet-500 bg-violet-500/10 border-violet-500/20' },
+];
+
+const PRIORITIES = [
+  { id: 'All', label: 'All Priorities' },
+  { id: 'High', label: 'High Priority', dot: 'bg-red-500' },
+  { id: 'Medium', label: 'Medium Priority', dot: 'bg-amber-500' },
+  { id: 'Low', label: 'Low Priority', dot: 'bg-emerald-500' },
+];
+
+const STATUS_FILTERS = [
+  { id: 'All', label: 'All Statuses' },
+  { id: 'Wishing', label: 'Wishing' },
+  { id: 'Planned', label: 'Planned' },
+  { id: 'Got it', label: 'Got It' },
+];
+
+const PRESET_GRADIENTS = [
+  'linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%)',
+  'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)',
+  'linear-gradient(135deg, #3B82F6 0%, #2DD4BF 100%)',
+  'linear-gradient(135deg, #F59E0B 0%, #EF4444 100%)',
 ];
 
 export default function WishListView() {
-  const { selectedWishlistFolderId: selectedFolderId, setSelectedWishlistFolderId: setSelectedFolderId } = useUIStore();
-  const [isInitializing, setIsInitializing] = useState(true);
+  const { selectedNoteId, setSelectedNoteId } = useUIStore();
+  const { openSoftDelete } = useConfirmStore();
 
-  // Modals / forms state
-  const [showFolderForm, setShowFolderForm] = useState(false);
-  const [newFolderName, setNewFolderName] = useState('');
-  
-  const [showItemForm, setShowItemForm] = useState(false);
-  const [editingItem, setEditingItem] = useState(null);
-  
-  // Item Form State
-  const [itemName, setItemName] = useState('');
-  const [itemUrl, setItemUrl] = useState('');
-  const [itemPrice, setItemPrice] = useState('');
-  const [itemPriority, setItemPriority] = useState('Medium');
-  const [itemNote, setItemNote] = useState('');
-  const [itemImageUrl, setItemImageUrl] = useState('');
-  const [itemTags, setItemTags] = useState('');
+  // Local View States
+  const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'list'
+  const [quickAddInput, setQuickAddInput] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedPriority, setSelectedPriority] = useState('All');
+  const [selectedStatus, setSelectedStatus] = useState('All');
+  const [sortBy, setSortBy] = useState('newest'); // 'newest' | 'priority' | 'price_high' | 'price_low'
+  const [animatingId, setAnimatingId] = useState(null);
 
-  // Data fetching
-  const folders = useLiveQuery(() => db.wishlist_folders.orderBy('sort_order').toArray(), []) || [];
-  const allItems = useLiveQuery(() => {
-    if (selectedFolderId) {
-      return db.wishlist_items.where('folder_id').equals(selectedFolderId).toArray();
-    }
-    return db.wishlist_items.toArray();
-  }, [selectedFolderId]) || [];
+  // 1. Fetch Wishlist Notes
+  const rawWishes = useLiveQuery(() =>
+    db.notes
+      .where('workspace_id')
+      .equals('wishlist')
+      .filter((n) => !n.is_archived && !n.is_deleted)
+      .toArray()
+  , []) || [];
 
-  const activeFolder = folders.find(f => f.id === selectedFolderId);
+  // Normalize Wish list item fields
+  const wishes = useMemo(() => {
+    return rawWishes.map((w) => {
+      const c = w.content && typeof w.content === 'object' ? w.content : {};
+      const status = w.status || c.status || (w.is_completed || c.gotIt ? 'Got it' : 'Wishing');
+      const priority = w.priority || c.priority || 'Medium';
+      const category = w.category || c.category || 'Buy';
+      const price = parseFloat(w.price !== undefined ? w.price : c.price) || 0;
+      const link = w.link || c.link || c.url || '';
+      const image = w.image || c.image || '';
+      const targetDate = w.target_date || c.targetDate || c.target_date || '';
+      const notes = c.notes || c.note || (typeof w.content === 'string' ? w.content : '');
 
-  // Initialize folders
-  useEffect(() => {
-    const init = async () => {
-      try {
-        await db.transaction('rw', db.wishlist_folders, async () => {
-          // Clean up duplicates
-          const all = await db.wishlist_folders.orderBy('sort_order').toArray();
-          const seen = new Set();
-          const toDelete = [];
-          for (const f of all) {
-            if (seen.has(f.name)) {
-              toDelete.push(f.id);
-            } else {
-              seen.add(f.name);
-            }
-          }
-          if (toDelete.length > 0) {
-            await db.wishlist_folders.bulkDelete(toDelete);
-          }
-
-          // Seed default folders if none exist
-          const count = await db.wishlist_folders.count();
-          if (count === 0) {
-            const toAdd = DEFAULT_FOLDERS.map((name, index) => ({
-              id: `default-folder-${index}`,
-              name,
-              sort_order: index
-            }));
-            await db.wishlist_folders.bulkAdd(toAdd);
-          }
-        });
-      } catch (err) {
-        console.error("Wishlist init error:", err);
-      } finally {
-        setIsInitializing(false);
-      }
-    };
-    init();
-  }, []);
-
-  const [activeTag, setActiveTag] = useState(null);
-
-  // Compute derived state
-  const activeItems = useMemo(() => {
-    let items = allItems.filter(i => !i.is_completed);
-    if (activeTag) items = items.filter(i => (i.tags || []).includes(activeTag));
-    return items.sort((a,b) => b.sort_order - a.sort_order);
-  }, [allItems, activeTag]);
-
-  const completedItems = useMemo(() => {
-    let items = allItems.filter(i => i.is_completed);
-    if (activeTag) items = items.filter(i => (i.tags || []).includes(activeTag));
-    return items.sort((a,b) => b.sort_order - a.sort_order);
-  }, [allItems, activeTag]);
-
-  const allAvailableTags = useMemo(() => {
-    const tags = new Set();
-    allItems.forEach(item => {
-      (item.tags || []).forEach(t => tags.add(t));
+      return {
+        ...w,
+        title: w.title || 'Untitled Wish',
+        category,
+        priority,
+        status,
+        price,
+        link,
+        image,
+        targetDate,
+        notes,
+        isGotIt: status === 'Got it' || w.is_completed,
+      };
     });
-    return Array.from(tags).sort();
-  }, [allItems]);
+  }, [rawWishes]);
 
-  useEffect(() => {
-    setActiveTag(null);
-  }, [selectedFolderId]);
+  // 2. Summary Statistics
+  const summary = useMemo(() => {
+    const totalWishes = wishes.length;
+    // Calculate total cost of active/pending wishes
+    const totalEstimatedCost = wishes
+      .filter((w) => !w.isGotIt)
+      .reduce((sum, w) => sum + (w.price || 0), 0);
 
-  const costSummary = useMemo(() => {
-    const wantedCost = activeItems.reduce((sum, item) => sum + (parseFloat(item.price) || 0), 0);
-    const boughtCost = completedItems.reduce((sum, item) => sum + (parseFloat(item.price) || 0), 0);
-    const totalItems = activeItems.length + completedItems.length;
-    const boughtPercent = totalItems > 0 ? Math.round((completedItems.length / totalItems) * 100) : 0;
+    // Calculate how many got this month
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+
+    const gotThisMonth = wishes.filter((w) => {
+      if (!w.isGotIt) return false;
+      const dateStr = w.got_it_at || w.updated_at || w.created_at;
+      if (!dateStr) return false;
+      const d = new Date(dateStr);
+      return !isNaN(d.getTime()) && d.getFullYear() === currentYear && d.getMonth() === currentMonth;
+    }).length;
+
     return {
-      wantedCost,
-      boughtCost,
-      totalCost: wantedCost,
-      totalItems,
-      boughtCount: completedItems.length,
-      wantedCount: activeItems.length,
-      boughtPercent
+      totalWishes,
+      totalEstimatedCost,
+      gotThisMonth,
     };
-  }, [activeItems, completedItems]);
+  }, [wishes]);
 
-  const handleCreateFolder = async (e) => {
-    e.preventDefault();
-    if (!newFolderName.trim()) return;
-    const id = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString();
-    await db.wishlist_folders.add({
-      id,
-      name: newFolderName.trim(),
-      sort_order: Date.now()
-    });
-    setNewFolderName('');
-    setShowFolderForm(false);
-  };
-
-  const handleSaveItem = async (e) => {
-    e.preventDefault();
-    if (!itemName.trim() && !itemUrl.trim()) return; // Require at least a name or URL
-
-    const tagsArray = itemTags.split(',').map(t => t.trim()).filter(t => t.length > 0);
-
-    const itemData = {
-      folder_id: selectedFolderId,
-      name: itemName.trim() || 'Unknown Item',
-      url: itemUrl.trim(),
-      price: parseFloat(itemPrice) || 0,
-      priority: itemPriority,
-      note: itemNote.trim(),
-      image_url: itemImageUrl.trim(),
-      is_completed: editingItem ? editingItem.is_completed : false,
-      tags: tagsArray,
-      sort_order: editingItem ? editingItem.sort_order : Date.now(),
-    };
-
-    if (editingItem) {
-      await db.wishlist_items.update(editingItem.id, itemData);
-    } else {
-      const id = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString();
-      await db.wishlist_items.add({ ...itemData, id });
-    }
-
-    resetItemForm();
-  };
-
-  const handleDeleteItem = async (e, id) => {
-    e.stopPropagation();
-    await db.wishlist_items.delete(id);
-  };
-
-  const handleToggleComplete = async (e, id, currentStatus) => {
-    e.stopPropagation();
-    await db.wishlist_items.update(id, { is_completed: !currentStatus });
-  };
-
-  const openItemForm = (item = null) => {
-    if (item) {
-      setEditingItem(item);
-      setItemName(item.name);
-      setItemUrl(item.url || '');
-      setItemPrice(item.price ? item.price.toString() : '');
-      setItemPriority(item.priority || 'Medium');
-      setItemNote(item.note || '');
-      setItemImageUrl(item.image_url || '');
-      setItemTags((item.tags || []).join(', '));
-    } else {
-      resetItemForm();
-    }
-    setShowItemForm(true);
-  };
-
-  const resetItemForm = () => {
-    setEditingItem(null);
-    setItemName('');
-    setItemUrl('');
-    setItemPrice('');
-    setItemPriority('Medium');
-    setItemNote('');
-    setItemImageUrl('');
-    setItemTags('');
-    setShowItemForm(false);
-  };
-
-  // Simple auto-parse logic (mock, relying on user input URL as source and inferring name if empty)
-  const handleUrlBlur = (e) => {
-    const val = e.target.value;
-    if (val && !itemName) {
-      try {
-        const url = new URL(val);
-        let domain = url.hostname.replace('www.', '');
-        setItemName(`Item from ${domain}`);
-      } catch (e) {
-        // invalid URL
+  // 3. Filtering and Sorting
+  const filteredWishes = useMemo(() => {
+    return wishes.filter((w) => {
+      if (selectedCategory !== 'All' && w.category !== selectedCategory) return false;
+      if (selectedPriority !== 'All' && w.priority !== selectedPriority) return false;
+      if (selectedStatus !== 'All') {
+        if (selectedStatus === 'Got it' && !w.isGotIt) return false;
+        if (selectedStatus !== 'Got it' && w.status !== selectedStatus) return false;
       }
+      return true;
+    });
+  }, [wishes, selectedCategory, selectedPriority, selectedStatus]);
+
+  const sortedWishes = useMemo(() => {
+    const list = [...filteredWishes];
+    const priorityWeight = { High: 3, Medium: 2, Low: 1 };
+
+    list.sort((a, b) => {
+      if (sortBy === 'priority') {
+        return (priorityWeight[b.priority] || 0) - (priorityWeight[a.priority] || 0);
+      }
+      if (sortBy === 'price_high') {
+        return (b.price || 0) - (a.price || 0);
+      }
+      if (sortBy === 'price_low') {
+        return (a.price || 0) - (b.price || 0);
+      }
+      // Default: newest
+      return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+    });
+
+    return list;
+  }, [filteredWishes, sortBy]);
+
+  // Split into active and completed for clean sections
+  const activeWishes = useMemo(() => sortedWishes.filter((w) => !w.isGotIt), [sortedWishes]);
+  const completedWishes = useMemo(() => sortedWishes.filter((w) => w.isGotIt), [sortedWishes]);
+
+  // 4. Quick Add Handler
+  const handleQuickAdd = async (e) => {
+    e.preventDefault();
+    const title = quickAddInput.trim();
+    if (!title) return;
+
+    const newId = generateUUID();
+    const now = new Date().toISOString();
+
+    const newWish = {
+      id: newId,
+      workspace_id: 'wishlist',
+      note_type: 'wishlist',
+      title,
+      category: selectedCategory !== 'All' ? selectedCategory : 'Buy',
+      priority: 'Medium',
+      status: 'Wishing',
+      price: 0,
+      link: '',
+      image: '',
+      target_date: '',
+      is_pinned: false,
+      is_archived: false,
+      is_deleted: false,
+      is_completed: false,
+      content: {
+        category: selectedCategory !== 'All' ? selectedCategory : 'Buy',
+        priority: 'Medium',
+        status: 'Wishing',
+        price: 0,
+        link: '',
+        image: '',
+        targetDate: '',
+        notes: '',
+      },
+      created_at: now,
+      updated_at: now,
+    };
+
+    await db.notes.add(newWish);
+    setQuickAddInput('');
+    setSelectedNoteId(newId);
+  };
+
+  // 5. "New Wish" Button Action
+  const handleCreateNewWish = async () => {
+    const newId = generateUUID();
+    const now = new Date().toISOString();
+
+    const newWish = {
+      id: newId,
+      workspace_id: 'wishlist',
+      note_type: 'wishlist',
+      title: '',
+      category: 'Buy',
+      priority: 'Medium',
+      status: 'Wishing',
+      price: 0,
+      link: '',
+      image: '',
+      target_date: '',
+      is_pinned: false,
+      is_archived: false,
+      is_deleted: false,
+      is_completed: false,
+      content: {
+        category: 'Buy',
+        priority: 'Medium',
+        status: 'Wishing',
+        price: 0,
+        link: '',
+        image: '',
+        targetDate: '',
+        notes: '',
+      },
+      created_at: now,
+      updated_at: now,
+    };
+
+    await db.notes.add(newWish);
+    setSelectedNoteId(newId);
+  };
+
+  // 6. "Got it" Check Toggle with Animation
+  const handleToggleGotIt = async (e, wish) => {
+    e.stopPropagation();
+    const nextStatus = wish.isGotIt ? 'Wishing' : 'Got it';
+    const nextCompleted = nextStatus === 'Got it';
+
+    setAnimatingId(wish.id);
+    setTimeout(() => setAnimatingId(null), 400);
+
+    const now = new Date().toISOString();
+    const existingContent = wish.content && typeof wish.content === 'object' ? wish.content : {};
+
+    await db.notes.update(wish.id, {
+      status: nextStatus,
+      is_completed: nextCompleted,
+      got_it_at: nextCompleted ? now : null,
+      content: {
+        ...existingContent,
+        status: nextStatus,
+        gotIt: nextCompleted,
+      },
+      updated_at: now,
+    });
+  };
+
+  // 7. Delete with Phase 2 Confirmation Dialog
+  const handleDeleteWish = (e, wish) => {
+    e.stopPropagation();
+    openSoftDelete({
+      title: wish.title || 'Untitled Wish',
+      onConfirm: async () => {
+        await softDeleteItem({
+          id: wish.id,
+          type: 'note',
+          title: wish.title || 'Untitled Wish',
+          workspace: 'wishlist',
+        });
+        if (selectedNoteId === wish.id) {
+          setSelectedNoteId(null);
+        }
+      },
+    });
+  };
+
+  // 8. Archive with Phase 2 Service
+  const handleArchiveWish = async (e, wish) => {
+    e.stopPropagation();
+    await archiveItem({
+      id: wish.id,
+      type: 'note',
+      title: wish.title || 'Untitled Wish',
+      workspace: 'wishlist',
+    });
+    if (selectedNoteId === wish.id) {
+      setSelectedNoteId(null);
     }
   };
 
-  if (isInitializing) return <div className="p-6 text-text-muted">Loading...</div>;
+  const formatPrice = (val) => {
+    const num = parseFloat(val) || 0;
+    return num > 0 ? `$${num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'Free / Not set';
+  };
 
-  const renderItemCard = (item) => (
-    <div 
-      key={item.id}
-      onClick={() => openItemForm(item)}
-      className={`relative group rounded-card border bg-card-default overflow-hidden transition-all duration-200 ease-out cursor-pointer hover:scale-[1.02] hover:shadow-lg dark:hover:shadow-black/40 border-black/5 dark:border-white/10 flex flex-col ${item.is_completed ? 'opacity-70 grayscale' : ''}`}
-    >
-      {/* Cover Image */}
-      {item.image_url ? (
-        <div className="w-full h-40 bg-black/5 dark:bg-white/5 border-b border-black/5 dark:border-white/5 shrink-0">
-          <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
-        </div>
-      ) : (
-        <div className="w-full h-40 bg-black/5 dark:bg-white/5 border-b border-black/5 dark:border-white/5 flex flex-col items-center justify-center shrink-0 text-text-muted">
-          <ImageIcon className="w-10 h-10 opacity-20 mb-2" />
-          <span className="text-xs opacity-50 font-medium">No Image</span>
-        </div>
-      )}
+  const getPriorityDot = (p) => {
+    if (p === 'High') return 'bg-red-500 ring-red-500/30';
+    if (p === 'Medium') return 'bg-amber-500 ring-amber-500/30';
+    return 'bg-emerald-500 ring-emerald-500/30';
+  };
 
-      <div className="p-4 flex-1 flex flex-col">
-        <div className="flex justify-between items-start gap-2 mb-2">
-          <h3 className="font-semibold text-sm text-text-primary line-clamp-2" title={item.name}>{item.name}</h3>
-        </div>
-        
-        <div className="flex items-center justify-between mb-3 mt-auto">
-          <div className="flex items-center gap-1 font-mono font-medium text-text-primary text-lg">
-            <DollarSign className="w-4 h-4 text-text-muted" />
-            {(parseFloat(item.price) || 0).toFixed(2)}
-          </div>
-          {item.priority && !item.is_completed && (
-            <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider ${
-              item.priority === 'High' ? 'bg-red-500/10 text-red-600 dark:text-red-400' :
-              item.priority === 'Medium' ? 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400' :
-              'bg-blue-500/10 text-blue-600 dark:text-blue-400'
-            }`}>
-              {item.priority}
-            </span>
-          )}
-        </div>
-
-        {item.note && (
-          <p className="text-xs text-text-muted line-clamp-2 mb-3 bg-black/5 dark:bg-white/5 p-2 rounded italic">
-            "{item.note}"
-          </p>
-        )}
-
-        <div className="flex items-center gap-2 mt-auto pt-3 border-t border-black/5 dark:border-white/5">
-           {item.url && (
-             <a href={item.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="p-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-blue-500 transition-colors" title="Visit Link">
-               <ExternalLink className="w-4 h-4" />
-             </a>
-           )}
-           <div className="flex-1"></div>
-           <button 
-             onClick={(e) => handleToggleComplete(e, item.id, item.is_completed)} 
-             className={`p-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors ${item.is_completed ? 'text-green-500' : 'text-text-muted'}`}
-             title={item.is_completed ? 'Mark as active' : 'Mark as got it!'}
-           >
-             <CheckCircle className="w-4 h-4" />
-           </button>
-           <button 
-             onClick={(e) => handleDeleteItem(e, item.id)} 
-             className="p-1.5 rounded-full hover:bg-red-50 dark:hover:bg-red-950/30 text-red-500 transition-colors"
-             title="Delete item"
-           >
-             <Trash2 className="w-4 h-4" />
-           </button>
-        </div>
-      </div>
-      
-      {item.is_completed && (
-        <div className="absolute top-2 right-2 bg-green-500 text-white rounded-full p-1 shadow-sm backdrop-blur-md">
-          <CheckCircle className="w-4 h-4" />
-        </div>
-      )}
-    </div>
-  );
+  const getCategoryMeta = (catId) => {
+    return CATEGORIES.find((c) => c.id === catId) || CATEGORIES[1];
+  };
 
   return (
-    <div className="flex flex-col h-full overflow-hidden relative">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6 flex-shrink-0">
-        <div>
-          {selectedFolderId && (
-            <div className="flex flex-col gap-1.5 mt-1">
-              <div className="flex flex-wrap items-center gap-2.5 text-xs text-text-muted">
-                <span className="font-semibold text-text-primary flex items-center">
-                  Wanted: <DollarSign className="w-3 h-3 ml-0.5" />{costSummary.wantedCost.toFixed(2)} ({costSummary.wantedCount})
-                </span>
-                <span className="w-1 h-1 rounded-full bg-black/20 dark:bg-white/20" />
-                <span className="text-emerald-600 dark:text-emerald-400 font-medium flex items-center">
-                  Bought: <DollarSign className="w-3 h-3 ml-0.5" />{costSummary.boughtCost.toFixed(2)} ({costSummary.boughtCount})
-                </span>
-                <span className="w-1 h-1 rounded-full bg-black/20 dark:bg-white/20" />
-                <span className="font-mono text-[11px]">
-                  {costSummary.boughtPercent}% Acquired
-                </span>
-              </div>
-              
-              {/* Thin progress bar: Bought vs Wanted */}
-              <div className="w-48 sm:w-64 h-1.5 bg-black/10 dark:bg-white/10 rounded-full overflow-hidden flex">
-                <div 
-                  className="h-full bg-emerald-500 rounded-full transition-all duration-500" 
-                  style={{ width: `${costSummary.boughtPercent}%` }}
-                />
-              </div>
-            </div>
-          )}
+    <div className="flex flex-col h-full overflow-hidden relative min-w-0">
+      {/* 1. Header */}
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-5 min-w-0 shrink-0">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-[28px] sm:text-[32px] font-bold tracking-tight text-text-primary capitalize leading-tight">
+              Wish List
+            </h1>
+            <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20 uppercase tracking-wider">
+              {wishes.length} {wishes.length === 1 ? 'wish' : 'wishes'}
+            </span>
+          </div>
+          {/* Violet underline */}
+          <div className="h-0.5 w-10 rounded-full bg-[#8B5CF6] mt-1.5" />
+          <p className="text-xs text-text-muted mt-1">
+            Dreams, goals, and items to acquire or experience
+          </p>
         </div>
-        
-        {selectedFolderId ? (
+
+        {/* Action Controls */}
+        <div className="flex items-center gap-2">
+          {/* View Toggle */}
+          <div className="flex items-center p-0.5 bg-black/5 dark:bg-white/5 rounded-button border border-black/5 dark:border-white/10">
+            <button
+              onClick={() => setViewMode('grid')}
+              title="Grid view"
+              aria-label="Grid view"
+              className={`p-1.5 rounded-button transition-colors ${
+                viewMode === 'grid'
+                  ? 'bg-bg-primary text-text-primary shadow-xs'
+                  : 'text-text-muted hover:text-text-primary'
+              }`}
+            >
+              <LayoutGrid className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              title="List view"
+              aria-label="List view"
+              className={`p-1.5 rounded-button transition-colors ${
+                viewMode === 'list'
+                  ? 'bg-bg-primary text-text-primary shadow-xs'
+                  : 'text-text-muted hover:text-text-primary'
+              }`}
+            >
+              <List className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* "New Wish" button */}
           <button
-            onClick={() => openItemForm()}
-            className="flex items-center gap-1.5 px-3 py-2 bg-text-primary text-bg-primary rounded-button text-xs font-medium hover:opacity-90 transition-opacity shadow-sm"
+            onClick={handleCreateNewWish}
+            aria-label="Create New Wish"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-[#8B5CF6] text-white rounded-button text-xs font-medium hover:bg-[#7C3AED] active:scale-95 transition-all shadow-sm"
           >
             <Plus className="w-4 h-4" />
-            <span>Add Item</span>
+            <span>New Wish</span>
           </button>
-        ) : (
-          <button
-            onClick={() => setShowFolderForm(true)}
-            className="flex items-center gap-1.5 px-3 py-2 bg-text-primary text-bg-primary rounded-button text-xs font-medium hover:opacity-90 transition-opacity shadow-sm"
-          >
-            <Folder className="w-4 h-4" />
-            <span>New Folder</span>
-          </button>
-        )}
+        </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto pr-2 pb-6">
-        {!selectedFolderId ? (
-          /* Folders View */
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {folders.map(folder => (
-              <div 
-                key={folder.id} 
-                onClick={() => setSelectedFolderId(folder.id)}
-                className="p-5 bg-card-default border border-black/5 dark:border-white/10 rounded-card flex items-center gap-4 cursor-pointer hover:scale-[1.02] hover:shadow-lg dark:hover:shadow-black/40 transition-all duration-200 ease-out group"
+      {/* 2. Quick Add Bar */}
+      <form onSubmit={handleQuickAdd} className="mb-4 shrink-0">
+        <div className="relative flex items-center">
+          <Sparkles className="w-4 h-4 absolute left-3.5 text-violet-500 pointer-events-none" />
+          <input
+            type="text"
+            value={quickAddInput}
+            onChange={(e) => setQuickAddInput(e.target.value)}
+            placeholder="Add a wish and press Enter..."
+            className="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm bg-card-default border border-black/10 dark:border-white/10 rounded-xl text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-violet-500/50 shadow-xs transition-all"
+          />
+        </div>
+      </form>
+
+      {/* 3. Summary Strip */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4 shrink-0">
+        {/* Total Wishes */}
+        <div className="p-3 bg-card-default border border-black/5 dark:border-white/10 rounded-xl flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-violet-500/10 text-violet-600 dark:text-violet-400 flex items-center justify-center shrink-0">
+            <Sparkles className="w-4 h-4" />
+          </div>
+          <div>
+            <div className="text-[11px] uppercase tracking-wider font-semibold text-text-muted">
+              Total Wishes
+            </div>
+            <div className="text-sm sm:text-base font-bold text-text-primary mt-0.5">
+              {summary.totalWishes}
+            </div>
+          </div>
+        </div>
+
+        {/* Total Estimated Cost */}
+        <div className="p-3 bg-card-default border border-black/5 dark:border-white/10 rounded-xl flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+            <DollarSign className="w-4 h-4" />
+          </div>
+          <div>
+            <div className="text-[11px] uppercase tracking-wider font-semibold text-text-muted">
+              Estimated Cost
+            </div>
+            <div className="text-sm sm:text-base font-bold text-text-primary mt-0.5">
+              ${summary.totalEstimatedCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
+          </div>
+        </div>
+
+        {/* Achieved This Month */}
+        <div className="p-3 bg-card-default border border-black/5 dark:border-white/10 rounded-xl flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+            <TrendingUp className="w-4 h-4" />
+          </div>
+          <div>
+            <div className="text-[11px] uppercase tracking-wider font-semibold text-text-muted">
+              Achieved This Month
+            </div>
+            <div className="text-sm sm:text-base font-bold text-text-primary mt-0.5">
+              {summary.gotThisMonth} {summary.gotThisMonth === 1 ? 'wish' : 'wishes'}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 4. Filters & Sorting Toolbar */}
+      <div className="flex flex-wrap items-center justify-between gap-2.5 mb-4 shrink-0 pb-3 border-b border-black/5 dark:border-white/10 text-xs">
+        {/* Category Pills */}
+        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5">
+          {CATEGORIES.map((cat) => {
+            const isSelected = selectedCategory === cat.id;
+            const Icon = cat.icon;
+            return (
+              <button
+                key={cat.id}
+                onClick={() => setSelectedCategory(cat.id)}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 ${
+                  isSelected
+                    ? 'bg-violet-600 text-white shadow-xs'
+                    : 'bg-black/5 dark:bg-white/5 text-text-muted hover:text-text-primary'
+                }`}
               >
-                <div className="w-12 h-12 rounded-full bg-black/5 dark:bg-white/5 flex items-center justify-center shrink-0 group-hover:bg-blue-500/10 group-hover:text-blue-500 transition-colors">
-                  <Folder className="w-6 h-6 opacity-70" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-text-primary">{folder.name}</h3>
-                  <p className="text-xs text-text-muted mt-0.5">Open Folder</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          /* Items View */
-          <div className="space-y-8">
-            {allAvailableTags.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-4">
-                <button
-                  onClick={() => setActiveTag(null)}
-                  className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                    activeTag === null 
-                      ? 'bg-text-primary text-bg-primary' 
-                      : 'bg-black/5 dark:bg-white/5 text-text-muted hover:text-text-primary hover:bg-black/10 dark:hover:bg-white/10'
-                  }`}
-                >
-                  All
-                </button>
-                {allAvailableTags.map(tag => (
-                  <button
-                    key={tag}
-                    onClick={() => setActiveTag(tag)}
-                    className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                      activeTag === tag 
-                        ? 'bg-text-primary text-bg-primary' 
-                        : 'bg-black/5 dark:bg-white/5 text-text-muted hover:text-text-primary hover:bg-black/10 dark:hover:bg-white/10'
-                    }`}
-                  >
-                    #{tag}
-                  </button>
-                ))}
-              </div>
-            )}
-            
-            {activeItems.length === 0 && completedItems.length === 0 ? (
-               <div className="h-64 flex flex-col items-center justify-center text-text-muted border border-dashed border-black/10 dark:border-white/10 rounded-card p-8 text-center bg-card-default">
-                 <Gift className="w-10 h-10 mb-3 opacity-30" />
-                 <p className="text-sm font-medium">This folder is empty</p>
-                 <p className="text-xs opacity-70 mt-1 max-w-xs">Click "Add Item" to start tracking things you want to buy.</p>
-               </div>
-            ) : (
-              <div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {activeItems.map(renderItemCard)}
-                </div>
-              </div>
-            )}
+                <Icon className="w-3 h-3" />
+                <span>{cat.label}</span>
+              </button>
+            );
+          })}
+        </div>
 
-            {/* Completed Items */}
-            {completedItems.length > 0 && (
-              <div className="mt-8">
-                <div className="flex items-center gap-2 text-xs font-semibold text-text-muted uppercase tracking-wider mb-4 border-b border-black/5 dark:border-white/5 pb-2">
-                  <CheckCircle className="w-4 h-4" /> Completed (Got It!)
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {completedItems.map(renderItemCard)}
-                </div>
-              </div>
-            )}
+        {/* Right Filter Dropdowns */}
+        <div className="flex items-center gap-2">
+          {/* Priority Filter */}
+          <select
+            value={selectedPriority}
+            onChange={(e) => setSelectedPriority(e.target.value)}
+            className="px-2.5 py-1 bg-card-default border border-black/10 dark:border-white/10 rounded-lg text-text-primary focus:outline-none focus:ring-1 focus:ring-violet-500"
+          >
+            {PRIORITIES.map((p) => (
+              <option key={p.id} value={p.id}>{p.label}</option>
+            ))}
+          </select>
+
+          {/* Status Filter */}
+          <select
+            value={selectedStatus}
+            onChange={(e) => setSelectedStatus(e.target.value)}
+            className="px-2.5 py-1 bg-card-default border border-black/10 dark:border-white/10 rounded-lg text-text-primary focus:outline-none focus:ring-1 focus:ring-violet-500"
+          >
+            {STATUS_FILTERS.map((s) => (
+              <option key={s.id} value={s.id}>{s.label}</option>
+            ))}
+          </select>
+
+          {/* Sort By */}
+          <div className="flex items-center gap-1">
+            <ArrowUpDown className="w-3.5 h-3.5 text-text-muted" />
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="px-2.5 py-1 bg-card-default border border-black/10 dark:border-white/10 rounded-lg text-text-primary focus:outline-none focus:ring-1 focus:ring-violet-500"
+            >
+              <option value="newest">Newest First</option>
+              <option value="priority">Priority (High to Low)</option>
+              <option value="price_high">Price (High to Low)</option>
+              <option value="price_low">Price (Low to High)</option>
+            </select>
           </div>
-        )}
+        </div>
       </div>
 
-      {/* New Folder Modal */}
-      {showFolderForm && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <form onSubmit={handleCreateFolder} className="bg-bg-primary w-full max-w-sm rounded-xl shadow-2xl border border-black/10 dark:border-white/10 p-6">
-            <h2 className="text-lg font-bold text-text-primary mb-4">Create Folder</h2>
-            <div className="mb-4">
-              <label className="block text-xs font-medium text-text-muted mb-1">Folder Name</label>
-              <input 
-                autoFocus
-                type="text" 
-                value={newFolderName}
-                onChange={e => setNewFolderName(e.target.value)}
-                className="w-full bg-bg-sidebar border border-black/10 dark:border-white/10 rounded px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-blue-500"
-                placeholder="e.g. My Birthday"
-                required
-              />
+      {/* 5. Content View: Wishes Grid or List */}
+      <div className="flex-1 overflow-y-auto space-y-6 pr-1 pb-16">
+        {wishes.length === 0 ? (
+          /* Feature 10: Empty State */
+          <div className="flex flex-col items-center justify-center h-72 text-center p-6 bg-card-default rounded-2xl border border-black/5 dark:border-white/10">
+            <div className="w-16 h-16 rounded-full bg-violet-500/10 text-violet-500 flex items-center justify-center mb-3.5 shadow-sm">
+              <Sparkles className="w-8 h-8" />
             </div>
-            <div className="flex justify-end gap-2">
-              <button type="button" onClick={() => setShowFolderForm(false)} className="px-4 py-2 text-sm font-medium text-text-muted hover:bg-black/5 dark:hover:bg-white/5 rounded-button">Cancel</button>
-              <button type="submit" className="px-4 py-2 text-sm font-medium bg-text-primary text-bg-primary rounded-button shadow-sm">Create</button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* Item Form Modal */}
-      {showItemForm && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="bg-bg-primary w-full max-w-md rounded-xl shadow-2xl border border-black/10 dark:border-white/10 p-0 overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="p-4 border-b border-black/5 dark:border-white/5 bg-bg-sidebar flex justify-between items-center shrink-0">
-              <h2 className="text-lg font-bold text-text-primary">{editingItem ? 'Edit Item' : 'Add Item'}</h2>
-              <button onClick={resetItemForm} className="p-1 hover:bg-black/5 dark:hover:bg-white/10 rounded-full text-text-muted"><Trash2 className="w-5 h-5 opacity-0" /> <span className="sr-only">Close</span></button>
-            </div>
-            
-            <form onSubmit={handleSaveItem} className="p-6 overflow-y-auto flex-1 space-y-4">
-              <div>
-                <label className="block text-xs font-medium text-text-muted mb-1 flex items-center gap-1"><LinkIcon className="w-3 h-3" /> Product URL</label>
-                <input 
-                  type="url" 
-                  value={itemUrl}
-                  onChange={e => setItemUrl(e.target.value)}
-                  onBlur={handleUrlBlur}
-                  className="w-full bg-bg-sidebar border border-black/10 dark:border-white/10 rounded px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-blue-500 placeholder:opacity-50"
-                  placeholder="https://amazon.com/..."
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-text-muted mb-1">Item Name *</label>
-                <input 
-                  type="text" 
-                  value={itemName}
-                  onChange={e => setItemName(e.target.value)}
-                  className="w-full bg-bg-sidebar border border-black/10 dark:border-white/10 rounded px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-blue-500"
-                  placeholder="e.g. Sony WH-1000XM5"
-                  required
-                />
-              </div>
-
-              <div className="flex gap-4">
-                <div className="flex-1">
-                  <label className="block text-xs font-medium text-text-muted mb-1 flex items-center gap-1"><DollarSign className="w-3 h-3" /> Price</label>
-                  <input 
-                    type="number" 
-                    step="0.01"
-                    min="0"
-                    value={itemPrice}
-                    onChange={e => setItemPrice(e.target.value)}
-                    className="w-full bg-bg-sidebar border border-black/10 dark:border-white/10 rounded px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-blue-500"
-                    placeholder="0.00"
-                  />
-                </div>
-                <div className="flex-1">
-                  <label className="block text-xs font-medium text-text-muted mb-1">Priority</label>
-                  <select 
-                    value={itemPriority}
-                    onChange={e => setItemPriority(e.target.value)}
-                    className="w-full bg-bg-sidebar border border-black/10 dark:border-white/10 rounded px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-blue-500 h-[38px]"
-                  >
-                    <option value="High">High</option>
-                    <option value="Medium">Medium</option>
-                    <option value="Someday">Someday</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-text-muted mb-1 flex items-center gap-1"><ImageIcon className="w-3 h-3" /> Image URL</label>
-                <input 
-                  type="url" 
-                  value={itemImageUrl}
-                  onChange={e => setItemImageUrl(e.target.value)}
-                  className="w-full bg-bg-sidebar border border-black/10 dark:border-white/10 rounded px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-blue-500 placeholder:opacity-50"
-                  placeholder="https://example.com/image.jpg"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-text-muted mb-1">Why I want this</label>
-                <textarea 
-                  value={itemNote}
-                  onChange={e => setItemNote(e.target.value)}
-                  className="w-full bg-bg-sidebar border border-black/10 dark:border-white/10 rounded px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-blue-500 resize-y min-h-[80px]"
-                  placeholder="e.g. For the new apartment..."
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-text-muted mb-1 flex items-center gap-1"><TagIcon className="w-3 h-3" /> Tags (comma separated)</label>
-                <input 
-                  type="text" 
-                  value={itemTags}
-                  onChange={e => setItemTags(e.target.value)}
-                  className="w-full bg-bg-sidebar border border-black/10 dark:border-white/10 rounded px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-blue-500"
-                  placeholder="e.g. gadget, electronics, birthday"
-                />
-              </div>
-              
-              <div className="pt-4 flex justify-end gap-2 border-t border-black/5 dark:border-white/5 shrink-0 mt-4">
-                <button type="button" onClick={resetItemForm} className="px-4 py-2 text-sm font-medium text-text-muted hover:bg-black/5 dark:hover:bg-white/5 rounded-button">Cancel</button>
-                <button type="submit" className="px-4 py-2 text-sm font-medium bg-text-primary text-bg-primary rounded-button shadow-sm">Save Item</button>
-              </div>
-            </form>
+            <h3 className="text-base sm:text-lg font-bold text-text-primary">
+              Nothing here yet. What do you wish for?
+            </h3>
+            <p className="text-xs text-text-muted max-w-sm mt-1.5 leading-relaxed">
+              Add your first wish using the quick add bar above or click "New Wish" to track items, places, skills, and goals.
+            </p>
+            <button
+              onClick={handleCreateNewWish}
+              className="mt-4 px-4 py-2 bg-[#8B5CF6] text-white rounded-button text-xs font-semibold hover:bg-[#7C3AED] transition-all shadow-xs"
+            >
+              Create a Wish
+            </button>
           </div>
-        </div>
-      )}
+        ) : filteredWishes.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-48 text-center p-6 text-text-muted">
+            <Search className="w-8 h-8 mb-2 opacity-40" />
+            <p className="text-xs">No wishes match the selected filters.</p>
+          </div>
+        ) : (
+          <>
+            {/* Active Wishes Section */}
+            {activeWishes.length > 0 && (
+              <div className="space-y-3">
+                {selectedStatus === 'All' && completedWishes.length > 0 && (
+                  <div className="text-xs font-semibold text-text-muted uppercase tracking-wider flex items-center gap-1.5">
+                    <span>Active Wishes ({activeWishes.length})</span>
+                  </div>
+                )}
+
+                {/* Render Grid or List */}
+                {viewMode === 'grid' ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-stretch">
+                    {activeWishes.map((wish) => renderWishCard(wish))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    {activeWishes.map((wish) => renderWishRow(wish))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* "Got It" Section (Feature 8) */}
+            {completedWishes.length > 0 && (
+              <div className="space-y-3 pt-2">
+                {selectedStatus === 'All' && (
+                  <div className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-1.5 pt-4 border-t border-black/5 dark:border-white/10">
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Achieved & Got It ({completedWishes.length})</span>
+                  </div>
+                )}
+
+                {viewMode === 'grid' ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-stretch opacity-75 hover:opacity-100 transition-opacity">
+                    {completedWishes.map((wish) => renderWishCard(wish, true))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2 opacity-75 hover:opacity-100 transition-opacity">
+                    {completedWishes.map((wish) => renderWishRow(wish, true))}
+                  </div>
+                )}
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
+
+  // Helper: Card Renderer for Grid View
+  function renderWishCard(wish, isCompleted = false) {
+    const isSelected = selectedNoteId === wish.id;
+    const isAnimating = animatingId === wish.id;
+    const catMeta = getCategoryMeta(wish.category);
+    const CatIcon = catMeta.icon;
+
+    return (
+      <div
+        key={wish.id}
+        onClick={() => setSelectedNoteId(wish.id)}
+        className={`group relative flex flex-col justify-between h-full bg-card-default border rounded-xl overflow-hidden cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-lg dark:hover:shadow-black/40 ${
+          isSelected
+            ? 'ring-2 ring-[#8B5CF6] shadow-card-hover border-violet-500/50'
+            : 'border-black/5 dark:border-white/10 hover:border-black/15 dark:hover:border-white/20'
+        } ${isCompleted ? 'bg-black/[0.01] dark:bg-white/[0.01]' : ''}`}
+      >
+        {/* Top: Image or Violet Gradient Placeholder */}
+        <div className="relative w-full aspect-video bg-black/5 dark:bg-white/5 overflow-hidden shrink-0">
+          {wish.image ? (
+            wish.image.startsWith('linear-gradient') ? (
+              <div className="w-full h-full" style={{ background: wish.image }} />
+            ) : (
+              <img
+                src={wish.image}
+                alt={wish.title}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                }}
+              />
+            )
+          ) : (
+            /* Violet Gradient Placeholder */
+            <div className="w-full h-full bg-gradient-to-br from-violet-500/20 via-purple-500/10 to-indigo-500/20 flex flex-col items-center justify-center p-3 text-violet-500">
+              <Sparkles className="w-7 h-7 mb-1 opacity-70 group-hover:scale-110 transition-transform" />
+              <span className="text-[10px] uppercase font-mono font-semibold tracking-wider opacity-60">
+                {wish.category}
+              </span>
+            </div>
+          )}
+
+          {/* Category Chip Badge Overlay */}
+          <span
+            className={`absolute top-2.5 left-2.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border backdrop-blur-md shadow-xs ${catMeta.color}`}
+          >
+            <CatIcon className="w-2.5 h-2.5" />
+            <span>{catMeta.label}</span>
+          </span>
+
+          {/* Quick Hover Actions: Archive & Delete */}
+          <div className="absolute top-2.5 right-2.5 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button
+              onClick={(e) => handleArchiveWish(e, wish)}
+              title="Archive wish"
+              aria-label="Archive wish"
+              className="p-1.5 rounded-lg bg-bg-primary/90 text-text-muted hover:text-text-primary backdrop-blur-md shadow-xs"
+            >
+              <Archive className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={(e) => handleDeleteWish(e, wish)}
+              title="Delete wish"
+              aria-label="Delete wish"
+              className="p-1.5 rounded-lg bg-bg-primary/90 text-text-muted hover:text-red-500 backdrop-blur-md shadow-xs"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Middle Content: Title, Priority, Price */}
+        <div className="p-3.5 flex flex-col justify-between flex-1 min-w-0">
+          <div>
+            <div className="flex items-start justify-between gap-2 mb-1.5">
+              <h3
+                className={`text-sm font-semibold text-text-primary line-clamp-2 leading-snug ${
+                  isCompleted ? 'line-through text-text-muted' : ''
+                }`}
+                title={wish.title}
+              >
+                {wish.title || 'Untitled Wish'}
+              </h3>
+            </div>
+
+            {/* Price & Target Date */}
+            <div className="flex items-center justify-between text-xs mt-1">
+              <span className="font-bold text-violet-600 dark:text-violet-400">
+                {formatPrice(wish.price)}
+              </span>
+
+              {wish.targetDate && (
+                <span className="flex items-center gap-1 text-[11px] text-text-muted">
+                  <Calendar className="w-3 h-3 opacity-60" />
+                  <span>{wish.targetDate}</span>
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Bottom Card Footer: Priority Dot & "Got it" Check Button */}
+          <div className="mt-3.5 pt-2.5 border-t border-black/5 dark:border-white/5 flex items-center justify-between">
+            <div className="flex items-center gap-1.5 text-[11px] text-text-muted">
+              <span className={`w-2 h-2 rounded-full ring-2 ${getPriorityDot(wish.priority)}`} />
+              <span>{wish.priority}</span>
+            </div>
+
+            {/* "Got it" Button */}
+            <button
+              onClick={(e) => handleToggleGotIt(e, wish)}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
+                isCompleted
+                  ? 'bg-emerald-500 text-white shadow-xs'
+                  : 'bg-black/5 dark:bg-white/5 text-text-muted hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20'
+              } ${isAnimating ? 'scale-110' : ''}`}
+              title={isCompleted ? 'Mark as wishing' : 'Mark as got it!'}
+            >
+              {isCompleted ? (
+                <CheckCircle2 className="w-3.5 h-3.5 fill-current" />
+              ) : (
+                <Circle className="w-3.5 h-3.5" />
+              )}
+              <span>{isCompleted ? 'Got it!' : 'Check'}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Helper: Row Renderer for List View
+  function renderWishRow(wish, isCompleted = false) {
+    const isSelected = selectedNoteId === wish.id;
+    const catMeta = getCategoryMeta(wish.category);
+    const CatIcon = catMeta.icon;
+
+    return (
+      <div
+        key={wish.id}
+        onClick={() => setSelectedNoteId(wish.id)}
+        className={`group flex items-center justify-between p-3 bg-card-default border rounded-xl cursor-pointer transition-all ${
+          isSelected
+            ? 'ring-2 ring-[#8B5CF6] border-violet-500/50 shadow-xs'
+            : 'border-black/5 dark:border-white/10 hover:border-black/15 dark:hover:border-white/20'
+        } ${isCompleted ? 'bg-black/[0.01] dark:bg-white/[0.01]' : ''}`}
+      >
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          {/* Got it toggle */}
+          <button
+            onClick={(e) => handleToggleGotIt(e, wish)}
+            className={`shrink-0 transition-transform ${
+              isCompleted ? 'text-emerald-500' : 'text-text-muted hover:text-emerald-500'
+            }`}
+          >
+            {isCompleted ? (
+              <CheckCircle2 className="w-4 h-4" />
+            ) : (
+              <Circle className="w-4 h-4" />
+            )}
+          </button>
+
+          {/* Thumbnail / Category Icon */}
+          <div className="w-8 h-8 rounded-lg overflow-hidden bg-black/5 dark:bg-white/5 flex items-center justify-center shrink-0">
+            {wish.image ? (
+              wish.image.startsWith('linear-gradient') ? (
+                <div className="w-full h-full" style={{ background: wish.image }} />
+              ) : (
+                <img src={wish.image} alt="" className="w-full h-full object-cover" />
+              )
+            ) : (
+              <CatIcon className="w-4 h-4 text-violet-500" />
+            )}
+          </div>
+
+          {/* Title & Category */}
+          <div className="min-w-0 flex-1">
+            <h4
+              className={`text-xs sm:text-sm font-semibold truncate ${
+                isCompleted ? 'line-through text-text-muted' : 'text-text-primary'
+              }`}
+            >
+              {wish.title || 'Untitled Wish'}
+            </h4>
+            <div className="flex items-center gap-2 text-[11px] text-text-muted mt-0.5">
+              <span>{catMeta.label}</span>
+              <span>•</span>
+              <span className="flex items-center gap-1">
+                <span className={`w-1.5 h-1.5 rounded-full ${getPriorityDot(wish.priority)}`} />
+                <span>{wish.priority}</span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Info: Price & Actions */}
+        <div className="flex items-center gap-3 shrink-0 ml-4">
+          <span className="text-xs font-bold text-violet-600 dark:text-violet-400">
+            {formatPrice(wish.price)}
+          </span>
+
+          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button
+              onClick={(e) => handleArchiveWish(e, wish)}
+              title="Archive wish"
+              className="p-1 rounded text-text-muted hover:text-text-primary"
+            >
+              <Archive className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={(e) => handleDeleteWish(e, wish)}
+              title="Delete wish"
+              className="p-1 rounded text-text-muted hover:text-red-500"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 }
