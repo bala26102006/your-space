@@ -108,7 +108,21 @@ export default function WishListView() {
     setActiveTag(null);
   }, [selectedFolderId]);
 
-  const totalCost = useMemo(() => activeItems.reduce((sum, item) => sum + (parseFloat(item.price) || 0), 0), [activeItems]);
+  const costSummary = useMemo(() => {
+    const wantedCost = activeItems.reduce((sum, item) => sum + (parseFloat(item.price) || 0), 0);
+    const boughtCost = completedItems.reduce((sum, item) => sum + (parseFloat(item.price) || 0), 0);
+    const totalItems = activeItems.length + completedItems.length;
+    const boughtPercent = totalItems > 0 ? Math.round((completedItems.length / totalItems) * 100) : 0;
+    return {
+      wantedCost,
+      boughtCost,
+      totalCost: wantedCost,
+      totalItems,
+      boughtCount: completedItems.length,
+      wantedCount: activeItems.length,
+      boughtPercent
+    };
+  }, [activeItems, completedItems]);
 
   const handleCreateFolder = async (e) => {
     e.preventDefault();
@@ -210,7 +224,7 @@ export default function WishListView() {
     <div 
       key={item.id}
       onClick={() => openItemForm(item)}
-      className={`relative group rounded-card border bg-card-default overflow-hidden transition-all duration-200 cursor-pointer hover:shadow-card-hover dark:hover:shadow-card-hover-dark border-black/5 dark:border-white/10 flex flex-col ${item.is_completed ? 'opacity-70 grayscale' : ''}`}
+      className={`relative group rounded-card border bg-card-default overflow-hidden transition-all duration-200 ease-out cursor-pointer hover:scale-[1.02] hover:shadow-lg dark:hover:shadow-black/40 border-black/5 dark:border-white/10 flex flex-col ${item.is_completed ? 'opacity-70 grayscale' : ''}`}
     >
       {/* Cover Image */}
       {item.image_url ? (
@@ -289,13 +303,29 @@ export default function WishListView() {
       <div className="flex items-center justify-between mb-6 flex-shrink-0">
         <div>
           {selectedFolderId && (
-            <p className="text-xs text-text-muted mt-1 flex items-center gap-2">
-              <span>{activeItems.length} items to get</span>
-              <span className="w-1 h-1 rounded-full bg-black/20 dark:bg-white/20" />
-              <span className="font-bold text-text-primary flex items-center">
-                Total Cost: <DollarSign className="w-3 h-3 ml-0.5" />{totalCost.toFixed(2)}
-              </span>
-            </p>
+            <div className="flex flex-col gap-1.5 mt-1">
+              <div className="flex flex-wrap items-center gap-2.5 text-xs text-text-muted">
+                <span className="font-semibold text-text-primary flex items-center">
+                  Wanted: <DollarSign className="w-3 h-3 ml-0.5" />{costSummary.wantedCost.toFixed(2)} ({costSummary.wantedCount})
+                </span>
+                <span className="w-1 h-1 rounded-full bg-black/20 dark:bg-white/20" />
+                <span className="text-emerald-600 dark:text-emerald-400 font-medium flex items-center">
+                  Bought: <DollarSign className="w-3 h-3 ml-0.5" />{costSummary.boughtCost.toFixed(2)} ({costSummary.boughtCount})
+                </span>
+                <span className="w-1 h-1 rounded-full bg-black/20 dark:bg-white/20" />
+                <span className="font-mono text-[11px]">
+                  {costSummary.boughtPercent}% Acquired
+                </span>
+              </div>
+              
+              {/* Thin progress bar: Bought vs Wanted */}
+              <div className="w-48 sm:w-64 h-1.5 bg-black/10 dark:bg-white/10 rounded-full overflow-hidden flex">
+                <div 
+                  className="h-full bg-emerald-500 rounded-full transition-all duration-500" 
+                  style={{ width: `${costSummary.boughtPercent}%` }}
+                />
+              </div>
+            </div>
           )}
         </div>
         
@@ -326,7 +356,7 @@ export default function WishListView() {
               <div 
                 key={folder.id} 
                 onClick={() => setSelectedFolderId(folder.id)}
-                className="p-5 bg-card-default border border-black/5 dark:border-white/10 rounded-card flex items-center gap-4 cursor-pointer hover:shadow-card-hover dark:hover:shadow-card-hover-dark transition-all group"
+                className="p-5 bg-card-default border border-black/5 dark:border-white/10 rounded-card flex items-center gap-4 cursor-pointer hover:scale-[1.02] hover:shadow-lg dark:hover:shadow-black/40 transition-all duration-200 ease-out group"
               >
                 <div className="w-12 h-12 rounded-full bg-black/5 dark:bg-white/5 flex items-center justify-center shrink-0 group-hover:bg-blue-500/10 group-hover:text-blue-500 transition-colors">
                   <Folder className="w-6 h-6 opacity-70" />
