@@ -40,12 +40,13 @@ input:-webkit-autofill:active{
   --bg-sidebar: #1A1A1A;
   --text-primary: #FFFFFF;
   --text-muted: #B0B0B0;
-  --active-nav-bg: #3A371D;
+  --active-nav-bg: #282828;
   --card-default: #1E1E1E;
   --card-yellow: #3A371D;
   --card-red: #3A2323;
   --card-blue: #1D3038;
   --card-green: #233A26;
+  --card-purple: #2E2538;
 
   --border-color: rgba(255, 255, 255, 0.1);
   --hover-bg: rgba(255, 255, 255, 0.06);
@@ -59,6 +60,10 @@ body {
   color: var(--text-primary);
   overflow-x: hidden;
   transition: background-color 200ms ease-in-out, color 200ms ease-in-out;
+}
+
+button {
+  transition: color 150ms ease-out, background-color 150ms ease-out, border-color 150ms ease-out, opacity 150ms ease-out, transform 150ms ease-out, box-shadow 150ms ease-out;
 }
 
 /* Custom scrollbars matching theme */
