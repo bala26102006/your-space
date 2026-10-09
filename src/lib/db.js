@@ -47,6 +47,10 @@ db.version(3).stores({
   syncQueue: '++id, table_name, record_id, action, created_at'
 });
 
+db.version(4).stores({
+  attachments: 'id, note_id, type, title, created_at'
+});
+
 db.on('populate', () => {
   db.workspaces.bulkAdd([
     { id: 'quicknotes', label: 'Quick Notes', icon: 'StickyNote', sort_order: 1 },
