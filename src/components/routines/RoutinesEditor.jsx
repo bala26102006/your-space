@@ -136,18 +136,27 @@ export default function RoutinesEditor({ note, onClose }) {
       const isSelected = selectedDateStr === dateStr;
 
       return (
-        <button 
-          key={dateStr}
-          disabled={dateStr > todayStr}
-          onClick={() => setSelectedDateStr(dateStr)}
-          onDoubleClick={() => handleToggleEntry(dateStr, false)}
-          className={`h-10 rounded-xl flex items-center justify-center text-xs transition-all ${bgStyle} ${
-            isSelected ? 'ring-2 ring-text-primary ring-offset-2 ring-offset-bg-primary font-bold' : ''
-          }`}
-          title={`${dateStr}${entry?.is_completed ? ' (Done)' : entry?.is_freeze ? ' (Frozen)' : ''}`}
-        >
-          {d}
-        </button>
+        <div key={dateStr} className="relative group/day flex items-center justify-center">
+          <button 
+            disabled={dateStr > todayStr}
+            onClick={() => setSelectedDateStr(dateStr)}
+            onDoubleClick={() => handleToggleEntry(dateStr, false)}
+            className={`w-full h-10 rounded-xl flex items-center justify-center text-xs transition-all ${bgStyle} ${
+              isSelected ? 'ring-2 ring-text-primary ring-offset-2 ring-offset-bg-primary font-bold' : ''
+            }`}
+          >
+            {d}
+          </button>
+          {/* Hover Tooltip when completed or has habit note */}
+          {(entry?.is_completed || entry?.habit_note) && (
+            <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/day:flex flex-col items-center z-30 animate-in fade-in duration-150">
+              <div className="bg-[#2C2A28] dark:bg-[#1E1E1E] text-white text-[11px] font-medium px-2.5 py-1 rounded-lg shadow-lg border border-white/10 whitespace-nowrap max-w-[200px] text-center truncate">
+                {entry.habit_note ? `"${entry.habit_note}"` : 'Completed ✓'}
+              </div>
+              <div className="w-1.5 h-1.5 bg-[#2C2A28] dark:bg-[#1E1E1E] rotate-45 -mt-0.5 border-r border-b border-white/10" />
+            </div>
+          )}
+        </div>
       );
     });
 
@@ -188,17 +197,27 @@ export default function RoutinesEditor({ note, onClose }) {
           const isSelected = selectedDateStr === dateStr;
 
           return (
-            <button 
-              key={dateStr}
-              onClick={() => setSelectedDateStr(dateStr)}
-              onDoubleClick={() => handleToggleEntry(dateStr, false)}
-              className={`flex-1 aspect-square rounded-xl flex flex-col items-center justify-center transition-all ${bgStyle} ${
-                isSelected ? 'ring-2 ring-text-primary ring-offset-2 ring-offset-bg-primary' : ''
-              }`}
-            >
-              <span className="text-[10px] uppercase opacity-75 mb-1 font-semibold">{dayName}</span>
-              <span className="text-base font-bold">{dObj.getDate()}</span>
-            </button>
+            <div key={dateStr} className="relative group/day flex-1 flex flex-col items-center">
+              <button 
+                onClick={() => setSelectedDateStr(dateStr)}
+                onDoubleClick={() => handleToggleEntry(dateStr, false)}
+                className={`w-full aspect-square rounded-xl flex flex-col items-center justify-center transition-all ${bgStyle} ${
+                  isSelected ? 'ring-2 ring-text-primary ring-offset-2 ring-offset-bg-primary' : ''
+                }`}
+              >
+                <span className="text-[10px] uppercase opacity-75 mb-1 font-semibold">{dayName}</span>
+                <span className="text-base font-bold">{dObj.getDate()}</span>
+              </button>
+              {/* Hover Tooltip */}
+              {(entry?.is_completed || entry?.habit_note) && (
+                <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/day:flex flex-col items-center z-30 animate-in fade-in duration-150">
+                  <div className="bg-[#2C2A28] dark:bg-[#1E1E1E] text-white text-[11px] font-medium px-2.5 py-1 rounded-lg shadow-lg border border-white/10 whitespace-nowrap max-w-[200px] text-center truncate">
+                    {entry.habit_note ? `"${entry.habit_note}"` : 'Completed ✓'}
+                  </div>
+                  <div className="w-1.5 h-1.5 bg-[#2C2A28] dark:bg-[#1E1E1E] rotate-45 -mt-0.5 border-r border-b border-white/10" />
+                </div>
+              )}
+            </div>
           );
         })}
       </div>

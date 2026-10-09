@@ -178,16 +178,24 @@ export default function RoutinesView() {
           }
 
           return (
-            <div key={dateStr} className="flex flex-col items-center gap-1">
+            <div key={dateStr} className="relative group/day flex flex-col items-center gap-1">
               <span className={`text-[10px] font-medium ${isToday ? 'text-text-primary font-bold' : 'text-text-muted opacity-60'}`}>
                 {dayLetter}
               </span>
               <div 
-                title={`${dateStr}${isDone ? ' (Completed)' : isFreeze ? ' (Frozen)' : ' (Not completed)'}`}
                 className={`w-6 h-6 rounded-md flex items-center justify-center text-[10px] transition-all ${dotStyle} ${isToday && !isDone && !isFreeze ? 'ring-1 ring-black/20 dark:ring-white/20' : ''}`}
               >
                 {isDone ? '✓' : isFreeze ? '❄' : ''}
               </div>
+              {/* Hover Tooltip */}
+              {(isDone || isFreeze || entry?.habit_note) && (
+                <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover/day:flex flex-col items-center z-30 animate-in fade-in duration-100">
+                  <div className="bg-[#2C2A28] dark:bg-[#1E1E1E] text-white text-[10px] font-medium px-2 py-0.5 rounded-lg shadow-lg border border-white/10 whitespace-nowrap text-center truncate max-w-[150px]">
+                    {entry?.habit_note ? `"${entry.habit_note}"` : isDone ? 'Completed ✓' : 'Frozen ❄'}
+                  </div>
+                  <div className="w-1.5 h-1.5 bg-[#2C2A28] dark:bg-[#1E1E1E] rotate-45 -mt-0.5 border-r border-b border-white/10" />
+                </div>
+              )}
             </div>
           );
         })}
@@ -253,10 +261,10 @@ export default function RoutinesView() {
                 <div 
                   key={routine.id} 
                   onClick={() => setSelectedNoteId(routine.id)}
-                  className={`group relative p-4 rounded-card cursor-pointer border transition-all duration-150 flex flex-col justify-between ${getCardColorStyle(cardColor)} ${
+                  className={`group relative p-4 rounded-card cursor-pointer border transition-all duration-200 ease-out hover:scale-[1.02] flex flex-col justify-between ${getCardColorStyle(cardColor)} ${
                     selectedNoteId === routine.id 
                       ? 'border-blue-500/70 shadow-md ring-1 ring-blue-500/30' 
-                      : 'border-black/5 dark:border-white/10 hover:shadow-card-hover dark:hover:shadow-card-hover-dark hover:border-black/15 dark:hover:border-white/20'
+                      : 'border-black/5 dark:border-white/10 hover:shadow-lg dark:hover:shadow-black/40 hover:border-black/15 dark:hover:border-white/20'
                   }`}
                 >
                   {/* Top line with title, streak & action menu */}
