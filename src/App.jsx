@@ -4,6 +4,7 @@ import { initWorkspaces } from './lib/db';
 import Sidebar from './components/layout/Sidebar';
 import GridListPane from './components/layout/GridListPane';
 import EditorPane from './components/layout/EditorPane';
+import CommandPalette from './components/layout/CommandPalette';
 
 export default function App() {
   const { focusMode, theme } = useUIStore();
@@ -31,6 +32,9 @@ export default function App() {
 
       {/* Editor Pane (slides in from right or centered in Focus Mode) */}
       <EditorPane />
+
+      {/* Futuristic Command Palette (Ctrl+K / Cmd+K) */}
+      <CommandPalette />
     </div>
   );
 }

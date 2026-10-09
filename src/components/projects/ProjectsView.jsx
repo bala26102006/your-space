@@ -64,15 +64,16 @@ export default function ProjectsView() {
   const allSubprojects = useLiveQuery(() => db.subprojects.toArray(), []) || [];
   const allNotes = useLiveQuery(() => db.notes.where('workspace_id').equals('projects').toArray(), []) || [];
 
-  const getProjectProgress = (projectId) => {
+  const getProjectProgressData = (projectId) => {
     const projectSubprojects = allSubprojects.filter(sp => sp.project_id === projectId && !sp.is_archived && !sp.is_deleted);
     const subprojectIds = projectSubprojects.map(sp => sp.id);
     const projectNotes = allNotes.filter(n => subprojectIds.includes(n.subproject_id) && !n.is_archived && !n.is_deleted);
     
-    if (projectSubprojects.length === 0) return 0;
-    // Simple heuristic: 3 notes per subproject = 100%
-    const targetNotes = projectSubprojects.length * 3;
-    return Math.min(100, Math.round((projectNotes.length / targetNotes) * 100));
+    const total = projectNotes.length;
+    if (total === 0) return { completed: 0, total: 0, percent: 0 };
+    const completed = projectNotes.filter(n => n.is_completed).length;
+    const percent = Math.round((completed / total) * 100);
+    return { completed, total, percent };
   };
 
   // Tags map for rendering notes
@@ -434,7 +435,7 @@ export default function ProjectsView() {
             else if (proj.color === 'blue') colorClasses = 'bg-card-blue border-blue-200/50 dark:border-blue-900/30';
             else if (proj.color === 'green') colorClasses = 'bg-card-green border-green-200/50 dark:border-green-900/30';
 
-            const progress = getProjectProgress(proj.id);
+            const { completed, total, percent: progress } = getProjectProgressData(proj.id);
             const colorData = COLOR_OPTIONS.find(c => c.id === proj.color) || COLOR_OPTIONS[0];
 
             return (
@@ -445,7 +446,7 @@ export default function ProjectsView() {
                 setSelectedSubprojectId(null);
                 setSelectedNoteId(null);
               }}
-              className={`group relative rounded-card p-4 border transition-all duration-200 cursor-pointer hover:shadow-card-hover dark:hover:shadow-card-hover-dark ${colorClasses}`}
+              className={`group relative rounded-card p-4 border transition-all duration-200 ease-out cursor-pointer hover:scale-[1.02] hover:shadow-lg dark:hover:shadow-black/40 ${colorClasses}`}
             >
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
@@ -491,9 +492,11 @@ export default function ProjectsView() {
 
               <div className="flex items-center gap-2 w-full">
                 <div className="flex-1 h-1.5 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
-                  <div className="h-full bg-green-500 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
+                  <div className="h-full bg-emerald-500 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
                 </div>
-                <span className="text-[10px] font-mono text-text-muted">{progress}%</span>
+                <span className="text-[10px] font-mono text-text-muted">
+                  {total > 0 ? `${progress}% (${completed}/${total})` : '0%'}
+                </span>
               </div>
             </div>
             );

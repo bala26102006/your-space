@@ -3,10 +3,11 @@ import { Check } from 'lucide-react';
 
 export const COLOR_OPTIONS = [
   { id: 'default', label: 'Default', bgLight: '#FFFFFF', bgDark: '#1E1E1E', border: '#E5E7EB' },
-  { id: 'yellow', label: 'Yellow', bgLight: '#FFF9C4', bgDark: '#3A371D', border: '#FDE047' },
-  { id: 'red', label: 'Red', bgLight: '#FFCDD2', bgDark: '#3A2323', border: '#FCA5A5' },
-  { id: 'blue', label: 'Blue', bgLight: '#B3E5FC', bgDark: '#1D3038', border: '#7DD3FC' },
-  { id: 'green', label: 'Green', bgLight: '#C8E6C9', bgDark: '#233A26', border: '#86EFAC' },
+  { id: 'yellow', label: 'Warm Mustard', bgLight: '#E6DAB9', bgDark: '#3A371D', border: '#E6DAB9' },
+  { id: 'red', label: 'Terracotta', bgLight: '#E8C9C1', bgDark: '#3A2323', border: '#E8C9C1' },
+  { id: 'blue', label: 'Dusty Blue', bgLight: '#B9C8D6', bgDark: '#1D3038', border: '#B9C8D6' },
+  { id: 'green', label: 'Sage', bgLight: '#C5D1C0', bgDark: '#233A26', border: '#C5D1C0' },
+  { id: 'purple', label: 'Lavender', bgLight: '#D6CCE0', bgDark: '#2E2538', border: '#D6CCE0' },
 ];
 
 export function getCardColorStyle(colorId) {
@@ -19,6 +20,8 @@ export function getCardColorStyle(colorId) {
       return 'bg-card-blue';
     case 'green':
       return 'bg-card-green';
+    case 'purple':
+      return 'bg-card-purple';
     default:
       return 'bg-card-default';
   }

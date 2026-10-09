@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Copy, Plus, Trash2, CheckSquare, Square, GripVertical, Type, AlignLeft } from 'lucide-react';
+import { Copy, Plus, Trash2, CheckSquare, Square, GripVertical, Type, AlignLeft, ChevronDown } from 'lucide-react';
 import { db } from '../../lib/db';
 import { useLiveQuery } from '../../hooks/useLiveQuery';
 import { getStarterKitItems } from '../../lib/starterKits';
@@ -20,7 +20,18 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-function SortableItem({ id, item, isTemplate, readOnly, onUpdate, onRemove, onKeyDown }) {
+function SortableItem({ 
+  id, 
+  item, 
+  isTemplate, 
+  readOnly, 
+  onUpdate, 
+  onRemove, 
+  onKeyDown,
+  isCollapsed,
+  nestedCount,
+  onToggleCollapse
+}) {
   const {
     attributes,
     listeners,
@@ -44,13 +55,27 @@ function SortableItem({ id, item, isTemplate, readOnly, onUpdate, onRemove, onKe
   return (
     <div ref={setNodeRef} style={style} className={`group flex flex-col gap-1 ${isIndented ? 'ml-8' : ''} ${isHeader ? 'mt-4 mb-2' : ''}`}>
       <div className="flex items-start gap-2 relative">
+        {/* Intuitive Tactile Drag Handle */}
         <div 
           {...attributes} 
           {...listeners} 
-          className="cursor-grab active:cursor-grabbing text-black/20 dark:text-white/20 hover:text-black/50 dark:hover:text-white/50 mt-1.5"
+          className="p-1 -ml-1 rounded cursor-grab active:cursor-grabbing text-text-muted/40 hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors mt-0.5"
+          title="Drag to reorder"
         >
           <GripVertical className="w-4 h-4" />
         </div>
+
+        {/* Section Header Collapse Toggle */}
+        {isHeader && (
+          <button
+            type="button"
+            onClick={() => onToggleCollapse && onToggleCollapse(item.id)}
+            className="p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 text-text-muted hover:text-text-primary transition-colors mt-0.5"
+            title={isCollapsed ? 'Expand section' : 'Collapse section'}
+          >
+            <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isCollapsed ? '-rotate-90 text-text-muted' : 'text-text-primary'}`} />
+          </button>
+        )}
 
         {isTask && (
           <button 
@@ -78,6 +103,21 @@ function SortableItem({ id, item, isTemplate, readOnly, onUpdate, onRemove, onKe
             `text-sm font-medium pt-1.5 ${item.is_completed && !isTemplate ? 'line-through text-text-muted' : 'text-text-primary'}`
           }`}
         />
+
+        {/* Collapsed Items Count Badge */}
+        {isHeader && nestedCount > 0 && (
+          <button
+            type="button"
+            onClick={() => onToggleCollapse && onToggleCollapse(item.id)}
+            className={`text-[10px] font-mono px-2 py-0.5 rounded-full mt-2 transition-colors ${
+              isCollapsed 
+                ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 font-semibold' 
+                : 'bg-black/5 dark:bg-white/5 text-text-muted opacity-70 hover:opacity-100'
+            }`}
+          >
+            {isCollapsed ? `${nestedCount} hidden` : `${nestedCount} items`}
+          </button>
+        )}
 
         {isTask && item.due_date && (
           <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 border border-amber-500/20 mt-2">
@@ -121,6 +161,45 @@ export default function ChecklistEditor({ noteId, content, onChange, readOnly })
   const items = useMemo(() => {
     return rawItems;
   }, [rawItems]);
+
+  // Collapsible section headers state
+  const [collapsedSections, setCollapsedSections] = useState(new Set());
+
+  const toggleSectionCollapse = (headerId) => {
+    setCollapsedSections(prev => {
+      const next = new Set(prev);
+      if (next.has(headerId)) next.delete(headerId);
+      else next.add(headerId);
+      return next;
+    });
+  };
+
+  // Group items by header and identify hidden items
+  const { headerCounts, hiddenItemIds } = useMemo(() => {
+    const counts = {};
+    const hidden = new Set();
+    let currentHeaderId = null;
+
+    items.forEach(item => {
+      if (item.item_type === 'header') {
+        currentHeaderId = item.id;
+        counts[currentHeaderId] = 0;
+      } else {
+        if (currentHeaderId) {
+          counts[currentHeaderId] = (counts[currentHeaderId] || 0) + 1;
+          if (collapsedSections.has(currentHeaderId)) {
+            hidden.add(item.id);
+          }
+        }
+      }
+    });
+
+    return { headerCounts: counts, hiddenItemIds: hidden };
+  }, [items, collapsedSections]);
+
+  const visibleItems = useMemo(() => {
+    return items.filter(item => !hiddenItemIds.has(item.id));
+  }, [items, hiddenItemIds]);
 
   // Migrate old JSON items if needed
   useEffect(() => {
@@ -315,9 +394,9 @@ export default function ChecklistEditor({ noteId, content, onChange, readOnly })
 
       {/* Items List */}
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
+        <SortableContext items={visibleItems.map(i => i.id)} strategy={verticalListSortingStrategy}>
           <div className="space-y-2">
-            {items.map((item) => (
+            {visibleItems.map((item) => (
               <SortableItem
                 key={item.id}
                 id={item.id}
@@ -327,6 +406,9 @@ export default function ChecklistEditor({ noteId, content, onChange, readOnly })
                 onUpdate={updateItem}
                 onRemove={removeItem}
                 onKeyDown={handleKeyDown}
+                isCollapsed={collapsedSections.has(item.id)}
+                nestedCount={headerCounts[item.id] || 0}
+                onToggleCollapse={toggleSectionCollapse}
               />
             ))}
           </div>

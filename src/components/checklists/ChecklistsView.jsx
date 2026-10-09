@@ -168,7 +168,7 @@ export default function ChecklistsView() {
             <div
               key={kit.id}
               onClick={() => setSelectedNoteId(kit.id)}
-              className="group relative rounded-card p-3 border border-black/5 dark:border-white/10 bg-card-default transition-all duration-200 cursor-pointer hover:shadow-card-hover dark:hover:shadow-card-hover-dark flex items-center gap-3"
+              className="group relative rounded-card p-3 border border-black/5 dark:border-white/10 bg-card-default transition-all duration-200 ease-out cursor-pointer hover:scale-[1.02] hover:shadow-lg dark:hover:shadow-black/40 flex items-center gap-3"
             >
               <div className="text-xl pl-1">{kit.title.split(' ')[0]}</div>
               <div>
@@ -237,7 +237,7 @@ export default function ChecklistsView() {
                   setSelectedChecklistCategory(folderName);
                   setSelectedNoteId(null);
                 }}
-                className="group relative rounded-card p-4 border border-black/5 dark:border-white/10 bg-card-default transition-all duration-200 cursor-pointer hover:shadow-card-hover dark:hover:shadow-card-hover-dark flex items-center gap-3"
+                className="group relative rounded-card p-4 border border-black/5 dark:border-white/10 bg-card-default transition-all duration-200 ease-out cursor-pointer hover:scale-[1.02] hover:shadow-lg dark:hover:shadow-black/40 flex items-center gap-3"
               >
                 <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400">
                   <Folder className="w-5 h-5 fill-blue-500/20" />

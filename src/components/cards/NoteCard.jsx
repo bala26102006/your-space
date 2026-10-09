@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Pin, MoreVertical, Archive, Trash2, Tag as TagIcon, Calendar, Copy } from 'lucide-react';
+import { Pin, MoreVertical, Archive, Trash2, Tag as TagIcon, Calendar, Copy, CheckCircle2, Circle } from 'lucide-react';
 import { COLOR_OPTIONS } from '../shared/ColorPicker';
 import TagPill from '../shared/TagPill';
 import { useLiveQuery } from '../../hooks/useLiveQuery';
 import { db } from '../../lib/db';
 import { getChecklistProgress, getWishlistTotalCost } from '../../lib/queries/cardSummary';
+import { generateUUID } from '../../lib/uuid';
 
 export default function NoteCard({
   note,
@@ -59,6 +60,10 @@ export default function NoteCard({
       return note.content?.note || '';
     }
 
+    if (note.workspace_id === 'sketch') {
+      return note.content?.description || '';
+    }
+
     // Parse TipTap JSON
     const extractText = (node) => {
       if (!node) return '';
@@ -108,6 +113,8 @@ export default function NoteCard({
         return 'bg-card-blue border-blue-200/50 dark:border-blue-900/30';
       case 'green':
         return 'bg-card-green border-green-200/50 dark:border-green-900/30';
+      case 'purple':
+        return 'bg-card-purple border-purple-200/50 dark:border-purple-900/30';
       default:
         return 'bg-card-default border-black/5 dark:border-white/10';
     }
@@ -116,11 +123,11 @@ export default function NoteCard({
   return (
     <div
       onClick={onSelect}
-      className={`group relative rounded-card p-4 border transition-all duration-200 cursor-pointer hover:shadow-card-hover dark:hover:shadow-card-hover-dark ${getColorClasses(
+      className={`group relative rounded-card p-4 border transition-all duration-200 ease-out cursor-pointer hover:scale-[1.02] hover:shadow-lg dark:hover:shadow-black/40 ${getColorClasses(
         colorToken
       )} ${isSelected ? 'ring-2 ring-text-primary/40 shadow-card-hover' : ''}`}
     >
-      {/* Card Header: Color Indicator dot + Pin + Actions */}
+      {/* Card Header: Color Indicator dot + Pin + Project complete + Actions */}
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           {colorToken !== 'default' && (
@@ -130,6 +137,27 @@ export default function NoteCard({
                 backgroundColor: COLOR_OPTIONS.find((c) => c.id === colorToken)?.border || '#E5E7EB',
               }}
             />
+          )}
+          {note.workspace_id === 'projects' && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                db.notes.update(note.id, {
+                  is_completed: !note.is_completed,
+                  updated_at: new Date().toISOString()
+                });
+              }}
+              className={`p-0.5 rounded transition-colors ${
+                note.is_completed ? 'text-emerald-500' : 'text-text-muted hover:text-emerald-500'
+              }`}
+              title={note.is_completed ? 'Mark scene as pending' : 'Mark scene as complete'}
+            >
+              {note.is_completed ? (
+                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+              ) : (
+                <Circle className="w-4 h-4 opacity-40 hover:opacity-100" />
+              )}
+            </button>
           )}
           {note.is_pinned && (
             <Pin className="w-3.5 h-3.5 text-amber-500 fill-amber-500 transform rotate-45" />
@@ -170,7 +198,7 @@ export default function NoteCard({
                 {note.workspace_id === 'checklists' && (
                   <button
                     onClick={async () => {
-                      const newId = crypto.randomUUID();
+                      const newId = generateUUID();
                       const newNote = {
                         ...note,
                         id: newId,
@@ -183,7 +211,7 @@ export default function NoteCard({
                       const items = await db.checklist_items.where('note_id').equals(note.id).toArray();
                       const dbItems = items.map(item => ({
                         ...item,
-                        id: crypto.randomUUID(),
+                        id: generateUUID(),
                         note_id: newId,
                         is_completed: false,
                       }));
@@ -228,9 +256,16 @@ export default function NoteCard({
       </div>
 
       {/* Card Title */}
-      <h3 className="font-semibold text-base text-text-primary mb-1 line-clamp-1">
-        {note.title || 'Untitled Note'}
-      </h3>
+      <div className="flex items-center justify-between gap-2 mb-1">
+        <h3 className={`font-semibold text-base line-clamp-1 ${note.is_completed ? 'line-through text-text-muted opacity-70' : 'text-text-primary'}`}>
+          {note.title || 'Untitled Note'}
+        </h3>
+        {note.is_completed && note.workspace_id === 'projects' && (
+          <span className="text-[10px] font-medium px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 shrink-0">
+            Done
+          </span>
+        )}
+      </div>
 
       {/* Card Content Preview (up to 3 lines) */}
       <p className="text-sm text-text-muted line-clamp-3 leading-relaxed min-h-[3rem]">

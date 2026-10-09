@@ -115,17 +115,25 @@ export default function Sidebar() {
           </div>
         </div>
 
-        {/* Global Search Bar */}
+        {/* Global Search Bar & Command Palette Trigger */}
         <div className="p-3">
-          <div className="relative">
+          <div className="relative flex items-center">
             <Search className="w-4 h-4 absolute left-3 top-2.5 text-text-muted pointer-events-none" />
             <input
               type="text"
-              placeholder="Search all notes..."
+              placeholder="Search notes... (Ctrl+K)"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 text-xs bg-bg-primary border border-black/5 dark:border-white/10 rounded-button focus:outline-none focus:ring-1 focus:ring-text-primary/30 text-text-primary placeholder:text-text-muted"
+              className="w-full pl-9 pr-12 py-1.5 text-xs bg-bg-primary border border-black/5 dark:border-white/10 rounded-button focus:outline-none focus:ring-1 focus:ring-text-primary/30 text-text-primary placeholder:text-text-muted"
             />
+            <button
+              type="button"
+              onClick={() => useUIStore.getState().openCommandPalette()}
+              className="absolute right-2 top-2 px-1.5 py-0.5 text-[10px] font-mono text-text-muted bg-black/5 dark:bg-white/5 rounded border border-black/5 dark:border-white/10 hover:text-text-primary"
+              title="Open Command Palette (Ctrl+K)"
+            >
+              ⌘K
+            </button>
           </div>
         </div>
 

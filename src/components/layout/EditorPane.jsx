@@ -408,7 +408,7 @@ export default function EditorPane() {
   if (!activeItem) {
     return (
       <aside
-        className={`fixed md:relative right-0 top-0 bottom-0 z-30 h-screen transition-transform duration-200 ease-in-out bg-bg-primary border-l border-black/10 dark:border-white/10 flex flex-col ${
+        className={`fixed md:relative right-0 top-0 bottom-0 z-30 h-screen transition-all duration-150 ease-out bg-bg-primary border-l border-black/10 dark:border-white/10 flex flex-col ${
           focusMode ? 'w-full max-w-3xl mx-auto border-none' : 'w-full md:w-[480px] lg:w-[540px]'
         } translate-x-full md:translate-x-0`}
       >
@@ -420,7 +420,7 @@ export default function EditorPane() {
   if (note?.workspace_id === 'routines') {
     return (
       <aside
-        className={`fixed md:relative right-0 top-0 bottom-0 z-30 h-screen transition-transform duration-200 ease-in-out bg-bg-primary border-l border-black/10 dark:border-white/10 flex flex-col ${
+        className={`fixed md:relative right-0 top-0 bottom-0 z-30 h-screen transition-all duration-150 ease-out bg-bg-primary border-l border-black/10 dark:border-white/10 flex flex-col ${
           focusMode ? 'w-full max-w-3xl mx-auto border-none' : 'w-full md:w-[480px] lg:w-[540px]'
         } translate-x-0`}
       >
@@ -432,7 +432,7 @@ export default function EditorPane() {
   if (note?.workspace_id === 'sketch') {
     return (
       <aside
-        className={`fixed md:relative right-0 top-0 bottom-0 z-30 h-screen transition-transform duration-200 ease-in-out bg-bg-primary border-l border-black/10 dark:border-white/10 flex flex-col ${
+        className={`fixed md:relative right-0 top-0 bottom-0 z-30 h-screen transition-all duration-150 ease-out bg-bg-primary border-l border-black/10 dark:border-white/10 flex flex-col ${
           focusMode ? 'w-full max-w-3xl mx-auto border-none' : 'w-full md:w-[480px] lg:w-[540px]'
         } translate-x-0`}
       >
@@ -443,7 +443,7 @@ export default function EditorPane() {
 
   return (
     <aside
-      className={`fixed md:relative right-0 top-0 bottom-0 z-30 h-screen transition-transform duration-200 ease-in-out bg-bg-primary border-l border-black/10 dark:border-white/10 flex flex-col ${
+      className={`fixed md:relative right-0 top-0 bottom-0 z-30 h-screen transition-all duration-150 ease-out bg-bg-primary border-l border-black/10 dark:border-white/10 flex flex-col ${
         focusMode ? 'w-full max-w-3xl mx-auto border-none' : 'w-full md:w-[480px] lg:w-[540px]'
       } translate-x-0`}
     >

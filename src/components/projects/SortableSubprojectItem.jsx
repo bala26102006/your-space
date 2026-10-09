@@ -32,10 +32,12 @@ export default function SortableSubprojectItem({
   const [showMenu, setShowMenu] = useState(false);
 
   // Count notes inside subproject
-  const noteCount = useLiveQuery(async () => {
+  const noteStats = useLiveQuery(async () => {
     const notes = await db.notes.where('subproject_id').equals(subproject.id).toArray();
-    return notes.filter((n) => !n.is_archived && !n.is_deleted).length;
-  }, [subproject.id]) || 0;
+    const active = notes.filter((n) => !n.is_archived && !n.is_deleted);
+    const completed = active.filter((n) => n.is_completed).length;
+    return { total: active.length, completed };
+  }, [subproject.id]) || { total: 0, completed: 0 };
 
   const handleSaveRename = (e) => {
     e.preventDefault();
@@ -51,7 +53,7 @@ export default function SortableSubprojectItem({
       ref={setNodeRef}
       style={style}
       onClick={onSelect}
-      className="group relative flex items-center justify-between p-3.5 bg-card-default border border-black/5 dark:border-white/10 rounded-card transition-all duration-200 cursor-pointer hover:shadow-card-hover dark:hover:shadow-card-hover-dark"
+      className="group relative flex items-center justify-between p-3.5 bg-card-default border border-black/5 dark:border-white/10 rounded-card transition-all duration-200 ease-out cursor-pointer hover:scale-[1.02] hover:shadow-lg dark:hover:shadow-black/40"
     >
       <div className="flex items-center gap-3 flex-1 min-w-0">
         {/* Drag Handle */}
@@ -88,9 +90,9 @@ export default function SortableSubprojectItem({
       </div>
 
       <div className="flex items-center gap-2">
-        <span className="text-xs text-text-muted flex items-center gap-1 bg-black/5 dark:bg-white/5 px-2 py-0.5 rounded-full">
+        <span className="text-xs text-text-muted flex items-center gap-1.5 bg-black/5 dark:bg-white/5 px-2.5 py-0.5 rounded-full font-mono">
           <FileText className="w-3 h-3" />
-          <span>{noteCount} note(s)</span>
+          <span>{noteStats.total > 0 ? `${noteStats.completed}/${noteStats.total} done` : '0 notes'}</span>
         </span>
 
         <div className="relative">

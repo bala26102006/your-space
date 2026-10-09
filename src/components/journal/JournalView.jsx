@@ -71,26 +71,38 @@ export default function JournalView() {
   const mmdd = todayStr.substring(5);
   const onThisDay = journalNotes.filter(n => n.entry_date?.substring(5) === mmdd && n.entry_date !== todayStr);
 
-  // Streak logic
+  // Streak logic (accurate consecutive days written)
   const streak = useMemo(() => {
-    if (journalNotes.length === 0) return 0;
-    const dates = [...new Set(journalNotes.map(n => n.entry_date))].sort((a,b) => new Date(b) - new Date(a));
-    let count = 0;
-    let current = new Date(todayStr);
-    const yesterdayStr = new Date(current.setDate(current.getDate() - 1)).toISOString().split('T')[0];
+    if (!journalNotes || journalNotes.length === 0) return 0;
+    const validDates = journalNotes
+      .map(n => n.entry_date)
+      .filter(d => typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d));
     
-    // Allow missing today (streak is still active if they wrote yesterday)
-    if (dates[0] === todayStr || dates[0] === yesterdayStr) {
-       // Valid active streak
-       let checkDate = new Date(dates[0]);
-       for (const d of dates) {
-         if (d === checkDate.toISOString().split('T')[0]) {
-           count++;
-           checkDate.setDate(checkDate.getDate() - 1);
-         } else {
-           break;
-         }
-       }
+    if (validDates.length === 0) return 0;
+
+    const toDayNumber = (dStr) => {
+      const [y, m, d] = dStr.split('-').map(Number);
+      return Math.floor(Date.UTC(y, m - 1, d) / 86400000);
+    };
+
+    const uniqueDays = Array.from(new Set(validDates.map(toDayNumber))).sort((a, b) => b - a);
+    const todayNum = toDayNumber(todayStr);
+    const latestDay = uniqueDays[0];
+
+    // Streak is active if user wrote today OR yesterday
+    if (latestDay !== todayNum && latestDay !== todayNum - 1) {
+      return 0;
+    }
+
+    let count = 0;
+    let expected = latestDay;
+    for (const day of uniqueDays) {
+      if (day === expected) {
+        count++;
+        expected--;
+      } else if (day < expected) {
+        break;
+      }
     }
     return count;
   }, [journalNotes, todayStr]);
