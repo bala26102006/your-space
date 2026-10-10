@@ -146,7 +146,7 @@ export default function TipTapEditor({
           </button>
         </div>
       )}
-      <div className="flex-1 overflow-y-auto">
+      <div className="pane-scroller flex-1 min-h-0 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable] [overscroll-behavior:contain]">
         <EditorContent editor={editor} className="prose dark:prose-invert max-w-none py-2" />
       </div>
     </div>

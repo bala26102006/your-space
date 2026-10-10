@@ -2,11 +2,39 @@
 
 > Update this file at the end of every stage.
 **Last updated:** 2026-10-10
-**Current stage:** UI Fix Phase 4 — Card Actions Fix (COMPLETED)
+**Current stage:** Journal Scroll & Split-View Layout Fix (COMPLETED — Steps 1-6)
 
 ---
 
 ## ✅ What's Built
+- **Journal Scroll & Split-View Layout Fix (Steps 1 through 6) completed:**
+  - **Step 1 (Diagnose & Root Cause Audit):**
+    - Identified nested scroll containers competing for vertical space in JournalView, Daily Prompt, Mood History, and TipTap canvas.
+    - Identified broken `min-h-0` flex chain in `App.jsx`, `Sidebar.jsx`, and `GridListPane.jsx` causing inner content to overflow boundaries.
+    - Identified viewport media queries (`lg:`, `sm:`) miscalculating available width when the split-view pane opens, squeezing multi-column grids into ~380px panes.
+  - **Step 2 (One Scroll Container Per Pane & min-h-0 Flex Chain):**
+    - Registered `@tailwindcss/container-queries` in `tailwind.config.js`.
+    - Defined `.pane-scroller` in `src/styles/tokens.css` with `scrollbar-gutter: stable`, `overscroll-behavior: contain`, `scrollbar-width: thin`, and themed WebKit scrollbars.
+    - Updated `App.jsx` root container to `flex flex-row h-dvh w-screen max-w-[100vw] overflow-hidden min-w-0`.
+    - Updated `Sidebar.jsx` aside to `flex flex-col h-full min-h-0 w-[250px] min-w-[250px]`.
+    - Updated `GridListPane.jsx` root to `flex-1 min-w-0 h-full min-h-0 flex flex-col overflow-hidden` with the inner body container as the single scroll container: `pane-scroller @container flex-1 min-h-0 min-w-0 p-4 sm:p-6 relative overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable] [overscroll-behavior:contain]`.
+    - Updated `JournalEditor.jsx` so header, date/mood banner, title, and footer are fixed (`shrink-0`), with nested scrollbars removed and TipTap acting as the sole content scroller (`pane-scroller flex-1 min-h-0 overflow-y-auto overflow-x-hidden`).
+  - **Step 3 & 4 (Container Queries, Natural Flow & Zero-Overlap Header for Journal):**
+    - Updated `JournalView.jsx` header to `flex flex-wrap items-center justify-between gap-x-4 gap-y-2 min-w-0 w-full` with title/workspace badge as `shrink-0 whitespace-nowrap`, wrapping streak and "Write Today" cleanly without overlap.
+    - Changed Journal grid to `@container` responsive: `@min-[720px]:grid-cols-[minmax(0,1fr)_340px] grid-cols-1 gap-6 min-w-0 w-full items-start`.
+    - When pane $< 720\text{px}$, direct grid children stack cleanly in one full-width vertical stream: Daily Prompt (`order-1`), Mood History (`order-2`), Timeline (`order-3`), and On This Day (`order-4`).
+    - When pane $\ge 720\text{px}$, Timeline occupies left column (`col-start-1 row-start-1 row-span-3`) while widgets occupy right column rows 1-3.
+    - Daily Prompt card text wraps naturally (`break-words normal-case`) with prompt actions placed on a dedicated row.
+    - Mood History rendered as $7 \times 5$ square cells (`aspect-square` in `grid-cols-7`) with downward tooltip placement (`top-full mt-1.5`) to prevent clipping into the widget title.
+  - **Step 5 (Timeline Selection & Write Today Deduplication):**
+    - `handleCreateEntry` in `JournalView.jsx` checks if an entry for today (`entry_date === todayStr`) already exists before adding, opening the existing entry if found to avoid duplicate blank entries.
+    - `handleSelectEntry` uses `scrollIntoView({ block: 'nearest', behavior: 'smooth' })` to prevent abrupt scroll jumping.
+  - **Step 6 (Wish List & Quick Notes Split-View Layout Fix):**
+    - **Quick Notes (`GridListPane.jsx`):** Header title & badge updated with `shrink-0 whitespace-nowrap`; cards grid updated from rigid viewport classes to `grid-cols-[repeat(auto-fill,minmax(160px,1fr))]` ensuring cards never shrink below 160px in split view.
+    - **Wish List (`WishListView.jsx`):** Header title & badge updated with `shrink-0 whitespace-nowrap`; summary strip updated to `@min-[600px]:grid-cols-3 grid-cols-1`; active and completed cards grids updated to container queries `@min-[500px]:grid-cols-2 @min-[850px]:grid-cols-3 @min-[1150px]:grid-cols-4 grid-cols-1`, displaying 1 clean column in split-view without squeezing.
+    - **NoteModal & TipTap (`NoteModal.jsx`, `TipTapEditor.jsx`):** Applied `.pane-scroller` standard with `min-h-0` flex chains and scroll containment.
+  - **Verification:**
+    - Verified complete production build (`npm run build`) succeeded with code 0 in 31.65s with zero errors.
 - **UI Fix Phase 4 (Card Actions Fix) completed:**
   - **Root Cause Resolution (Zero Swallowing):**
     - Added `e.stopPropagation()` on every card action button, popover, and dropdown across `NoteCard.jsx`, `JournalView.jsx`, `WishListView.jsx`, `ArchiveView.jsx`, and `TrashView.jsx`, completely eliminating card-level click swallowing.

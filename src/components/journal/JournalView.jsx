@@ -231,8 +231,21 @@ export default function JournalView() {
     return weeks;
   }, [journalNotes, today, offset, todayStr]);
 
-  // Create new journal entry with blank title so placeholder shows
+  const allHeatmapDays = useMemo(() => heatmapWeeks.flat(), [heatmapWeeks]);
+
+  // Create new journal entry with blank title, or open existing today's entry
   const handleCreateEntry = async (promptTitle = null) => {
+    // If Write Today without specific prompt title, open existing entry for today if one already exists
+    if (!promptTitle) {
+      const existingToday = journalNotes.find(
+        (n) => n.entry_date === todayStr && !n.is_archived && !n.is_deleted
+      );
+      if (existingToday) {
+        setSelectedNoteId(existingToday.id);
+        return;
+      }
+    }
+
     const newId = generateUUID();
     const newNote = {
       id: newId,
@@ -257,25 +270,29 @@ export default function JournalView() {
     setSelectedNoteId(newId);
   };
 
+  const handleSelectEntry = (e, noteId) => {
+    setSelectedNoteId(noteId);
+    if (e?.currentTarget) {
+      e.currentTarget.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  };
+
   return (
     <div className="space-y-6 pb-16 min-w-0 w-full">
-      {/* 1. Page Header: flex with flex-wrap gap-3. Below 900px, buttons wrap cleanly. */}
-      <div className="flex flex-wrap items-center justify-between gap-3 shrink-0 min-w-0 w-full">
+      {/* 1. Page Header: flex-wrap with gap-x-4 gap-y-2. Title & badge on left, streak & Write Today below on narrow panes */}
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 min-w-0 w-full">
         {/* Left: title + badge */}
-        <div className="flex flex-col min-w-0">
-          <div className="flex items-center gap-2.5 flex-wrap">
-            <h1 className="text-[28px] sm:text-[32px] font-bold tracking-tight text-text-primary capitalize leading-tight">
-              Journal
-            </h1>
-            <span className="px-2 py-0.5 text-[11px] font-semibold rounded-full bg-[var(--workspace-accent-bg)] text-[var(--workspace-accent)] border border-[var(--workspace-accent)]/20 uppercase tracking-wider">
-              Workspace
-            </span>
-          </div>
-          <div className="h-0.5 w-8 rounded-full bg-[var(--workspace-accent)] mt-1.5" />
+        <div className="flex items-center gap-2.5 shrink-0 whitespace-nowrap min-w-0">
+          <h1 className="text-[28px] sm:text-[32px] font-bold tracking-tight text-text-primary capitalize leading-tight shrink-0 whitespace-nowrap">
+            Journal
+          </h1>
+          <span className="px-2 py-0.5 text-[11px] font-semibold rounded-full bg-[var(--workspace-accent-bg)] text-[var(--workspace-accent)] border border-[var(--workspace-accent)]/20 uppercase tracking-wider shrink-0 whitespace-nowrap">
+            Workspace
+          </span>
         </div>
 
-        {/* Right: streak + Write Today. Below 900px, wraps to a clean row */}
-        <div className="flex items-center gap-2.5 flex-wrap shrink-0 max-[900px]:w-full max-[900px]:justify-start">
+        {/* Right: streak + Write Today (wraps cleanly below when pane is narrow) */}
+        <div className="flex items-center gap-2.5 flex-wrap shrink-0">
           <div className="flex items-center gap-1.5 text-xs font-semibold text-rose-500 bg-rose-500/10 px-3 py-1.5 rounded-xl border border-rose-500/20 shrink-0 whitespace-nowrap">
             <Flame className="w-3.5 h-3.5 fill-rose-500/20 text-rose-500" />
             <span>{streak} Day Streak</span>
@@ -291,11 +308,11 @@ export default function JournalView() {
         </div>
       </div>
 
-      {/* 2. Layout: 2 columns on desktop (>=1024px), 1 column below 1024px. Right column min-width 320px */}
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(320px,360px)] xl:grid-cols-[minmax(0,1fr)_380px] gap-6 min-w-0">
+      {/* 2. Container-query layout: >=720px is 2 columns (Timeline left, Widgets right). <720px is 1 column (Daily Prompt -> Mood History -> Timeline -> On This Day) */}
+      <div className="grid grid-cols-1 @min-[720px]:grid-cols-[minmax(0,1fr)_340px] gap-6 min-w-0 w-full items-start">
         
-        {/* Left Column (Timeline of Entries) */}
-        <div className="flex flex-col min-w-0 space-y-4">
+        {/* Left Column (Timeline of Entries): order-3 on narrow panes, spans all rows on left on >=720px */}
+        <div className="order-3 @min-[720px]:order-none @min-[720px]:col-start-1 @min-[720px]:row-start-1 @min-[720px]:row-span-3 flex flex-col min-w-0 space-y-4 w-full">
           <div className="flex items-center justify-between text-xs font-semibold text-text-muted uppercase tracking-wider px-1">
             <span>Timeline</span>
             <span>{isLoading ? 'Loading...' : `${journalNotes.length} ${journalNotes.length === 1 ? 'entry' : 'entries'}`}</span>
@@ -325,7 +342,7 @@ export default function JournalView() {
             </div>
           ) : (
             /* Entry Cards: Date chip placed inside card with proper padding, never absolutely positioned over border */
-            <div className="space-y-3.5 min-w-0">
+            <div className="space-y-3.5 min-w-0 w-full">
               {journalNotes.map((note) => {
                 const isSelected = selectedNoteId === note.id;
                 const moodObj = note.mood ? MOOD_CONFIG[note.mood] : null;
@@ -335,7 +352,7 @@ export default function JournalView() {
                 return (
                   <div
                     key={note.id}
-                    onClick={() => setSelectedNoteId(note.id)}
+                    onClick={(e) => handleSelectEntry(e, note.id)}
                     className={`group relative border rounded-2xl p-5 sm:p-5.5 cursor-pointer transition-all duration-200 hover:scale-[1.01] hover:shadow-lg dark:hover:shadow-black/40 min-w-0 ${getColorClasses(
                       note.color
                     )} ${
@@ -535,18 +552,23 @@ export default function JournalView() {
           )}
         </div>
 
-        {/* Right Column (Daily Prompt + Mood History + On This Day) */}
-        <div className="flex flex-col gap-6 min-w-0 lg:min-w-[320px]">
-
-          {/* 3. Daily Prompt Card: Text wraps normally without break-all or narrow fixed width */}
-          <div className="bg-card-default border border-black/10 dark:border-white/10 rounded-2xl p-5 sm:p-6 shadow-sm relative overflow-hidden min-w-0">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2 text-rose-500">
-                <Sparkles className="w-4 h-4" />
-                <span className="text-xs font-bold uppercase tracking-wider text-text-muted">
+        {/* 3. Daily Prompt Card: order-1 on narrow panes (<720px), col-start-2 row-start-1 on >=720px */}
+        <div className="order-1 @min-[720px]:order-none @min-[720px]:col-start-2 @min-[720px]:row-start-1 min-w-0 w-full">
+          <div className="bg-card-default border border-black/10 dark:border-white/10 rounded-2xl p-4 sm:p-5 shadow-sm relative min-w-0 flex flex-col justify-between">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-1.5 text-rose-500">
+                <Sparkles className="w-4 h-4 shrink-0" />
+                <span className="text-xs font-bold uppercase tracking-wider text-text-muted whitespace-nowrap">
                   Daily Prompt
                 </span>
               </div>
+            </div>
+
+            <p className="text-sm sm:text-base font-medium text-text-primary italic leading-relaxed my-2 break-words normal-case">
+              &ldquo;{currentPrompt}&rdquo;
+            </p>
+
+            <div className="pt-2 flex flex-wrap items-center justify-between gap-2 border-t border-black/5 dark:border-white/5 mt-2">
               <button
                 onClick={handleShufflePrompt}
                 className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium text-text-muted hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
@@ -556,80 +578,71 @@ export default function JournalView() {
                 <Shuffle className="w-3.5 h-3.5" />
                 <span>Shuffle</span>
               </button>
-            </div>
-
-            <p className="text-base sm:text-lg font-medium text-text-primary italic leading-relaxed my-3 break-words normal-case">
-              &ldquo;{currentPrompt}&rdquo;
-            </p>
-
-            <div className="pt-2 flex justify-end">
               <button
                 onClick={() => handleCreateEntry(currentPrompt)}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 active:scale-95 rounded-lg text-xs font-semibold transition-all shadow-2xs"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 active:scale-95 rounded-lg text-xs font-semibold transition-all shadow-2xs whitespace-nowrap"
               >
                 <PenTool className="w-3.5 h-3.5" />
                 <span>Use this prompt</span>
               </button>
             </div>
           </div>
+        </div>
 
-          {/* Mood History Heatmap: Real GitHub-style */}
-          <div className="bg-card-default border border-black/10 dark:border-white/10 rounded-2xl p-5 sm:p-6 shadow-sm min-w-0">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <Smile className="w-4 h-4 text-rose-500" />
-                <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider">
+        {/* 4. Mood History Heatmap: order-2 on narrow panes (<720px), col-start-2 row-start-2 on >=720px */}
+        <div className="order-2 @min-[720px]:order-none @min-[720px]:col-start-2 @min-[720px]:row-start-2 min-w-0 w-full">
+          <div className="bg-card-default border border-black/10 dark:border-white/10 rounded-2xl p-4 sm:p-5 shadow-sm min-w-0">
+            <div className="flex items-center justify-between mb-3 min-w-0">
+              <div className="flex items-center gap-2 min-w-0">
+                <Smile className="w-4 h-4 text-rose-500 shrink-0" />
+                <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider truncate">
                   Mood History (Last 35 Days)
                 </h3>
               </div>
-              <span className="text-[11px] font-mono text-text-muted">GitHub style</span>
+              <span className="text-[11px] font-mono text-text-muted shrink-0">7×5 grid</span>
             </div>
 
-            {/* Heatmap Grid */}
-            <div className="p-3 bg-bg-primary/50 rounded-xl border border-black/5 dark:border-white/5 overflow-visible min-w-0">
-              <div className="flex gap-2 justify-center">
-                {heatmapWeeks.map((week, wIdx) => (
-                  <div key={wIdx} className="flex flex-col gap-2">
-                    {week.map((day, dIdx) => {
-                      const bgStyle = day.moodConfig
-                        ? day.moodConfig.bgClass
-                        : day.hasEntry
-                        ? 'bg-blue-400'
-                        : 'bg-black/5 dark:bg-white/10';
+            {/* Heatmap Grid of 7 columns with square cells */}
+            <div className="p-3 bg-bg-primary/50 rounded-xl border border-black/5 dark:border-white/5 min-w-0">
+              <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
+                {allHeatmapDays.map((day, dIdx) => {
+                  const bgStyle = day.moodConfig
+                    ? day.moodConfig.bgClass
+                    : day.hasEntry
+                    ? 'bg-blue-400'
+                    : 'bg-black/5 dark:bg-white/10';
 
-                      return (
-                        <div key={dIdx} className="relative group/cell">
-                          <div
-                            className={`w-4.5 h-4.5 sm:w-5 sm:h-5 rounded-md ${bgStyle} ${
-                              day.isToday ? 'ring-2 ring-rose-500 ring-offset-1 ring-offset-card-default' : ''
-                            } transition-transform duration-100 hover:scale-125 cursor-pointer`}
-                          />
+                  return (
+                    <div key={dIdx} className="relative group/cell aspect-square flex items-center justify-center">
+                      <div
+                        className={`w-full h-full aspect-square rounded-md ${bgStyle} ${
+                          day.isToday ? 'ring-2 ring-rose-500 ring-offset-1 ring-offset-card-default' : ''
+                        } transition-transform duration-100 hover:scale-110 cursor-pointer`}
+                      />
 
-                          {/* Hover Tooltip - opens downward */}
-                          <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1.5 hidden group-hover/cell:flex flex-col items-center z-50 pointer-events-none whitespace-nowrap">
-                            <div className="w-2 h-2 bg-card-default border-t border-l border-black/10 dark:border-[var(--border-color)] rotate-45 -mb-1" />
-                            <div className="bg-card-default text-text-primary border border-black/10 dark:border-[var(--border-color)] px-2.5 py-1.5 rounded-lg shadow-xl text-[11px] leading-tight flex flex-col gap-0.5">
-                              <span className="font-semibold">{day.formattedDate}</span>
-                              <span className="text-text-muted">
-                                {day.mood ? `${day.moodConfig.emoji} ${day.mood}` : day.hasEntry ? '📝 Entry recorded' : 'No entry'}
-                              </span>
-                              {day.entryTitle && (
-                                <span className="text-[10px] text-text-muted/80 truncate max-w-[140px]">
-                                  {day.entryTitle}
-                                </span>
-                              )}
-                            </div>
-                          </div>
+                      {/* Hover Tooltip - opens downward */}
+                      <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1.5 hidden group-hover/cell:flex flex-col items-center z-50 pointer-events-none whitespace-nowrap">
+                        <div className="w-2 h-2 bg-card-default border-t border-l border-black/10 dark:border-[var(--border-color)] rotate-45 -mb-1" />
+                        <div className="bg-card-default text-text-primary border border-black/10 dark:border-[var(--border-color)] px-2.5 py-1.5 rounded-lg shadow-xl text-[11px] leading-tight flex flex-col gap-0.5">
+                          <span className="font-semibold">{day.formattedDate}</span>
+                          <span className="text-text-muted">
+                            {day.mood ? `${day.moodConfig.emoji} ${day.mood}` : day.hasEntry ? '📝 Entry recorded' : 'No entry'}
+                          </span>
+                          {day.entryTitle && (
+                            <span className="text-[10px] text-text-muted/80 truncate max-w-[140px]">
+                              {day.entryTitle}
+                            </span>
+                          )}
                         </div>
-                      );
-                    })}
-                  </div>
-                ))}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
             {/* Heatmap Legend */}
-            <div className="flex gap-3.5 mt-3.5 text-[11px] text-text-muted font-medium justify-center flex-wrap">
+            <div className="flex flex-wrap gap-2 sm:gap-3.5 mt-3.5 text-[11px] text-text-muted font-medium justify-center">
               <span className="flex items-center gap-1">
                 <span className="w-2.5 h-2.5 rounded-sm bg-blue-500 inline-block"></span>
                 <span>Calm 😌</span>
@@ -648,11 +661,13 @@ export default function JournalView() {
               </span>
             </div>
           </div>
+        </div>
 
-          {/* On This Day Card */}
-          <div className="bg-card-default border border-black/10 dark:border-white/10 rounded-2xl p-5 sm:p-6 shadow-sm min-w-0">
+        {/* 5. On This Day Card: order-4 on narrow panes (<720px), col-start-2 row-start-3 on >=720px */}
+        <div className="order-4 @min-[720px]:order-none @min-[720px]:col-start-2 @min-[720px]:row-start-3 min-w-0 w-full">
+          <div className="bg-card-default border border-black/10 dark:border-white/10 rounded-2xl p-4 sm:p-5 shadow-sm min-w-0">
             <div className="flex items-center gap-2 mb-3">
-              <Clock className="w-4 h-4 text-rose-500" />
+              <Clock className="w-4 h-4 text-rose-500 shrink-0" />
               <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider">
                 On This Day
               </h3>
@@ -666,13 +681,13 @@ export default function JournalView() {
                 {onThisDay.map((note) => (
                   <div
                     key={note.id}
-                    onClick={() => setSelectedNoteId(note.id)}
+                    onClick={(e) => handleSelectEntry(e, note.id)}
                     className="p-3 bg-bg-primary border border-black/5 dark:border-white/5 rounded-xl cursor-pointer hover:border-[var(--workspace-accent)] transition-colors"
                   >
                     <div className="text-[10px] font-mono text-text-muted mb-0.5">
                       {note.entry_date?.substring(0, 4)}
                     </div>
-                    <div className="font-semibold text-xs text-text-primary truncate">
+                    <div className="font-semibold text-xs text-text-primary truncate break-words">
                       {note.title || 'Untitled reflection'}
                     </div>
                   </div>
@@ -680,8 +695,9 @@ export default function JournalView() {
               </div>
             )}
           </div>
-
         </div>
+
+
       </div>
     </div>
   );

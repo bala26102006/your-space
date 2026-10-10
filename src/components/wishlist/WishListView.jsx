@@ -409,13 +409,13 @@ export default function WishListView() {
   return (
     <div className="space-y-6 pb-16 min-w-0">
       {/* 1. Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 min-w-0">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2.5">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 min-w-0 w-full">
+        <div className="min-w-0 shrink-0">
+          <div className="flex items-center gap-2.5 shrink-0 whitespace-nowrap">
             <h1 className="text-[28px] sm:text-[32px] font-bold tracking-tight text-text-primary capitalize leading-tight">
               Wish List
             </h1>
-            <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20 uppercase tracking-wider">
+            <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20 uppercase tracking-wider shrink-0 whitespace-nowrap">
               {wishes.length} {wishes.length === 1 ? 'wish' : 'wishes'}
             </span>
           </div>
@@ -427,7 +427,7 @@ export default function WishListView() {
         </div>
 
         {/* Action Controls */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           {/* Layout Toggle (Grid / List) */}
           <div className="flex items-center p-0.5 bg-black/5 dark:bg-white/5 rounded-button border border-black/5 dark:border-white/10">
             <button
@@ -483,7 +483,7 @@ export default function WishListView() {
       </form>
 
       {/* 3. Summary Strip */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4 shrink-0">
+      <div className="grid grid-cols-1 @min-[600px]:grid-cols-3 gap-3 mb-4 shrink-0">
         {/* Total Wishes */}
         <div className="p-3 bg-card-default border border-black/5 dark:border-white/10 rounded-xl flex items-center gap-3">
           <div className="w-9 h-9 rounded-lg bg-violet-500/10 text-violet-600 dark:text-violet-400 flex items-center justify-center shrink-0">
@@ -634,7 +634,7 @@ export default function WishListView() {
 
                 {/* Render Grid or List */}
                 {viewMode === 'grid' ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-stretch">
+                  <div className="grid grid-cols-1 @min-[500px]:grid-cols-2 @min-[850px]:grid-cols-3 @min-[1150px]:grid-cols-4 gap-4 items-stretch">
                     {activeWishes.map((wish) => renderWishCard(wish))}
                   </div>
                 ) : (
@@ -656,7 +656,7 @@ export default function WishListView() {
                 )}
 
                 {viewMode === 'grid' ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-stretch opacity-75 hover:opacity-100 transition-opacity">
+                  <div className="grid grid-cols-1 @min-[500px]:grid-cols-2 @min-[850px]:grid-cols-3 @min-[1150px]:grid-cols-4 gap-4 items-stretch opacity-75 hover:opacity-100 transition-opacity">
                     {completedWishes.map((wish) => renderWishCard(wish, true))}
                   </div>
                 ) : (

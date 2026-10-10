@@ -55,7 +55,7 @@ export default function App() {
   return (
     <div
       data-workspace={activeWorkspace}
-      className="flex h-screen w-screen max-w-[100vw] overflow-hidden min-w-0 bg-bg-primary text-text-primary selection:bg-active-nav-bg"
+      className="flex flex-row h-dvh w-screen max-w-[100vw] overflow-hidden min-w-0 bg-bg-primary text-text-primary selection:bg-active-nav-bg"
     >
       {!focusMode && (
         <>

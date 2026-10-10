@@ -217,7 +217,7 @@ export default function NoteModal({
         )}
 
         {/* Scrollable Modal Content */}
-        <div className={`flex-1 overflow-y-auto min-h-0 flex flex-col p-4 sm:p-6 ${contentClassName}`}>
+        <div className={`pane-scroller flex-1 overflow-y-auto overflow-x-hidden min-h-0 flex flex-col p-4 sm:p-6 [scrollbar-gutter:stable] [overscroll-behavior:contain] ${contentClassName}`}>
           {children}
         </div>
 

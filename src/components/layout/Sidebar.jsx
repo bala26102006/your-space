@@ -116,7 +116,7 @@ export default function Sidebar() {
     <>
       {/* Desktop Sidebar (250px) */}
       <aside
-        className={`flex flex-col h-screen w-[250px] min-w-[250px] bg-bg-sidebar border-r border-black/5 dark:border-[var(--border-color)] transition-all duration-200 ${
+        className={`flex flex-col h-full min-h-0 w-[250px] min-w-[250px] bg-bg-sidebar border-r border-black/5 dark:border-[var(--border-color)] transition-all duration-200 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full absolute z-30'
         }`}
       >

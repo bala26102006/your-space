@@ -194,7 +194,7 @@ export default function JournalEditor({ note, onClose }) {
       onDelete={handleDelete}
       isExpanded={isExpanded}
       onToggleExpand={() => setIsExpanded(!isExpanded)}
-      contentClassName="p-0"
+      contentClassName="p-0 overflow-hidden flex flex-col min-h-0"
       footer={
         <div className="px-6 py-3 shrink-0 flex flex-wrap items-center justify-between gap-3 text-xs text-text-muted">
           {/* Word count & Reading Time */}
@@ -254,9 +254,9 @@ export default function JournalEditor({ note, onClose }) {
               <button
                 type="button"
                 onClick={() => setShowTagInput(true)}
-                className="flex items-center gap-1 px-2 py-0.5 rounded-full border border-dashed border-black/15 dark:border-white/15 text-[11px] text-text-muted hover:text-text-primary hover:border-black/30 transition-colors"
+                className="flex items-center gap-1 px-2.5 py-1 rounded-full border border-dashed border-black/15 dark:border-white/15 text-xs text-text-muted hover:text-text-primary hover:border-black/30 transition-colors"
               >
-                <TagIcon className="w-2.5 h-2.5" />
+                <TagIcon className="w-3 h-3" />
                 <span>+ Tag</span>
               </button>
             )}
@@ -308,8 +308,8 @@ export default function JournalEditor({ note, onClose }) {
         </div>
       </div>
 
-      {/* Main Journal Canvas (Scrollable) */}
-      <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col min-w-0">
+      {/* Main Journal Canvas: Fixed header/title, only TipTap scrolls */}
+      <div className="flex-1 min-h-0 flex flex-col min-w-0 overflow-hidden px-6 pt-5 pb-2">
         {/* Entry Title Input */}
         <input
           type="text"
@@ -320,7 +320,7 @@ export default function JournalEditor({ note, onClose }) {
         />
 
         {/* TipTap Rich Text Canvas */}
-        <div className="flex-1 min-h-[300px]">
+        <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
           <TipTapEditor
             content={content}
             onChange={handleEditorChange}

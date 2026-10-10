@@ -399,8 +399,8 @@ export default function GridListPane() {
         {/* Pane Header */}
         <div className="flex flex-wrap items-center justify-between gap-3 mb-6 min-w-0">
           <div className="min-w-0">
-            <div className="flex items-center gap-2.5">
-              <h1 className="text-[28px] sm:text-[32px] font-bold tracking-tight text-text-primary capitalize leading-tight">
+            <div className="flex items-center gap-2.5 flex-wrap min-w-0">
+              <h1 className="text-[28px] sm:text-[32px] font-bold tracking-tight text-text-primary capitalize leading-tight shrink-0 whitespace-nowrap">
                 {isGlobalView
                   ? (searchQuery ? `Search: "${searchQuery}"` : 'Tag Filter')
                   : (activeWorkspace === 'quicknotes'
@@ -410,7 +410,7 @@ export default function GridListPane() {
                       : activeWorkspace)}
               </h1>
               {!isGlobalView && (
-                <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-[var(--workspace-accent-bg)] text-[var(--workspace-accent)] border border-[var(--workspace-accent)]/20 uppercase tracking-wider">
+                <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-[var(--workspace-accent-bg)] text-[var(--workspace-accent)] border border-[var(--workspace-accent)]/20 uppercase tracking-wider shrink-0 whitespace-nowrap">
                   Workspace
                 </span>
               )}
@@ -631,7 +631,7 @@ export default function GridListPane() {
                   <Pin className="w-3.5 h-3.5" />
                   <span>Pinned</span>
                 </div>
-                <div className={viewMode === 'list' ? 'flex flex-col gap-3' : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'}>
+                <div className={viewMode === 'list' ? 'flex flex-col gap-3' : 'grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-4'}>
                   {pinnedNotes.map((note) => (
                     <NoteCard
                       key={note.id}
@@ -656,7 +656,7 @@ export default function GridListPane() {
                     Others
                   </div>
                 )}
-                <div className={viewMode === 'list' ? 'flex flex-col gap-3' : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'}>
+                <div className={viewMode === 'list' ? 'flex flex-col gap-3' : 'grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-4'}>
                   {unpinnedNotes.map((note) => (
                     <div key={note.id} className="relative">
                       <NoteCard
@@ -702,9 +702,9 @@ export default function GridListPane() {
   };
 
   return (
-    <main className="flex-1 min-w-[320px] h-screen flex flex-col bg-bg-primary transition-all duration-200 overflow-hidden">
+    <main className="flex-1 min-w-0 h-full min-h-0 flex flex-col bg-bg-primary transition-all duration-200 overflow-hidden">
       <TopBar />
-      <div className={`flex-1 min-w-0 p-4 sm:p-6 relative overflow-x-hidden ${getOverflowClass()}`}>
+      <div className="pane-scroller @container flex-1 min-h-0 min-w-0 p-4 sm:p-6 relative overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable] [overscroll-behavior:contain]">
         {renderContent()}
       </div>
     </main>
