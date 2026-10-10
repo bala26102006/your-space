@@ -380,14 +380,6 @@ export default function GridListPane() {
   const isGlobalView = !!(searchQuery.trim() || activeTagId);
 
   const getOverflowClass = () => {
-    if (!isGlobalView) {
-      if (activeWorkspace === 'projects') return 'overflow-y-auto';
-      if (activeWorkspace === 'journal') return 'overflow-hidden';
-      if (activeWorkspace === 'wishlist') return 'overflow-hidden';
-      if (activeWorkspace === 'checklists') return 'overflow-hidden';
-      if (activeWorkspace === 'archive') return 'overflow-hidden';
-      if (activeWorkspace === 'trash') return 'overflow-hidden';
-    }
     return 'overflow-y-auto';
   };
 

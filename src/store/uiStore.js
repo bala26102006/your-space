@@ -1,62 +1,89 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
-export const useUIStore = create((set) => ({
-  activeWorkspace: 'quicknotes',
-  activePane: 'grid', // 'sidebar', 'grid', 'editor'
-  viewMode: 'grid',
-  sortBy: 'date',
-  sortOrder: 'desc',
-  isFocusMode: false,
-  isSidebarCollapsed: false,
-  theme: localStorage.getItem('theme') || 'light',
-  activeModal: null,
-  isCommandPaletteOpen: false,
-  user: { id: 'local-user-123', email: 'local@yourspace.app' },
+const DEFAULT_WORKSPACE_VIEW_MODES = {
+  quicknotes: 'grid',
+  projects: 'grid',
+  journal: 'grid',
+  checklists: 'grid',
+  wishlist: 'grid',
+  routines: 'grid',
+  sketch: 'grid',
+  archive: 'grid',
+  trash: 'grid',
+};
 
-  setIsCommandPaletteOpen: (open) => set((state) => ({ 
-    isCommandPaletteOpen: typeof open === 'boolean' ? open : !state.isCommandPaletteOpen 
-  })),
-  openCommandPalette: () => set({ isCommandPaletteOpen: true }),
-  closeCommandPalette: () => set({ isCommandPaletteOpen: false }),
+export const useUIStore = create(
+  persist(
+    (set, get) => ({
+      activeWorkspace: 'quicknotes',
+      activePane: 'grid', // 'sidebar', 'grid', 'editor'
+      viewMode: 'grid',
+      workspaceViewModes: DEFAULT_WORKSPACE_VIEW_MODES,
+      sortBy: 'date',
+      sortOrder: 'desc',
+      isFocusMode: false,
+      isSidebarCollapsed: false,
+      theme: localStorage.getItem('theme') || 'light',
+      activeModal: null,
+      isCommandPaletteOpen: false,
+      user: { id: 'local-user-123', email: 'local@yourspace.app' },
 
-  setUser: (user) => {
-    set({ user });
-  },
-  
-  // Backward compatibility fields so UI components do not break
-  selectedNoteId: null,
-  selectedProjectId: null,
-  selectedSubprojectId: null,
-  focusMode: false,
-  searchQuery: '',
-  activeTagId: null,
-  sidebarOpen: true,
-  selectedChecklistCategory: null,
-  selectedWishlistFolderId: null,
+      setIsCommandPaletteOpen: (open) => set((state) => ({ 
+        isCommandPaletteOpen: typeof open === 'boolean' ? open : !state.isCommandPaletteOpen 
+      })),
+      openCommandPalette: () => set({ isCommandPaletteOpen: true }),
+      closeCommandPalette: () => set({ isCommandPaletteOpen: false }),
 
-  setActiveWorkspace: (workspaceId) =>
-    set({
-      activeWorkspace: workspaceId,
+      setUser: (user) => {
+        set({ user });
+      },
+      
+      // Backward compatibility fields so UI components do not break
       selectedNoteId: null,
       selectedProjectId: null,
       selectedSubprojectId: null,
-      selectedChecklistCategory: null,
-      selectedWishlistFolderId: null,
+      focusMode: false,
       searchQuery: '',
       activeTagId: null,
-    }),
+      sidebarOpen: true,
+      selectedChecklistCategory: null,
+      selectedWishlistFolderId: null,
 
-  setActivePane: (pane) => set({ activePane: pane }),
-  setActiveModal: (modal) => set({ activeModal: modal }),
+      setActiveWorkspace: (workspaceId) =>
+        set((state) => {
+          const modes = state.workspaceViewModes || DEFAULT_WORKSPACE_VIEW_MODES;
+          return {
+            activeWorkspace: workspaceId,
+            viewMode: modes[workspaceId] || 'grid',
+            selectedNoteId: null,
+            selectedProjectId: null,
+            selectedSubprojectId: null,
+            selectedChecklistCategory: null,
+            selectedWishlistFolderId: null,
+            searchQuery: '',
+            activeTagId: null,
+          };
+        }),
 
-  setSelectedChecklistCategory: (category) => set({ selectedChecklistCategory: category }),
-  setSelectedWishlistFolderId: (id) => set({ selectedWishlistFolderId: id }),
-  setSortBy: (sortBy) => set({ sortBy }),
-  setSortOrder: (sortOrder) => set({ sortOrder }),
-  setViewMode: (mode) => set({ viewMode: mode }),
-  setSelectedNoteId: (noteId) => set({ selectedNoteId: noteId }),
-  setSelectedProjectId: (projectId) => set({ selectedProjectId: projectId, selectedSubprojectId: null, selectedNoteId: null }),
-  setSelectedSubprojectId: (subprojectId) => set({ selectedSubprojectId: subprojectId, selectedNoteId: null }),
+      setActivePane: (pane) => set({ activePane: pane }),
+      setActiveModal: (modal) => set({ activeModal: modal }),
+
+      setSelectedChecklistCategory: (category) => set({ selectedChecklistCategory: category }),
+      setSelectedWishlistFolderId: (id) => set({ selectedWishlistFolderId: id }),
+      setSortBy: (sortBy) => set({ sortBy }),
+      setSortOrder: (sortOrder) => set({ sortOrder }),
+      setViewMode: (mode) =>
+        set((state) => ({
+          viewMode: mode,
+          workspaceViewModes: {
+            ...(state.workspaceViewModes || DEFAULT_WORKSPACE_VIEW_MODES),
+            [state.activeWorkspace]: mode,
+          },
+        })),
+      setSelectedNoteId: (noteId) => set({ selectedNoteId: noteId }),
+      setSelectedProjectId: (projectId) => set({ selectedProjectId: projectId, selectedSubprojectId: null, selectedNoteId: null }),
+      setSelectedSubprojectId: (subprojectId) => set({ selectedSubprojectId: subprojectId, selectedNoteId: null }),
 
   setIsFocusMode: (mode) => set((state) => {
     const newVal = typeof mode === 'boolean' ? mode : !state.isFocusMode;
@@ -97,4 +124,24 @@ export const useUIStore = create((set) => ({
     return { isSidebarCollapsed: newVal, sidebarOpen: !newVal };
   }),
   toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen, isSidebarCollapsed: state.sidebarOpen })),
-}));
+    }),
+    {
+      name: 'yourspace-ui-storage',
+      partialize: (state) => ({
+        workspaceViewModes: state.workspaceViewModes,
+        theme: state.theme,
+        sortOrder: state.sortOrder,
+        sortBy: state.sortBy,
+        isSidebarCollapsed: state.isSidebarCollapsed,
+      }),
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          const modes = state.workspaceViewModes || DEFAULT_WORKSPACE_VIEW_MODES;
+          const currentWs = state.activeWorkspace || 'quicknotes';
+          state.viewMode = modes[currentWs] || 'grid';
+        }
+      },
+    }
+  )
+);
+

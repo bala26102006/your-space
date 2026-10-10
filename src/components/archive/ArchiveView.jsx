@@ -149,7 +149,7 @@ export default function ArchiveView() {
   };
 
   return (
-    <div className="flex flex-col h-full overflow-hidden relative min-w-0">
+    <div className="space-y-6 pb-16 min-w-0">
       {/* Page Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6 min-w-0">
         <div>
@@ -169,7 +169,7 @@ export default function ArchiveView() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto space-y-8 pr-1 pb-12">
+      <div className="space-y-8 min-w-0">
         {allArchived.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 text-center p-6 bg-card-default rounded-xl border border-black/5 dark:border-white/10">
             <div className="w-14 h-14 rounded-full bg-stone-500/10 text-stone-500 flex items-center justify-center mb-3">

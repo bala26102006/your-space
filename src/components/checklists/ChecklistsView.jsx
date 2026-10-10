@@ -18,7 +18,8 @@ export default function ChecklistsView() {
     selectedNoteId,
     setSelectedNoteId,
     searchQuery,
-    activeTagId
+    activeTagId,
+    viewMode,
   } = useUIStore();
 
   const [newFolderInput, setNewFolderInput] = useState('');
@@ -135,7 +136,7 @@ export default function ChecklistsView() {
     const categoryNotes = checklists.filter(c => c.category === selectedChecklistCategory);
 
     return (
-      <div className="space-y-4 min-w-0">
+      <div className="space-y-4 pb-16 min-w-0">
         <div className="flex items-center justify-between mb-4 min-w-0">
           <h2 className="text-lg font-semibold text-text-primary">{selectedChecklistCategory}</h2>
           <button
@@ -157,7 +158,7 @@ export default function ChecklistsView() {
             <p className="text-xs font-medium text-text-primary">No checklists here yet.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className={viewMode === 'list' ? 'flex flex-col gap-3' : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'}>
             {categoryNotes.map((note) => (
               <NoteCard
                 key={note.id}
@@ -180,7 +181,7 @@ export default function ChecklistsView() {
 
   // Render Main Folders View
   return (
-    <div className="space-y-4 min-w-0">
+    <div className="space-y-4 pb-16 min-w-0">
       {/* Starter Kits Section */}
       <div className="mb-8 min-w-0">
         <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">Starter Kits</h2>
@@ -261,7 +262,7 @@ export default function ChecklistsView() {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className={viewMode === 'list' ? 'flex flex-col gap-3' : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'}>
           {folders.map((folderName) => {
             const count = checklists.filter(c => c.category === folderName).length;
             return (

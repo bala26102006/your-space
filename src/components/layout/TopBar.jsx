@@ -147,12 +147,12 @@ export default function TopBar() {
       </div>
 
       {/* View Controls */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2.5">
         {/* Sort Dropdown */}
         <div className="relative group">
           <button 
             aria-label="Sort options"
-            className="flex items-center gap-1.5 px-2 py-1.5 rounded-button text-xs font-medium text-text-muted hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+            className="h-9 px-3 flex items-center gap-1.5 rounded-button text-xs font-medium text-text-muted hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
           >
             <ArrowDownUp className="w-4 h-4" />
             <span className="capitalize">{sortOrder}</span>
@@ -175,14 +175,16 @@ export default function TopBar() {
           </div>
         </div>
 
-        <div className="w-px h-4 bg-black/10 dark:bg-white/10"></div>
+        <div className="w-px h-5 bg-black/10 dark:bg-white/10"></div>
 
-        {/* View Toggle */}
-        <div className="flex items-center bg-black/5 dark:bg-white/5 rounded-button p-0.5">
+        {/* View Toggle (36px height, vertically centered, clear active highlight) */}
+        <div className="h-9 flex items-center bg-black/5 dark:bg-white/5 rounded-button p-1 border border-black/5 dark:border-white/10 gap-1">
           <button
             onClick={() => setViewMode('grid')}
-            className={`p-1.5 rounded-sm transition-colors ${
-              viewMode === 'grid' ? 'bg-bg-primary text-text-primary shadow-sm' : 'text-text-muted hover:text-text-primary'
+            className={`h-7 w-7 flex items-center justify-center rounded-button transition-all ${
+              viewMode === 'grid'
+                ? 'bg-bg-primary text-[var(--workspace-accent)] shadow-xs font-semibold'
+                : 'text-text-muted hover:text-text-primary'
             }`}
             title="Grid View"
             aria-label="Switch to grid view"
@@ -191,8 +193,10 @@ export default function TopBar() {
           </button>
           <button
             onClick={() => setViewMode('list')}
-            className={`p-1.5 rounded-sm transition-colors ${
-              viewMode === 'list' ? 'bg-bg-primary text-text-primary shadow-sm' : 'text-text-muted hover:text-text-primary'
+            className={`h-7 w-7 flex items-center justify-center rounded-button transition-all ${
+              viewMode === 'list'
+                ? 'bg-bg-primary text-[var(--workspace-accent)] shadow-xs font-semibold'
+                : 'text-text-muted hover:text-text-primary'
             }`}
             title="List View"
             aria-label="Switch to list view"
@@ -201,12 +205,12 @@ export default function TopBar() {
           </button>
         </div>
 
-        <div className="w-px h-4 bg-black/10 dark:bg-white/10"></div>
+        <div className="w-px h-5 bg-black/10 dark:bg-white/10"></div>
 
-        {/* Focus Mode Toggle */}
+        {/* Focus Mode Toggle (36px height) */}
         <button
           onClick={() => setFocusMode(!focusMode)}
-          className="p-1.5 rounded-button text-text-muted hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+          className="h-9 w-9 flex items-center justify-center rounded-button text-text-muted hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
           title={focusMode ? "Exit Focus Mode" : "Enter Focus Mode"}
           aria-label={focusMode ? "Exit focus mode" : "Enter focus mode"}
         >

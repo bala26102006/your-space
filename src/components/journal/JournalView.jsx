@@ -1,22 +1,21 @@
 import React, { useState, useMemo } from 'react';
-import { useLiveQuery } from '../../hooks/useLiveQuery';
-import { db } from '../../lib/db';
-import { useUIStore } from '../../store/uiStore';
 import { 
   Plus, 
-  Flame, 
   Calendar as CalendarIcon, 
-  Clock, 
   Smile, 
   Sparkles, 
+  BookOpen, 
+  Flame, 
   Shuffle, 
   PenTool, 
-  BookOpen, 
+  Clock, 
   Pin, 
-  MoreVertical, 
   Archive, 
   Trash2 
 } from 'lucide-react';
+import { useUIStore } from '../../store/uiStore';
+import { useLiveQuery } from '../../hooks/useLiveQuery';
+import { db } from '../../lib/db';
 import TagPill from '../shared/TagPill';
 import { generateUUID } from '../../lib/uuid';
 import { TimelineSkeleton } from '../shared/SkeletonLoader';
@@ -24,29 +23,29 @@ import { softDeleteItem, archiveItem } from '../../lib/services/trashService';
 import { useConfirmStore } from '../../store/confirmStore';
 
 const PROMPTS = [
-  "What is on your mind today?",
-  "What are you grateful for right now?",
-  "How did you practice self-care today?",
-  "Describe a small victory you had today.",
-  "What is something you're looking forward to?",
-  "Write about a difficult emotion you felt today.",
-  "What did you read or listen to today that resonated?",
-  "How can you make tomorrow better than today?",
-  "Describe a conversation that impacted you.",
-  "What is a goal you're currently working towards?",
-  "Who did you help today, or who helped you?",
-  "What made you laugh recently?",
-  "Describe a moment of peace you experienced.",
-  "What is a habit you want to build or break?",
-  "Write about a memory that brings you joy.",
-  "What are you prioritizing right now?",
-  "How did you challenge yourself today?",
-  "Describe your perfect day.",
-  "What is something you need to let go of?",
-  "Write a short letter to your future self.",
-  "What inspired you today?",
-  "How did you handle stress today?",
-  "What is a skill you want to learn?",
+  "What made you smile today?",
+  "What is something you learned this week?",
+  "Describe a challenge you faced and how you overcame it.",
+  "What are three things you are grateful for right now?",
+  "If today was a chapter in your book, what would it be called?",
+  "What is one intention you have for tomorrow?",
+  "Who inspired you recently, and why?",
+  "Write about a small moment of peace you experienced today.",
+  "What is something you want to let go of?",
+  "How did you take care of yourself today?",
+  "What is a dream you've been thinking about lately?",
+  "What drained your energy today? What restored it?",
+  "What is a conversation you remember from this week?",
+  "Describe your surroundings right now in detail.",
+  "What would you tell yourself one year ago?",
+  "What are you looking forward to this month?",
+  "How did you show kindness to someone recently?",
+  "What is a decision you made that you feel good about?",
+  "Write about an emotion you felt strongly today.",
+  "What is something beautiful you noticed today?",
+  "What boundary did you protect or need to set?",
+  "If you had an extra hour today, how would you spend it?",
+  "What is a song that matches your mood today?",
   "Describe a place where you feel most comfortable.",
   "What are you proud of achieving recently?",
   "How are you feeling physically today?",
@@ -183,7 +182,6 @@ export default function JournalView() {
 
   // GitHub-style Mood Heatmap (last 35 days, 5 weeks x 7 days)
   const heatmapWeeks = useMemo(() => {
-    // Generate 35 days ending today, aligned to weeks
     const days = [];
     for (let i = 34; i >= 0; i--) {
       const d = new Date(today);
@@ -204,7 +202,6 @@ export default function JournalView() {
       });
     }
 
-    // Split into 5 weeks of 7 days
     const weeks = [];
     for (let i = 0; i < days.length; i += 7) {
       weeks.push(days.slice(i, i + 7));
@@ -212,7 +209,7 @@ export default function JournalView() {
     return weeks;
   }, [journalNotes, today, offset, todayStr]);
 
-  // Create new journal entry
+  // Create new journal entry with blank title so placeholder shows
   const handleCreateEntry = async (promptTitle = null) => {
     const newId = generateUUID();
     const newNote = {
@@ -221,7 +218,7 @@ export default function JournalView() {
       workspace_id: 'journal',
       subproject_id: null,
       note_type: 'plain',
-      title: promptTitle || 'Journal Entry',
+      title: promptTitle || '',
       content: { type: 'doc', content: [] },
       color: 'default',
       is_pinned: false,
@@ -239,30 +236,31 @@ export default function JournalView() {
   };
 
   return (
-    <div className="h-full w-full flex flex-col overflow-hidden min-w-0">
-      {/* 1. Header: Single line with "Journal", streak badge, and "Write Today" button */}
-      <div className="flex items-center justify-between gap-3 mb-6 shrink-0 min-w-0 w-full">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2.5">
+    <div className="space-y-6 pb-16 min-w-0 w-full">
+      {/* 1. Page Header: flex with flex-wrap gap-3. Below 900px, buttons wrap cleanly. */}
+      <div className="flex flex-wrap items-center justify-between gap-3 shrink-0 min-w-0 w-full">
+        {/* Left: title + badge */}
+        <div className="flex flex-col min-w-0">
+          <div className="flex items-center gap-2.5 flex-wrap">
             <h1 className="text-[28px] sm:text-[32px] font-bold tracking-tight text-text-primary capitalize leading-tight">
               Journal
             </h1>
-            <span className="px-2 py-0.5 text-[11px] font-medium rounded-full bg-[var(--workspace-accent-bg)] text-[var(--workspace-accent)] border border-[var(--workspace-accent)]/20 uppercase tracking-wider">
+            <span className="px-2 py-0.5 text-[11px] font-semibold rounded-full bg-[var(--workspace-accent-bg)] text-[var(--workspace-accent)] border border-[var(--workspace-accent)]/20 uppercase tracking-wider">
               Workspace
             </span>
           </div>
           <div className="h-0.5 w-8 rounded-full bg-[var(--workspace-accent)] mt-1.5" />
         </div>
 
-        {/* Right controls: Streak Badge + Write Today Button aligned on same line */}
-        <div className="flex items-center gap-2.5 shrink-0">
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-rose-500 bg-rose-500/10 px-3 py-1.5 rounded-xl border border-rose-500/20 shrink-0">
+        {/* Right: streak + Write Today. Below 900px, wraps to a clean row */}
+        <div className="flex items-center gap-2.5 flex-wrap shrink-0 max-[900px]:w-full max-[900px]:justify-start">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-rose-500 bg-rose-500/10 px-3 py-1.5 rounded-xl border border-rose-500/20 shrink-0 whitespace-nowrap">
             <Flame className="w-3.5 h-3.5 fill-rose-500/20 text-rose-500" />
             <span>{streak} Day Streak</span>
           </div>
           <button
             onClick={() => handleCreateEntry()}
-            className="flex items-center gap-1.5 px-3.5 sm:px-4 py-2 bg-[var(--workspace-accent)] text-white rounded-button text-xs font-semibold hover:opacity-90 active:scale-95 transition-all shadow-sm shrink-0"
+            className="flex items-center gap-1.5 px-3.5 sm:px-4 py-2 bg-[var(--workspace-accent)] text-white rounded-button text-xs font-semibold hover:opacity-90 active:scale-95 transition-all shadow-sm shrink-0 whitespace-nowrap"
             aria-label="Write today's journal entry"
           >
             <Plus className="w-4 h-4" />
@@ -271,11 +269,11 @@ export default function JournalView() {
         </div>
       </div>
 
-      {/* 2. Main 2-Column Grid (Stacks on small screens, no horizontal scroll) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 overflow-y-auto pr-1 pb-8 min-w-0 overflow-x-hidden">
+      {/* 2. Layout: 2 columns on desktop (>=1024px), 1 column below 1024px. Right column min-width 320px */}
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(320px,360px)] xl:grid-cols-[minmax(0,1fr)_380px] gap-6 min-w-0">
         
-        {/* Left Column (Timeline of Entries): Span 7 columns */}
-        <div className="lg:col-span-7 flex flex-col min-w-0 space-y-4">
+        {/* Left Column (Timeline of Entries) */}
+        <div className="flex flex-col min-w-0 space-y-4">
           <div className="flex items-center justify-between text-xs font-semibold text-text-muted uppercase tracking-wider px-1">
             <span>Timeline</span>
             <span>{isLoading ? 'Loading...' : `${journalNotes.length} ${journalNotes.length === 1 ? 'entry' : 'entries'}`}</span>
@@ -284,7 +282,7 @@ export default function JournalView() {
           {isLoading ? (
             <TimelineSkeleton count={4} />
           ) : journalNotes.length === 0 ? (
-            /* 3. Empty State with beautiful illustration and large write button */
+            /* Empty State */
             <div className="flex flex-col items-center justify-center p-8 sm:p-12 text-center bg-card-default border border-dashed border-black/10 dark:border-white/10 rounded-2xl min-w-0 shadow-2xs">
               <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-rose-500/20 via-amber-500/15 to-rose-500/10 text-rose-500 flex items-center justify-center mb-4 shadow-sm border border-rose-500/20 ring-4 ring-rose-500/5">
                 <BookOpen className="w-8 h-8" />
@@ -304,8 +302,8 @@ export default function JournalView() {
               </button>
             </div>
           ) : (
-            /* 4. Entry Cards: Date chip, mood emoji, title, 2-line preview, tags */
-            <div className="space-y-3 min-w-0">
+            /* Entry Cards: Date chip placed inside card with proper padding, never absolutely positioned over border */
+            <div className="space-y-3.5 min-w-0">
               {journalNotes.map((note) => {
                 const isSelected = selectedNoteId === note.id;
                 const moodObj = note.mood ? MOOD_CONFIG[note.mood] : null;
@@ -316,24 +314,24 @@ export default function JournalView() {
                   <div
                     key={note.id}
                     onClick={() => setSelectedNoteId(note.id)}
-                    className={`group relative bg-card-default border rounded-2xl p-4.5 cursor-pointer transition-all duration-200 hover:scale-[1.01] hover:shadow-lg dark:hover:shadow-black/40 min-w-0 ${
+                    className={`group relative bg-card-default border rounded-2xl p-5 sm:p-5.5 cursor-pointer transition-all duration-200 hover:scale-[1.01] hover:shadow-lg dark:hover:shadow-black/40 min-w-0 ${
                       isSelected
                         ? 'border-[var(--workspace-accent)] ring-2 ring-[var(--workspace-accent)] shadow-card-hover'
                         : 'border-black/5 dark:border-white/10'
                     }`}
                   >
                     {/* Top Row: Date chip + Mood Emoji Badge + Actions */}
-                    <div className="flex items-center justify-between gap-2 min-w-0">
+                    <div className="flex items-center justify-between gap-2 min-w-0 mb-2.5">
                       <div className="flex items-center gap-2 flex-wrap min-w-0">
-                        {/* Date chip */}
-                        <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-black/5 dark:bg-white/10 text-text-muted shrink-0">
+                        {/* Date chip: placed inside card with proper padding */}
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-black/5 dark:bg-white/10 text-text-muted shrink-0">
                           <CalendarIcon className="w-3 h-3 opacity-60" />
                           <span>{formatEntryDate(note.entry_date)}</span>
                         </div>
 
                         {/* Mood Emoji Badge */}
                         {moodObj && (
-                          <div className={`flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium border shrink-0 ${moodObj.badgeBg}`}>
+                          <div className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium border shrink-0 ${moodObj.badgeBg}`}>
                             <span>{moodObj.emoji}</span>
                             <span>{moodObj.label}</span>
                           </div>
@@ -381,10 +379,10 @@ export default function JournalView() {
                               title: note.title || 'Journal Entry',
                               onConfirm: async () => {
                                 await softDeleteItem({
-                                  id: note.id,
-                                  type: 'note',
-                                  title: note.title || 'Journal Entry',
-                                  workspace: 'journal',
+                                   id: note.id,
+                                   type: 'note',
+                                   title: note.title || 'Journal Entry',
+                                   workspace: 'journal',
                                 });
                                 if (selectedNoteId === note.id) setSelectedNoteId(null);
                               },
@@ -399,8 +397,8 @@ export default function JournalView() {
                     </div>
 
                     {/* Title */}
-                    <h3 className="text-sm font-semibold text-text-primary mt-2.5 truncate">
-                      {note.title || 'Journal Entry'}
+                    <h3 className="text-base font-semibold text-text-primary truncate">
+                      {note.title || 'Untitled reflection'}
                     </h3>
 
                     {/* 2-line preview */}
@@ -410,7 +408,7 @@ export default function JournalView() {
 
                     {/* Tags Footer */}
                     {tags.length > 0 && (
-                      <div className="mt-3 pt-2 flex flex-wrap gap-1 border-t border-black/5 dark:border-white/5">
+                      <div className="mt-3 pt-2.5 flex flex-wrap gap-1 border-t border-black/5 dark:border-white/5">
                         {tags.map((tag) => (
                           <TagPill key={tag.id} label={tag.label} />
                         ))}
@@ -423,11 +421,11 @@ export default function JournalView() {
           )}
         </div>
 
-        {/* Right Column (Insights & Heatmap): Span 5 columns */}
-        <div className="lg:col-span-5 flex flex-col gap-6 min-w-0">
+        {/* Right Column (Daily Prompt + Mood History + On This Day) */}
+        <div className="flex flex-col gap-6 min-w-0 lg:min-w-[320px]">
 
-          {/* 6. Daily Prompt Card with Shuffle button and "Use this prompt" button */}
-          <div className="bg-card-default border border-black/10 dark:border-white/10 rounded-2xl p-5 shadow-sm relative overflow-hidden min-w-0">
+          {/* 3. Daily Prompt Card: Text wraps normally without break-all or narrow fixed width */}
+          <div className="bg-card-default border border-black/10 dark:border-white/10 rounded-2xl p-5 sm:p-6 shadow-sm relative overflow-hidden min-w-0">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2 text-rose-500">
                 <Sparkles className="w-4 h-4" />
@@ -446,7 +444,7 @@ export default function JournalView() {
               </button>
             </div>
 
-            <p className="text-base sm:text-lg font-medium text-text-primary italic leading-relaxed my-3">
+            <p className="text-base sm:text-lg font-medium text-text-primary italic leading-relaxed my-3 break-words normal-case">
               &ldquo;{currentPrompt}&rdquo;
             </p>
 
@@ -461,8 +459,8 @@ export default function JournalView() {
             </div>
           </div>
 
-          {/* 5. Mood History Heatmap: Real GitHub-style with hover tooltips */}
-          <div className="bg-card-default border border-black/10 dark:border-white/10 rounded-2xl p-5 shadow-sm min-w-0">
+          {/* Mood History Heatmap: Real GitHub-style */}
+          <div className="bg-card-default border border-black/10 dark:border-white/10 rounded-2xl p-5 sm:p-6 shadow-sm min-w-0">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <Smile className="w-4 h-4 text-rose-500" />
@@ -493,7 +491,7 @@ export default function JournalView() {
                             } transition-transform duration-100 hover:scale-125 cursor-pointer`}
                           />
 
-                          {/* Hover Tooltip - opens downward so it never covers the section title */}
+                          {/* Hover Tooltip - opens downward */}
                           <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1.5 hidden group-hover/cell:flex flex-col items-center z-50 pointer-events-none whitespace-nowrap">
                             <div className="w-2 h-2 bg-card-default border-t border-l border-black/10 dark:border-[var(--border-color)] rotate-45 -mb-1" />
                             <div className="bg-card-default text-text-primary border border-black/10 dark:border-[var(--border-color)] px-2.5 py-1.5 rounded-lg shadow-xl text-[11px] leading-tight flex flex-col gap-0.5">
@@ -538,7 +536,7 @@ export default function JournalView() {
           </div>
 
           {/* On This Day Card */}
-          <div className="bg-card-default border border-black/10 dark:border-white/10 rounded-2xl p-5 shadow-sm min-w-0">
+          <div className="bg-card-default border border-black/10 dark:border-white/10 rounded-2xl p-5 sm:p-6 shadow-sm min-w-0">
             <div className="flex items-center gap-2 mb-3">
               <Clock className="w-4 h-4 text-rose-500" />
               <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider">
@@ -561,7 +559,7 @@ export default function JournalView() {
                       {note.entry_date?.substring(0, 4)}
                     </div>
                     <div className="font-semibold text-xs text-text-primary truncate">
-                      {note.title || 'Journal Entry'}
+                      {note.title || 'Untitled reflection'}
                     </div>
                   </div>
                 ))}

@@ -7,7 +7,7 @@ import { useDebouncedSave } from '../../hooks/useDebouncedSave';
 import SavedIndicator from '../cards/SavedIndicator';
 import { summarizeText, expandIdea } from '../../lib/ai';
 import { exportProjectToPDF, exportProjectToWord } from '../../lib/export';
-import ColorPicker, { getCardColorStyle } from '../shared/ColorPicker';
+import { getCardColorStyle } from '../shared/ColorPicker';
 import TipTapEditor from '../editor/TipTapEditor';
 import ChecklistEditor from '../editor/ChecklistEditor';
 import WishlistEditor from '../editor/WishlistEditor';
@@ -15,17 +15,27 @@ import RoutinesEditor from '../routines/RoutinesEditor';
 import SketchEditor from '../sketch/SketchEditor';
 import JournalEditor from '../journal/JournalEditor';
 import TagPill from '../shared/TagPill';
-import TodayDashboard from './TodayDashboard';
+import NoteModal from '../shared/NoteModal';
 import { STARTER_KITS, getStarterKitItems } from '../../lib/starterKits';
 import { generateUUID } from '../../lib/uuid';
 import { softDeleteItem, archiveItem, unarchiveItem } from '../../lib/services/trashService';
 import { useConfirmStore } from '../../store/confirmStore';
 
 export default function EditorPane() {
-  const { selectedNoteId, setSelectedNoteId, selectedSubprojectId, setSelectedSubprojectId, selectedProjectId, setSelectedProjectId, focusMode, setFocusMode } = useUIStore();
+  const { 
+    selectedNoteId, 
+    setSelectedNoteId, 
+    selectedSubprojectId, 
+    setSelectedSubprojectId, 
+    selectedProjectId, 
+    setSelectedProjectId, 
+    focusMode, 
+    setFocusMode 
+  } = useUIStore();
   const { openSoftDelete } = useConfirmStore();
   const { saveStatus, triggerSave } = useDebouncedSave(1000);
   const [sketchFullscreen, setSketchFullscreen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   // Fetch current selected note
   const note = useLiveQuery(() => {
@@ -155,8 +165,63 @@ export default function EditorPane() {
     setSelectedNoteId(newId);
   };
 
+  // Close handler: resets active selection and closes modal
+  const handleClose = () => {
+    if (isProject) setSelectedProjectId(null);
+    else if (isSubproject) setSelectedSubprojectId(null);
+    else setSelectedNoteId(null);
+  };
+
+  // If no note or project item is selected, render nothing!
+  // Split-view logic is completely removed: GridListPane maintains full width.
   if (!activeItem) {
     return null;
+  }
+
+  // Journal workspace opens via JournalEditor (which uses NoteModal)
+  if (note?.workspace_id === 'journal') {
+    return <JournalEditor note={note} onClose={() => setSelectedNoteId(null)} />;
+  }
+
+  // Routines workspace opens via NoteModal
+  if (note?.workspace_id === 'routines') {
+    return (
+      <NoteModal
+        isOpen={true}
+        onClose={() => setSelectedNoteId(null)}
+        customHeader={<></>}
+        contentClassName="p-0"
+      >
+        <RoutinesEditor note={note} onClose={() => setSelectedNoteId(null)} />
+      </NoteModal>
+    );
+  }
+
+  // Sketch workspace opens via NoteModal
+  if (note?.workspace_id === 'sketch') {
+    return (
+      <NoteModal
+        isOpen={true}
+        onClose={() => {
+          setSketchFullscreen(false);
+          setSelectedNoteId(null);
+        }}
+        customHeader={<></>}
+        contentClassName="p-0"
+        isExpanded={sketchFullscreen}
+        className={sketchFullscreen ? 'fixed inset-0 w-screen h-screen max-w-none max-h-none rounded-none' : ''}
+      >
+        <SketchEditor 
+          note={note} 
+          onClose={() => {
+            setSketchFullscreen(false);
+            setSelectedNoteId(null);
+          }}
+          isFullscreen={sketchFullscreen}
+          onToggleFullscreen={() => setSketchFullscreen(prev => !prev)}
+        />
+      </NoteModal>
+    );
   }
 
   // Handle Title Edits
@@ -340,19 +405,6 @@ export default function EditorPane() {
     });
   };
 
-  // Handle Mood Edits
-  const handleMoodChange = (e) => {
-    if (isProject || isSubproject) return;
-    const newMood = e.target.value;
-    setMood(newMood);
-    triggerSave(async () => {
-      await db.notes.update(selectedNoteId, {
-        mood: newMood,
-        updated_at: new Date().toISOString(),
-      });
-    });
-  };
-
   // Handle Soft-Delete
   const handleDelete = () => {
     const itemTitle = isProject ? project?.title : isSubproject ? subproject?.title : note?.title;
@@ -447,317 +499,106 @@ export default function EditorPane() {
     setNewTagInput('');
   };
 
-  if (!activeItem) {
-    return (
-      <aside
-        className={`fixed md:relative right-0 top-0 bottom-0 z-30 h-screen transition-all duration-150 ease-out bg-bg-primary border-l border-black/10 dark:border-white/10 flex flex-col min-w-0 overflow-hidden ${
-          focusMode ? 'w-full max-w-3xl mx-auto border-none' : 'w-full md:w-[480px] lg:w-[540px]'
-        } translate-x-full md:translate-x-0`}
-      >
-        <TodayDashboard />
-      </aside>
-    );
-  }
-
-  if (note?.workspace_id === 'routines') {
-    return (
-      <aside
-        className={`fixed md:relative right-0 top-0 bottom-0 z-30 h-screen transition-all duration-150 ease-out bg-bg-primary border-l border-black/10 dark:border-white/10 flex flex-col min-w-0 overflow-hidden ${
-          focusMode ? 'w-full max-w-3xl mx-auto border-none' : 'w-full md:w-[480px] lg:w-[540px]'
-        } translate-x-0`}
-      >
-        <RoutinesEditor note={note} onClose={() => setSelectedNoteId(null)} />
-      </aside>
-    );
-  }
-
-  if (note?.workspace_id === 'sketch') {
-    return (
-      <aside
-        className={`fixed top-0 bottom-0 z-50 h-screen transition-all duration-150 ease-out bg-bg-primary flex flex-col min-w-0 overflow-hidden ${
-          sketchFullscreen
-            ? 'inset-0 w-screen h-screen'
-            : (focusMode 
-                ? 'right-0 md:relative w-full max-w-4xl mx-auto border-none' 
-                : 'right-0 md:relative w-full md:w-[540px] lg:w-[680px] xl:w-[820px] 2xl:flex-1 border-l border-black/10 dark:border-white/10')
-        }`}
-      >
-        <SketchEditor 
-          note={note} 
-          onClose={() => {
-            setSketchFullscreen(false);
-            setSelectedNoteId(null);
-          }}
-          isFullscreen={sketchFullscreen}
-          onToggleFullscreen={() => setSketchFullscreen(prev => !prev)}
-        />
-      </aside>
-    );
-  }
-
-  if (note?.workspace_id === 'journal') {
-    return (
-      <aside
-        className={`fixed md:relative right-0 top-0 bottom-0 z-30 h-screen transition-all duration-150 ease-out bg-bg-primary border-l border-black/10 dark:border-white/10 flex flex-col min-w-0 overflow-hidden ${
-          focusMode ? 'w-full max-w-3xl mx-auto border-none' : 'w-full md:w-[480px] lg:w-[540px]'
-        } translate-x-0`}
-      >
-        <JournalEditor note={note} onClose={() => setSelectedNoteId(null)} />
-      </aside>
-    );
-  }
-
-  return (
-    <aside
-      className={`fixed md:relative right-0 top-0 bottom-0 z-30 h-screen transition-all duration-150 ease-out bg-bg-primary border-l border-black/10 dark:border-white/10 flex flex-col min-w-0 overflow-hidden ${
-        focusMode ? 'w-full max-w-3xl mx-auto border-none' : 'w-full md:w-[480px] lg:w-[540px]'
-      } translate-x-0`}
-    >
-      {/* Editor Header Bar */}
-      <div className="h-14 px-4 flex items-center justify-between border-b border-black/5 dark:border-white/10">
-        <div className="flex items-center gap-3">
+  // Extra action buttons for header right slot
+  const extraHeaderActions = (
+    <div className="flex items-center gap-1.5 shrink-0">
+      {/* Quick Notes: Send to Project */}
+      {!isProject && !isSubproject && note?.workspace_id === 'quicknotes' && (
+        <div className="relative">
           <button
-            onClick={() => {
-              if (isProject) setSelectedProjectId(null);
-              else if (isSubproject) setSelectedSubprojectId(null);
-              else setSelectedNoteId(null);
-            }}
-            className="p-1.5 rounded-button hover:bg-black/5 dark:hover:bg-white/10 text-text-muted hover:text-text-primary"
-            title="Close editor"
+            type="button"
+            onClick={() => setShowSendMenu(!showSendMenu)}
+            className="flex items-center gap-1 px-2 py-1 bg-text-primary text-bg-primary rounded text-xs font-medium hover:opacity-90 transition-opacity"
+            title="Send to Project"
+            aria-label="Send note to project"
           >
-            <X className="w-4 h-4" />
+            <ArrowRightLeft className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Move</span>
           </button>
-          <SavedIndicator status={saveStatus} />
-        </div>
-
-        {/* Editor Actions Toolbar */}
-        <div className="flex items-center gap-1.5 text-text-muted">
-          {!isProject && !isSubproject && note?.workspace_id === 'journal' && (
-             <select 
-               value={mood || ''} 
-               onChange={handleMoodChange}
-               className="text-xs bg-bg-sidebar border border-black/10 dark:border-white/10 rounded px-2 py-1 text-text-primary focus:outline-none h-[28px]"
-             >
-               <option value="">No mood</option>
-               <option value="Calm">Calm 😌</option>
-               <option value="Restless">Restless 🏃</option>
-               <option value="Grateful">Grateful 🙏</option>
-               <option value="Tired">Tired 😴</option>
-             </select>
-          )}
-
-          <ColorPicker currentColor={color} onChange={handleColorChange} />
-
-          {!isProject && !isSubproject && (
-            <button
-              onClick={handlePinToggle}
-              className={`p-1.5 rounded-button hover:bg-black/5 dark:hover:bg-white/10 transition-colors ${
-                isPinned ? 'text-amber-500 fill-amber-500' : ''
-              }`}
-              title={isPinned ? 'Unpin' : 'Pin note'}
-            >
-              <Pin className={`w-4 h-4 ${isPinned ? 'fill-current' : ''}`} />
-            </button>
-          )}
-
-          <button
-            onClick={handleArchive}
-            className="p-1.5 rounded-button hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
-            title={activeItem.is_archived ? 'Unarchive' : 'Archive'}
-          >
-            <Archive className="w-4 h-4" />
-          </button>
-
-          <button
-            onClick={handleDelete}
-            className="p-1.5 rounded-button hover:bg-red-50 dark:hover:bg-red-950/30 text-red-600 dark:text-red-400 transition-colors"
-            title="Move to trash"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
-
-          <button
-            onClick={() => setFocusMode(!focusMode)}
-            className="p-1.5 rounded-button hover:bg-black/5 dark:hover:bg-white/10 transition-colors ml-1"
-            title={focusMode ? 'Exit Focus Mode' : 'Focus Mode (Ctrl+.)'}
-          >
-            {focusMode ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-          </button>
-
-          {!isProject && !isSubproject && note?.workspace_id === 'quicknotes' && (
-            <div className="relative ml-2">
-              <button
-                onClick={() => setShowSendMenu(!showSendMenu)}
-                className="flex items-center gap-1 px-2 py-1 bg-text-primary text-bg-primary rounded text-xs font-medium hover:opacity-90 transition-opacity"
-                title="Send to Project"
-              >
-                <ArrowRightLeft className="w-3.5 h-3.5" />
-                <span>Move</span>
-              </button>
-              {showSendMenu && (
-                <div className="absolute right-0 top-full mt-2 w-64 max-h-64 overflow-y-auto bg-bg-primary border border-black/10 dark:border-white/10 rounded-lg shadow-lg z-20 py-2">
-                  <div className="px-3 pb-2 text-xs font-semibold text-text-muted border-b border-black/5 dark:border-white/5 mb-1">
-                    Select Destination
-                  </div>
-                  {allProjects.filter(p => !p.is_deleted && !p.is_archived).map(proj => (
-                    <div key={proj.id} className="mb-1">
-                      <div className="px-3 py-1 text-xs font-bold text-text-primary truncate">{proj.title || 'Untitled'}</div>
-                      {allSubprojects.filter(sp => sp.project_id === proj.id && !sp.is_deleted && !sp.is_archived).map(sp => (
-                        <button
-                          key={sp.id}
-                          onClick={() => handleSendToProject(sp.id)}
-                          className="w-full text-left pl-6 pr-3 py-1.5 text-xs hover:bg-hover-bg text-text-muted hover:text-text-primary truncate"
-                        >
-                          ↳ {sp.title || 'Untitled Section'}
-                        </button>
-                      ))}
-                    </div>
+          {showSendMenu && (
+            <div className="absolute right-0 top-full mt-2 w-64 max-h-64 overflow-y-auto bg-bg-primary border border-black/10 dark:border-white/10 rounded-lg shadow-lg z-30 py-2">
+              <div className="px-3 pb-2 text-xs font-semibold text-text-muted border-b border-black/5 dark:border-white/5 mb-1">
+                Select Destination
+              </div>
+              {allProjects.filter(p => !p.is_deleted && !p.is_archived).map(proj => (
+                <div key={proj.id} className="mb-1">
+                  <div className="px-3 py-1 text-xs font-bold text-text-primary truncate">{proj.title || 'Untitled'}</div>
+                  {allSubprojects.filter(sp => sp.project_id === proj.id && !sp.is_deleted && !sp.is_archived).map(sp => (
+                    <button
+                      key={sp.id}
+                      onClick={() => handleSendToProject(sp.id)}
+                      className="w-full text-left pl-6 pr-3 py-1.5 text-xs hover:bg-hover-bg text-text-muted hover:text-text-primary truncate"
+                    >
+                      ↳ {sp.title || 'Untitled Section'}
+                    </button>
                   ))}
-                  {allProjects.length === 0 && (
-                    <div className="px-3 py-2 text-xs text-text-muted">No active projects found.</div>
-                  )}
                 </div>
+              ))}
+              {allProjects.length === 0 && (
+                <div className="px-3 py-2 text-xs text-text-muted">No active projects found.</div>
               )}
-            </div>
-          )}
-          
-          {isProject && (
-            <div className="flex items-center gap-1 ml-2 border-l border-black/10 dark:border-white/10 pl-2">
-              <button
-                onClick={() => exportProjectToPDF(selectedProjectId)}
-                className="flex items-center gap-1 px-2 py-1 bg-red-500/10 text-red-600 dark:text-red-400 rounded text-xs font-medium hover:bg-red-500/20 transition-colors"
-                title="Export to PDF"
-              >
-                <span>PDF</span>
-              </button>
-              <button
-                onClick={() => exportProjectToWord(selectedProjectId)}
-                className="flex items-center gap-1 px-2 py-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded text-xs font-medium hover:bg-blue-500/20 transition-colors"
-                title="Export to Word"
-              >
-                <span>Word</span>
-              </button>
-            </div>
-          )}
-
-          {!isProject && !isSubproject && note?.workspace_id !== 'journal' && note?.workspace_id !== 'checklists' && note?.workspace_id !== 'wishlist' && (
-            <div className="flex items-center gap-1 ml-2 border-l border-black/10 dark:border-white/10 pl-2">
-              <button
-                onClick={handleAISummarize}
-                disabled={isAILoading}
-                className="flex items-center gap-1 px-2 py-1 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded text-xs font-medium hover:bg-purple-500/20 transition-colors disabled:opacity-50"
-                title="AI Summarize"
-              >
-                {isAILoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                <span>Summarize</span>
-              </button>
-              <button
-                onClick={handleAIExpand}
-                disabled={isAILoading}
-                className="flex items-center gap-1 px-2 py-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded text-xs font-medium hover:bg-blue-500/20 transition-colors disabled:opacity-50"
-                title="AI Expand Idea"
-              >
-                {isAILoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                <span>Expand</span>
-              </button>
             </div>
           )}
         </div>
-      </div>
+      )}
 
-      {/* Editor Body Canvas */}
-      <div className={`flex-1 overflow-y-auto p-6 flex flex-col ${isProject || isSubproject ? '' : getCardColorStyle(color)} transition-colors duration-200`}>
-        {/* Title Input */}
-        <input
-          type="text"
-          placeholder={isProject ? "Project Title..." : isSubproject ? "Section Title..." : "Title..."}
-          value={title}
-          onChange={handleTitleChange}
-          className="w-full text-2xl font-bold bg-transparent border-none outline-none text-text-primary placeholder:text-text-muted mb-4"
-        />
+      {/* Projects: Export PDF / Word */}
+      {isProject && (
+        <div className="flex items-center gap-1 border-r border-black/10 dark:border-white/10 pr-1.5 mr-0.5">
+          <button
+            type="button"
+            onClick={() => exportProjectToPDF(selectedProjectId)}
+            className="flex items-center gap-1 px-2 py-1 bg-red-500/10 text-red-600 dark:text-red-400 rounded text-xs font-medium hover:bg-red-500/20 transition-colors"
+            title="Export to PDF"
+          >
+            <span>PDF</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => exportProjectToWord(selectedProjectId)}
+            className="flex items-center gap-1 px-2 py-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded text-xs font-medium hover:bg-blue-500/20 transition-colors"
+            title="Export to Word"
+          >
+            <span>Word</span>
+          </button>
+        </div>
+      )}
 
-        {!isProject && !isSubproject && (
-          <>
-            {/* Tag Manager Toolbar */}
-            <div className="mb-4 flex flex-wrap items-center gap-1.5 relative">
-              {noteTags.map((tag) => (
-                <TagPill
-                  key={tag.id}
-                  label={tag.label}
-                  onRemove={() => handleToggleTag(tag.id)}
-                />
-              ))}
+      {/* AI Summarize & Expand */}
+      {!isProject && !isSubproject && note?.workspace_id !== 'journal' && note?.workspace_id !== 'checklists' && note?.workspace_id !== 'wishlist' && (
+        <div className="flex items-center gap-1 border-r border-black/10 dark:border-white/10 pr-1.5 mr-0.5">
+          <button
+            type="button"
+            onClick={handleAISummarize}
+            disabled={isAILoading}
+            className="flex items-center gap-1 px-2 py-1 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded text-xs font-medium hover:bg-purple-500/20 transition-colors disabled:opacity-50"
+            title="AI Summarize"
+            aria-label="AI Summarize"
+          >
+            {isAILoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+            <span className="hidden sm:inline">Summarize</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleAIExpand}
+            disabled={isAILoading}
+            className="flex items-center gap-1 px-2 py-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded text-xs font-medium hover:bg-blue-500/20 transition-colors disabled:opacity-50"
+            title="AI Expand Idea"
+            aria-label="AI Expand Idea"
+          >
+            {isAILoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+            <span className="hidden sm:inline">Expand</span>
+          </button>
+        </div>
+      )}
+    </div>
+  );
 
-              <button
-                type="button"
-                onClick={() => setShowTagMenu(!showTagMenu)}
-                className="inline-flex items-center gap-1 px-2 py-0.5 text-xs text-text-muted hover:text-text-primary bg-black/5 dark:bg-white/10 rounded-full"
-              >
-                <Plus className="w-3 h-3" />
-                <span>Add tag</span>
-              </button>
-
-              {showTagMenu && (
-                <div className="absolute left-0 top-7 z-20 w-48 p-2 bg-bg-primary border border-black/10 dark:border-white/10 rounded-button shadow-lg text-xs">
-                  <form onSubmit={handleCreateAndAttachTag} className="mb-2">
-                    <input
-                      type="text"
-                      autoFocus
-                      placeholder="New tag..."
-                      value={newTagInput}
-                      onChange={(e) => setNewTagInput(e.target.value)}
-                      className="w-full px-2 py-1 bg-bg-sidebar border border-black/10 dark:border-white/10 rounded text-text-primary"
-                    />
-                  </form>
-                  <div className="max-h-32 overflow-y-auto space-y-1">
-                    {allTags.map((t) => {
-                      const isAttached = noteTags.some((nt) => nt.id === t.id);
-                      return (
-                        <button
-                          key={t.id}
-                          type="button"
-                          onClick={() => handleToggleTag(t.id)}
-                          className={`w-full text-left px-2 py-1 rounded flex items-center justify-between hover:bg-hover-bg ${
-                            isAttached ? 'font-medium text-text-primary' : 'text-text-muted'
-                          }`}
-                        >
-                          <span>#{t.label}</span>
-                          {isAttached && <span>✓</span>}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Specialized Editors */}
-            <div className="flex-1">
-              {note?.workspace_id === 'wishlist' ? (
-                <WishlistEditor content={content} onChange={handleEditorChange} />
-              ) : note?.workspace_id === 'checklists' ? (
-                <ChecklistEditor noteId={selectedNoteId} content={content} onChange={handleEditorChange} />
-              ) : (
-                <TipTapEditor content={content} onChange={handleEditorChange} />
-              )}
-            </div>
-          </>
-        )}
-
-        {(isProject || isSubproject) && (
-          <div className="flex-1">
-            <textarea
-              placeholder={isProject ? "Description or logline of this project..." : "Description or summary of this section..."}
-              value={description}
-              onChange={handleDescriptionChange}
-              className="w-full h-full bg-transparent border-none outline-none text-text-primary placeholder:text-text-muted resize-none"
-            />
-          </div>
-        )}
-      </div>
-
+  // Footer for Starter Kit & AI Suggestions
+  const modalFooter = (
+    <>
       {aiSuggestion && (
-        <div className="border-t border-black/10 dark:border-white/10 p-4 bg-purple-50/50 dark:bg-purple-900/10 flex flex-col gap-2">
+        <div className="p-4 bg-purple-50/50 dark:bg-purple-900/10 flex flex-col gap-2">
           <div className="flex items-center gap-2 text-purple-700 dark:text-purple-300 font-medium text-sm">
             <Sparkles className="w-4 h-4" />
             AI Suggestion ({aiSuggestion.type === 'summarize' ? 'Summary' : 'Expansion'}):
@@ -776,9 +617,8 @@ export default function EditorPane() {
         </div>
       )}
 
-      {/* Starter Kit Use Template Bar */}
       {activeItem?.content?.isStarterKit && (
-        <div className="border-t border-black/10 dark:border-white/10 p-4 bg-bg-sidebar flex items-center justify-between">
+        <div className="p-4 bg-bg-sidebar flex items-center justify-between">
           <select
             value={selectedFolder}
             onChange={(e) => setSelectedFolder(e.target.value)}
@@ -796,6 +636,113 @@ export default function EditorPane() {
           </button>
         </div>
       )}
-    </aside>
+    </>
+  );
+
+  return (
+    <NoteModal
+      isOpen={true}
+      onClose={handleClose}
+      saveStatus={saveStatus}
+      color={color}
+      onColorChange={!isProject && !isSubproject ? handleColorChange : undefined}
+      isPinned={isPinned}
+      onPinToggle={!isProject && !isSubproject ? handlePinToggle : undefined}
+      isArchived={activeItem?.is_archived}
+      onArchive={handleArchive}
+      onDelete={handleDelete}
+      isExpanded={isExpanded}
+      onToggleExpand={() => setIsExpanded(!isExpanded)}
+      headerRight={extraHeaderActions}
+      footer={aiSuggestion || activeItem?.content?.isStarterKit ? modalFooter : null}
+    >
+      {/* Title Input */}
+      <input
+        type="text"
+        placeholder={isProject ? "Project Title..." : isSubproject ? "Section Title..." : "Title..."}
+        value={title}
+        onChange={handleTitleChange}
+        className="w-full text-2xl font-bold bg-transparent border-none outline-none text-text-primary placeholder:text-text-muted mb-4 shrink-0"
+      />
+
+      {!isProject && !isSubproject && (
+        <>
+          {/* Tag Manager Toolbar */}
+          <div className="mb-4 flex flex-wrap items-center gap-1.5 relative shrink-0">
+            {noteTags.map((tag) => (
+              <TagPill
+                key={tag.id}
+                label={tag.label}
+                onRemove={() => handleToggleTag(tag.id)}
+              />
+            ))}
+
+            <button
+              type="button"
+              onClick={() => setShowTagMenu(!showTagMenu)}
+              className="inline-flex items-center gap-1 px-2 py-0.5 text-xs text-text-muted hover:text-text-primary bg-black/5 dark:bg-white/10 rounded-full"
+            >
+              <Plus className="w-3 h-3" />
+              <span>Add tag</span>
+            </button>
+
+            {showTagMenu && (
+              <div className="absolute left-0 top-7 z-20 w-48 p-2 bg-bg-primary border border-black/10 dark:border-white/10 rounded-button shadow-lg text-xs">
+                <form onSubmit={handleCreateAndAttachTag} className="mb-2">
+                  <input
+                    type="text"
+                    autoFocus
+                    placeholder="New tag..."
+                    value={newTagInput}
+                    onChange={(e) => setNewTagInput(e.target.value)}
+                    className="w-full px-2 py-1 bg-bg-sidebar border border-black/10 dark:border-white/10 rounded text-text-primary"
+                  />
+                </form>
+                <div className="max-h-32 overflow-y-auto space-y-1">
+                  {allTags.map((t) => {
+                    const isAttached = noteTags.some((nt) => nt.id === t.id);
+                    return (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => handleToggleTag(t.id)}
+                        className={`w-full text-left px-2 py-1 rounded flex items-center justify-between hover:bg-hover-bg ${
+                          isAttached ? 'font-medium text-text-primary' : 'text-text-muted'
+                        }`}
+                      >
+                        <span>#{t.label}</span>
+                        {isAttached && <span>✓</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Specialized Editors */}
+          <div className="flex-1 min-h-[250px]">
+            {note?.workspace_id === 'wishlist' ? (
+              <WishlistEditor content={content} onChange={handleEditorChange} />
+            ) : note?.workspace_id === 'checklists' ? (
+              <ChecklistEditor noteId={selectedNoteId} content={content} onChange={handleEditorChange} />
+            ) : (
+              <TipTapEditor content={content} onChange={handleEditorChange} />
+            )}
+          </div>
+        </>
+      )}
+
+      {(isProject || isSubproject) && (
+        <div className="flex-1 min-h-[250px]">
+          <textarea
+            placeholder={isProject ? "Description or logline of this project..." : "Description or summary of this section..."}
+            value={description}
+            onChange={handleDescriptionChange}
+            className="w-full h-full min-h-[200px] bg-transparent border-none outline-none text-text-primary placeholder:text-text-muted resize-none"
+          />
+        </div>
+      )}
+    </NoteModal>
   );
 }

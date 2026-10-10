@@ -9,7 +9,7 @@ import { softDeleteItem, archiveItem } from '../../lib/services/trashService';
 import { useConfirmStore } from '../../store/confirmStore';
 
 export default function SketchView() {
-  const { selectedNoteId, setSelectedNoteId } = useUIStore();
+  const { selectedNoteId, setSelectedNoteId, viewMode } = useUIStore();
   const { openSoftDelete } = useConfirmStore();
 
   // Fetch all non-deleted sketch notes
@@ -99,9 +99,9 @@ export default function SketchView() {
   };
 
   return (
-    <div className="flex flex-col h-full overflow-hidden relative min-w-[320px]">
+    <div className="space-y-6 pb-16 min-w-0">
       {/* Workspace Header: Title & Description on left, New Sketch on right */}
-      <div className="flex flex-wrap items-start justify-between gap-3 mb-6 flex-shrink-0 min-w-0">
+      <div className="flex flex-wrap items-start justify-between gap-3 flex-shrink-0 min-w-0">
         <div className="min-w-0 pr-4 flex-1">
           <div className="flex items-center gap-2 mb-1">
             <span className="w-2.5 h-2.5 rounded-full bg-[var(--workspace-accent)] inline-block"></span>
@@ -126,8 +126,8 @@ export default function SketchView() {
         </button>
       </div>
 
-      {/* Grid Pane: Smooth scrolling with padding and gap */}
-      <div className="flex-1 overflow-y-auto pr-1 pb-8 min-w-0">
+      {/* Grid Pane: Smooth scrolling as one page */}
+      <div className="space-y-4 min-w-0">
         {isLoading ? (
           <GridSkeleton count={4} />
         ) : sketches.length === 0 ? (
@@ -148,7 +148,7 @@ export default function SketchView() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-4">
+          <div className={viewMode === 'list' ? 'flex flex-col gap-3' : 'grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-4'}>
             {sketches.map((sketch) => {
               const attachment = attachmentMap.get(sketch.id);
               const isSelected = selectedNoteId === sketch.id;
@@ -162,10 +162,10 @@ export default function SketchView() {
                     isSelected
                       ? 'border-[var(--workspace-accent)] shadow-sm ring-1 ring-[var(--workspace-accent)]/20'
                       : 'border-black/5 dark:border-white/10'
-                  } rounded-2xl cursor-pointer hover:scale-[1.02] hover:shadow-lg dark:hover:shadow-black/40 transition-all duration-200 ease-out flex flex-col overflow-hidden`}
+                  } rounded-2xl cursor-pointer hover:scale-[1.01] hover:shadow-lg dark:hover:shadow-black/40 transition-all duration-200 ease-out flex ${viewMode === 'list' ? 'flex-row items-center h-20' : 'flex-col'} overflow-hidden`}
                 >
                   {/* Thumbnail area */}
-                  <div className="w-full aspect-[4/3] bg-white dark:bg-[#1A1A1A] flex items-center justify-center p-2 relative overflow-hidden border-b border-black/5 dark:border-white/5">
+                  <div className={`${viewMode === 'list' ? 'w-24 h-full shrink-0 border-r border-b-0' : 'w-full aspect-[4/3] border-b'} bg-white dark:bg-[#1A1A1A] flex items-center justify-center p-2 relative overflow-hidden border-black/5 dark:border-white/5`}>
                     {attachment?.image_data ? (
                       <img
                         src={attachment.image_data}
@@ -198,7 +198,7 @@ export default function SketchView() {
                     </div>
                   </div>
 
-                  {/* Card Info: Title on one line with ellipsis, and date on one line */}
+                  {/* Card Info */}
                   <div className="p-3.5 flex flex-col justify-between flex-1 bg-card-default min-w-0">
                     <h3 
                       className="text-xs font-semibold text-text-primary truncate" 
@@ -207,7 +207,7 @@ export default function SketchView() {
                       {sketch.title || 'Untitled Sketch'}
                     </h3>
 
-                    <div className="flex items-center gap-1.5 text-[10px] text-text-muted mt-2 pt-2 border-t border-black/5 dark:border-white/5 min-w-0">
+                    <div className={`flex items-center gap-1.5 text-[10px] text-text-muted ${viewMode === 'list' ? 'mt-1' : 'mt-2 pt-2 border-t border-black/5 dark:border-white/5'} min-w-0`}>
                       <Calendar className="w-3 h-3 opacity-60 shrink-0" />
                       <span className="truncate whitespace-nowrap">Created on {dateStr || 'Recent'}</span>
                     </div>

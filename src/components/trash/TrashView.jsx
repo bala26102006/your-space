@@ -272,7 +272,7 @@ export default function TrashView() {
   };
 
   return (
-    <div className="flex flex-col h-full overflow-hidden relative min-w-0">
+    <div className="space-y-6 pb-16 min-w-0">
       {/* Page Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6 min-w-0">
         <div>

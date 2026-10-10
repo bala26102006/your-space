@@ -60,11 +60,10 @@ const PRESET_GRADIENTS = [
 ];
 
 export default function WishListView() {
-  const { selectedNoteId, setSelectedNoteId } = useUIStore();
+  const { selectedNoteId, setSelectedNoteId, viewMode } = useUIStore();
   const { openSoftDelete } = useConfirmStore();
 
   // Local View States
-  const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'list'
   const [quickAddInput, setQuickAddInput] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedPriority, setSelectedPriority] = useState('All');
@@ -333,9 +332,9 @@ export default function WishListView() {
   };
 
   return (
-    <div className="flex flex-col h-full overflow-hidden relative min-w-0">
+    <div className="space-y-6 pb-16 min-w-0">
       {/* 1. Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-5 min-w-0 shrink-0">
+      <div className="flex flex-wrap items-center justify-between gap-3 min-w-0">
         <div className="min-w-0">
           <div className="flex items-center gap-2.5">
             <h1 className="text-[28px] sm:text-[32px] font-bold tracking-tight text-text-primary capitalize leading-tight">
@@ -354,34 +353,6 @@ export default function WishListView() {
 
         {/* Action Controls */}
         <div className="flex items-center gap-2">
-          {/* View Toggle */}
-          <div className="flex items-center p-0.5 bg-black/5 dark:bg-white/5 rounded-button border border-black/5 dark:border-white/10">
-            <button
-              onClick={() => setViewMode('grid')}
-              title="Grid view"
-              aria-label="Grid view"
-              className={`p-1.5 rounded-button transition-colors ${
-                viewMode === 'grid'
-                  ? 'bg-bg-primary text-text-primary shadow-xs'
-                  : 'text-text-muted hover:text-text-primary'
-              }`}
-            >
-              <LayoutGrid className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setViewMode('list')}
-              title="List view"
-              aria-label="List view"
-              className={`p-1.5 rounded-button transition-colors ${
-                viewMode === 'list'
-                  ? 'bg-bg-primary text-text-primary shadow-xs'
-                  : 'text-text-muted hover:text-text-primary'
-              }`}
-            >
-              <List className="w-4 h-4" />
-            </button>
-          </div>
-
           {/* "New Wish" button */}
           <button
             onClick={handleCreateNewWish}
@@ -522,7 +493,7 @@ export default function WishListView() {
       </div>
 
       {/* 5. Content View: Wishes Grid or List */}
-      <div className="flex-1 overflow-y-auto space-y-6 pr-1 pb-16">
+      <div className="space-y-6 min-w-0">
         {wishes.length === 0 ? (
           /* Feature 10: Empty State */
           <div className="flex flex-col items-center justify-center h-72 text-center p-6 bg-card-default rounded-2xl border border-black/5 dark:border-white/10">
