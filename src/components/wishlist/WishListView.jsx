@@ -60,7 +60,7 @@ const PRESET_GRADIENTS = [
 ];
 
 export default function WishListView() {
-  const { selectedNoteId, setSelectedNoteId, viewMode } = useUIStore();
+  const { selectedNoteId, setSelectedNoteId, viewMode, setViewMode } = useUIStore();
   const { openSoftDelete } = useConfirmStore();
 
   // Local View States
@@ -353,6 +353,34 @@ export default function WishListView() {
 
         {/* Action Controls */}
         <div className="flex items-center gap-2">
+          {/* Layout Toggle (Grid / List) */}
+          <div className="flex items-center p-0.5 bg-black/5 dark:bg-white/5 rounded-button border border-black/5 dark:border-white/10">
+            <button
+              onClick={() => setViewMode('grid')}
+              title="Grid view"
+              aria-label="Grid view"
+              className={`p-1.5 rounded-button transition-colors ${
+                viewMode === 'grid'
+                  ? 'bg-bg-primary text-[#8B5CF6] shadow-xs'
+                  : 'text-text-muted hover:text-text-primary'
+              }`}
+            >
+              <LayoutGrid className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              title="List view"
+              aria-label="List view"
+              className={`p-1.5 rounded-button transition-colors ${
+                viewMode === 'list'
+                  ? 'bg-bg-primary text-[#8B5CF6] shadow-xs'
+                  : 'text-text-muted hover:text-text-primary'
+              }`}
+            >
+              <List className="w-4 h-4" />
+            </button>
+          </div>
+
           {/* "New Wish" button */}
           <button
             onClick={handleCreateNewWish}
