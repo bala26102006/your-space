@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
-import { Pin, MoreVertical, Archive, Trash2, Tag as TagIcon, Calendar, Copy, CheckCircle2, Circle } from 'lucide-react';
+import { Pin, MoreVertical, Archive, Trash2, Tag as TagIcon, Calendar, Copy, CheckCircle2, Circle, Palette } from 'lucide-react';
 import { COLOR_OPTIONS } from '../shared/ColorPicker';
 import TagPill from '../shared/TagPill';
 import { useLiveQuery } from '../../hooks/useLiveQuery';
 import { db } from '../../lib/db';
 import { getChecklistProgress, getWishlistTotalCost } from '../../lib/queries/cardSummary';
 import { generateUUID } from '../../lib/uuid';
+import { useConfirmStore } from '../../store/confirmStore';
+import { useToastStore } from '../../store/toastStore';
+import { softDeleteItem, restoreItem, archiveItem, unarchiveItem } from '../../lib/services/trashService';
 
 export default function NoteCard({
   note,
@@ -17,6 +20,100 @@ export default function NoteCard({
   onDelete,
 }) {
   const [showMenu, setShowMenu] = useState(false);
+  const [showColorMenu, setShowColorMenu] = useState(false);
+  const { openSoftDelete } = useConfirmStore();
+  const { showToast } = useToastStore();
+
+  const handlePin = async (e) => {
+    e.stopPropagation();
+    const nextPin = !note.is_pinned;
+    await db.notes.update(note.id, {
+      is_pinned: nextPin,
+      updated_at: new Date().toISOString(),
+    });
+    if (onPinToggle) onPinToggle(note.id);
+    showToast({ message: nextPin ? 'Pinned note' : 'Unpinned note' });
+  };
+
+  const handleColorSelect = async (e, colorId) => {
+    e.stopPropagation();
+    setShowColorMenu(false);
+    await db.notes.update(note.id, {
+      color: colorId,
+      updated_at: new Date().toISOString(),
+    });
+    const opt = COLOR_OPTIONS.find((c) => c.id === colorId);
+    showToast({ message: `Color changed to ${opt?.label || colorId}` });
+  };
+
+  const handleArchive = async (e) => {
+    e.stopPropagation();
+    setShowMenu(false);
+    const isArchived = Boolean(note.is_archived);
+    if (isArchived) {
+      await unarchiveItem({
+        id: note.id,
+        type: 'note',
+        title: note.title || 'Untitled note',
+        workspace: note.workspace_id || 'quicknotes',
+      });
+      showToast({ message: `Unarchived "${note.title || 'note'}"` });
+    } else {
+      await archiveItem({
+        id: note.id,
+        type: 'note',
+        title: note.title || 'Untitled note',
+        workspace: note.workspace_id || 'quicknotes',
+      });
+      showToast({
+        message: `Archived "${note.title || 'note'}"`,
+        action: {
+          label: 'Undo',
+          onClick: async () => {
+            await unarchiveItem({
+              id: note.id,
+              type: 'note',
+              title: note.title || 'Untitled note',
+              workspace: note.workspace_id || 'quicknotes',
+            });
+          },
+        },
+      });
+    }
+    if (onArchive) onArchive(note.id);
+  };
+
+  const handleDelete = (e) => {
+    e.stopPropagation();
+    setShowMenu(false);
+    openSoftDelete({
+      title: note.title || 'Untitled note',
+      count: 1,
+      onConfirm: async () => {
+        await softDeleteItem({
+          id: note.id,
+          type: 'note',
+          title: note.title || 'Untitled note',
+          workspace: note.workspace_id || 'quicknotes',
+        });
+        showToast({
+          message: `Moved "${note.title || 'note'}" to Trash`,
+          action: {
+            label: 'Undo',
+            onClick: async () => {
+              await restoreItem({
+                id: note.id,
+                type: 'note',
+                title: note.title || 'Untitled note',
+                workspace: note.workspace_id || 'quicknotes',
+              });
+            },
+          },
+        });
+        if (onDelete) onDelete(note.id);
+      },
+    });
+  };
 
   const checklistItems = useLiveQuery(
     () => {
@@ -165,30 +262,69 @@ export default function NoteCard({
           )}
         </div>
 
-        {/* Hover Menu Trigger */}
-        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center gap-1">
-          {onPinToggle && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onPinToggle(note.id);
-              }}
-              title={note.is_pinned ? 'Unpin' : 'Pin note'}
-              aria-label={note.is_pinned ? 'Unpin note' : 'Pin note'}
-              className="p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 text-text-muted hover:text-text-primary"
-            >
-              <Pin className={`w-3.5 h-3.5 ${note.is_pinned ? 'fill-current' : ''}`} />
-            </button>
-          )}
-
+        {/* Actions Bar: Visible on hover on desktop, always visible on touch */}
+        <div className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200 flex items-center gap-1">
+          {/* Color Change Button & Popover */}
           <div className="relative">
             <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowColorMenu(!showColorMenu);
+                setShowMenu(false);
+              }}
+              title="Change color"
+              aria-label="Change note color"
+              className="w-8 h-8 min-w-[32px] min-h-[32px] flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-text-muted hover:text-text-primary transition-colors"
+            >
+              <Palette className="w-3.5 h-3.5" />
+            </button>
+
+            {showColorMenu && (
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="absolute right-0 top-9 z-30 p-2 bg-bg-primary rounded-xl shadow-xl border border-black/10 dark:border-white/10 flex items-center gap-1.5"
+              >
+                {COLOR_OPTIONS.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={(e) => handleColorSelect(e, c.id)}
+                    title={c.label}
+                    aria-label={`Select ${c.label} color`}
+                    className={`w-6 h-6 rounded-full border transition-transform hover:scale-110 ${
+                      (note.color || 'default') === c.id ? 'ring-2 ring-[var(--workspace-accent)] ring-offset-1 scale-105' : ''
+                    }`}
+                    style={{ backgroundColor: c.border }}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Pin Button */}
+          <button
+            type="button"
+            onClick={handlePin}
+            title={note.is_pinned ? 'Unpin note' : 'Pin note'}
+            aria-label={note.is_pinned ? 'Unpin note' : 'Pin note'}
+            className="w-8 h-8 min-w-[32px] min-h-[32px] flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-text-muted hover:text-text-primary transition-colors"
+          >
+            <Pin className={`w-3.5 h-3.5 ${note.is_pinned ? 'fill-current text-amber-500' : ''}`} />
+          </button>
+
+          {/* More Actions Menu */}
+          <div className="relative">
+            <button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 setShowMenu(!showMenu);
+                setShowColorMenu(false);
               }}
+              title="More actions"
               aria-label="More note actions"
-              className="p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 text-text-muted hover:text-text-primary"
+              className="w-8 h-8 min-w-[32px] min-h-[32px] flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-text-muted hover:text-text-primary transition-colors"
             >
               <MoreVertical className="w-3.5 h-3.5" />
             </button>
@@ -196,11 +332,13 @@ export default function NoteCard({
             {showMenu && (
               <div
                 onClick={(e) => e.stopPropagation()}
-                className="absolute right-0 top-6 z-20 w-36 py-1 bg-bg-primary rounded-button shadow-lg border border-black/10 dark:border-white/10 text-xs"
+                className="absolute right-0 top-9 z-30 w-40 py-1 bg-bg-primary rounded-button shadow-xl border border-black/10 dark:border-white/10 text-xs"
               >
                 {note.workspace_id === 'checklists' && (
                   <button
-                    onClick={async () => {
+                    type="button"
+                    onClick={async (e) => {
+                      e.stopPropagation();
                       const newId = generateUUID();
                       const newNote = {
                         ...note,
@@ -212,7 +350,7 @@ export default function NoteCard({
                       };
                       await db.notes.add(newNote);
                       const items = await db.checklist_items.where('note_id').equals(note.id).toArray();
-                      const dbItems = items.map(item => ({
+                      const dbItems = items.map((item) => ({
                         ...item,
                         id: generateUUID(),
                         note_id: newId,
@@ -220,38 +358,31 @@ export default function NoteCard({
                       }));
                       await db.checklist_items.bulkAdd(dbItems);
                       setShowMenu(false);
-                      if (onSelect) onSelect(newId); // Select the newly created checklist
+                      showToast({ message: 'Checklist duplicated' });
+                      if (onSelect) onSelect(newId);
                     }}
-                    className="w-full text-left px-3 py-1.5 flex items-center gap-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+                    className="w-full text-left px-3 py-2 flex items-center gap-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400"
                   >
                     <Copy className="w-3.5 h-3.5" />
                     <span>Duplicate & Reset</span>
                   </button>
                 )}
-                {onArchive && (
-                  <button
-                    onClick={() => {
-                      onArchive(note.id);
-                      setShowMenu(false);
-                    }}
-                    className="w-full text-left px-3 py-1.5 flex items-center gap-2 hover:bg-hover-bg text-text-primary"
-                  >
-                    <Archive className="w-3.5 h-3.5" />
-                    <span>{note.is_archived ? 'Unarchive' : 'Archive'}</span>
-                  </button>
-                )}
-                {onDelete && (
-                  <button
-                    onClick={() => {
-                      onDelete(note.id);
-                      setShowMenu(false);
-                    }}
-                    className="w-full text-left px-3 py-1.5 flex items-center gap-2 hover:bg-red-50 dark:hover:bg-red-950/30 text-red-600 dark:text-red-400"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    <span>Move to Trash</span>
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={handleArchive}
+                  className="w-full text-left px-3 py-2 flex items-center gap-2 hover:bg-hover-bg text-text-primary"
+                >
+                  <Archive className="w-3.5 h-3.5" />
+                  <span>{note.is_archived ? 'Unarchive' : 'Archive'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  className="w-full text-left px-3 py-2 flex items-center gap-2 hover:bg-red-50 dark:hover:bg-red-950/30 text-red-600 dark:text-red-400"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Move to Trash</span>
+                </button>
               </div>
             )}
           </div>

@@ -3,7 +3,7 @@
 > Update this file at the end of every stage.
 
 **Last updated:** 2026-10-10
-**Current stage:** UI Fix Phase 2 — Journal Panel UI Fix & Centered Note Editor (COMPLETED)
+**Current stage:** UI Fix Phase 4 — Card Actions Fix (COMPLETED)
 
 ---
 
@@ -16,6 +16,7 @@
 - **Stage 5: Testing & QA / UI Polish Phases 1 & 2** — Global per-workspace accent color palette across light and dark modes, zero horizontal scrollbar constraint, dynamic selection rings and progress bars, safe universal UUID generation, and command palette (`Cmd/Ctrl+K`).
 - **UI Fix Phase 1: Note Editor as Centered Modal** — Replaced the split-pane right column with an accessible, responsive, centered `<NoteModal />` with focus trap, backdrop dim/blur, single-row header, color popover, and full notes list visibility with zero squeeze.
 - **UI Fix Phase 2: Journal Panel UI Fix** — Responsive header wrapping, 2-column layout with min 320px right column, natural prompt text wrapping, padded date chips, and auto-cleanup engine for empty entries.
+- **UI Fix Phase 4: Card Actions Fix** — Root cause resolved with `e.stopPropagation()`. Color change, pin/unpin, archive, soft delete, and restore now work across Quick Notes, Journal, Wish List, and Checklists with Dexie persistence, >=32px touch hit areas, and instant toasts with Undo.
 
 ## ⏭️ Next Up
 - **Stage 6: Deploy & Ship** — Final build generation, hosting configuration, environment variable lock down, and production handoff.

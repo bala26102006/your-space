@@ -7,6 +7,7 @@ import GridListPane from './components/layout/GridListPane';
 import EditorPane from './components/layout/EditorPane';
 import CommandPalette from './components/layout/CommandPalette';
 import DeleteConfirmModal from './components/shared/DeleteConfirmModal';
+import ToastContainer from './components/shared/ToastContainer';
 
 export default function App() {
   const { focusMode, theme, activeWorkspace } = useUIStore();
@@ -71,6 +72,9 @@ export default function App() {
 
       {/* Global Delete Confirmation Modal (Soft & Permanent) */}
       <DeleteConfirmModal />
+
+      {/* Global Toast Notification System */}
+      <ToastContainer />
     </div>
   );
 }

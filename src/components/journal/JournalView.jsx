@@ -11,7 +11,8 @@ import {
   Clock, 
   Pin, 
   Archive, 
-  Trash2 
+  Trash2,
+  Palette
 } from 'lucide-react';
 import { useUIStore } from '../../store/uiStore';
 import { useLiveQuery } from '../../hooks/useLiveQuery';
@@ -19,8 +20,10 @@ import { db } from '../../lib/db';
 import TagPill from '../shared/TagPill';
 import { generateUUID } from '../../lib/uuid';
 import { TimelineSkeleton } from '../shared/SkeletonLoader';
-import { softDeleteItem, archiveItem } from '../../lib/services/trashService';
+import { softDeleteItem, archiveItem, unarchiveItem, restoreItem } from '../../lib/services/trashService';
 import { useConfirmStore } from '../../store/confirmStore';
+import { useToastStore } from '../../store/toastStore';
+import { COLOR_OPTIONS } from '../shared/ColorPicker';
 
 const PROMPTS = [
   "What made you smile today?",
@@ -97,9 +100,28 @@ function extractTextPreview(content) {
   return extract(content).trim();
 }
 
+function getColorClasses(color) {
+  switch (color) {
+    case 'yellow':
+      return 'bg-card-yellow border-yellow-200/50 dark:border-yellow-900/30';
+    case 'red':
+      return 'bg-card-red border-red-200/50 dark:border-red-900/30';
+    case 'blue':
+      return 'bg-card-blue border-blue-200/50 dark:border-blue-900/30';
+    case 'green':
+      return 'bg-card-green border-green-200/50 dark:border-green-900/30';
+    case 'purple':
+      return 'bg-card-purple border-purple-200/50 dark:border-purple-900/30';
+    default:
+      return 'bg-card-default border-black/5 dark:border-white/10';
+  }
+}
+
 export default function JournalView() {
   const { setSelectedNoteId, selectedNoteId } = useUIStore();
   const { openSoftDelete } = useConfirmStore();
+  const { showToast } = useToastStore();
+  const [activeColorNoteId, setActiveColorNoteId] = useState(null);
 
   const today = new Date();
   const offset = today.getTimezoneOffset();
@@ -314,7 +336,9 @@ export default function JournalView() {
                   <div
                     key={note.id}
                     onClick={() => setSelectedNoteId(note.id)}
-                    className={`group relative bg-card-default border rounded-2xl p-5 sm:p-5.5 cursor-pointer transition-all duration-200 hover:scale-[1.01] hover:shadow-lg dark:hover:shadow-black/40 min-w-0 ${
+                    className={`group relative border rounded-2xl p-5 sm:p-5.5 cursor-pointer transition-all duration-200 hover:scale-[1.01] hover:shadow-lg dark:hover:shadow-black/40 min-w-0 ${getColorClasses(
+                      note.color
+                    )} ${
                       isSelected
                         ? 'border-[var(--workspace-accent)] ring-2 ring-[var(--workspace-accent)] shadow-card-hover'
                         : 'border-black/5 dark:border-white/10'
@@ -344,19 +368,75 @@ export default function JournalView() {
                         )}
                       </div>
 
-                      {/* Card Actions Menu */}
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                      {/* Card Actions Menu: Always visible on touch, hover on desktop, min 32px hit area */}
+                      <div className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                        {/* Color Picker Button & Popover */}
+                        <div className="relative">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveColorNoteId(activeColorNoteId === note.id ? null : note.id);
+                            }}
+                            title="Change color"
+                            aria-label="Change journal entry color"
+                            className="w-8 h-8 min-w-[32px] min-h-[32px] flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                          >
+                            <Palette className="w-3.5 h-3.5" />
+                          </button>
+
+                          {activeColorNoteId === note.id && (
+                            <div
+                              onClick={(e) => e.stopPropagation()}
+                              className="absolute right-0 top-9 z-30 p-2 bg-bg-primary rounded-xl shadow-xl border border-black/10 dark:border-white/10 flex items-center gap-1.5"
+                            >
+                              {COLOR_OPTIONS.map((c) => (
+                                <button
+                                  key={c.id}
+                                  type="button"
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
+                                    await db.notes.update(note.id, {
+                                      color: c.id,
+                                      updated_at: new Date().toISOString(),
+                                    });
+                                    setActiveColorNoteId(null);
+                                    showToast({ message: `Color changed to ${c.label}` });
+                                  }}
+                                  title={c.label}
+                                  aria-label={`Select ${c.label} color`}
+                                  className={`w-6 h-6 rounded-full border transition-transform hover:scale-110 ${
+                                    (note.color || 'default') === c.id ? 'ring-2 ring-[var(--workspace-accent)] ring-offset-1 scale-105' : ''
+                                  }`}
+                                  style={{ backgroundColor: c.border }}
+                                />
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Pin Button */}
                         <button
+                          type="button"
                           onClick={async (e) => {
                             e.stopPropagation();
-                            await db.notes.update(note.id, { is_pinned: !note.is_pinned });
+                            const nextPin = !note.is_pinned;
+                            await db.notes.update(note.id, {
+                              is_pinned: nextPin,
+                              updated_at: new Date().toISOString(),
+                            });
+                            showToast({ message: nextPin ? 'Pinned journal entry' : 'Unpinned journal entry' });
                           }}
-                          className="p-1 rounded text-text-muted hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/10"
-                          title={note.is_pinned ? 'Unpin' : 'Pin note'}
+                          className="w-8 h-8 min-w-[32px] min-h-[32px] flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                          title={note.is_pinned ? 'Unpin entry' : 'Pin entry'}
+                          aria-label={note.is_pinned ? 'Unpin entry' : 'Pin entry'}
                         >
-                          <Pin className={`w-3.5 h-3.5 ${note.is_pinned ? 'fill-current' : ''}`} />
+                          <Pin className={`w-3.5 h-3.5 ${note.is_pinned ? 'fill-current text-amber-500' : ''}`} />
                         </button>
+
+                        {/* Archive Button */}
                         <button
+                          type="button"
                           onClick={async (e) => {
                             e.stopPropagation();
                             await archiveItem({
@@ -366,30 +446,64 @@ export default function JournalView() {
                               workspace: 'journal',
                             });
                             if (selectedNoteId === note.id) setSelectedNoteId(null);
+                            showToast({
+                              message: `Archived "${note.title || 'Journal Entry'}"`,
+                              action: {
+                                label: 'Undo',
+                                onClick: async () => {
+                                  await unarchiveItem({
+                                    id: note.id,
+                                    type: 'note',
+                                    title: note.title || 'Journal Entry',
+                                    workspace: 'journal',
+                                  });
+                                },
+                              },
+                            });
                           }}
-                          className="p-1 rounded text-text-muted hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/10"
-                          title="Archive note"
+                          className="w-8 h-8 min-w-[32px] min-h-[32px] flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                          title="Archive entry"
+                          aria-label="Archive journal entry"
                         >
                           <Archive className="w-3.5 h-3.5" />
                         </button>
+
+                        {/* Delete Button */}
                         <button
+                          type="button"
                           onClick={(e) => {
                             e.stopPropagation();
                             openSoftDelete({
                               title: note.title || 'Journal Entry',
+                              count: 1,
                               onConfirm: async () => {
                                 await softDeleteItem({
-                                   id: note.id,
-                                   type: 'note',
-                                   title: note.title || 'Journal Entry',
-                                   workspace: 'journal',
+                                  id: note.id,
+                                  type: 'note',
+                                  title: note.title || 'Journal Entry',
+                                  workspace: 'journal',
                                 });
                                 if (selectedNoteId === note.id) setSelectedNoteId(null);
+                                showToast({
+                                  message: `Moved "${note.title || 'Journal Entry'}" to Trash`,
+                                  action: {
+                                    label: 'Undo',
+                                    onClick: async () => {
+                                      await restoreItem({
+                                        id: note.id,
+                                        type: 'note',
+                                        title: note.title || 'Journal Entry',
+                                        workspace: 'journal',
+                                      });
+                                    },
+                                  },
+                                });
                               },
                             });
                           }}
-                          className="p-1 rounded text-text-muted hover:text-red-500 hover:bg-red-500/10"
-                          title="Delete note"
+                          className="w-8 h-8 min-w-[32px] min-h-[32px] flex items-center justify-center rounded-lg text-text-muted hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                          title="Delete entry"
+                          aria-label="Delete journal entry"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>

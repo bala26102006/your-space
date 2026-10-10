@@ -20,13 +20,17 @@ import {
   Tag,
   ArrowUpDown,
   Search,
+  Palette,
+  Pin,
 } from 'lucide-react';
 import { useLiveQuery } from '../../hooks/useLiveQuery';
 import { useUIStore } from '../../store/uiStore';
 import { db } from '../../lib/db';
 import { generateUUID } from '../../lib/uuid';
 import { useConfirmStore } from '../../store/confirmStore';
-import { softDeleteItem, archiveItem } from '../../lib/services/trashService';
+import { softDeleteItem, archiveItem, unarchiveItem, restoreItem } from '../../lib/services/trashService';
+import { useToastStore } from '../../store/toastStore';
+import { COLOR_OPTIONS } from '../shared/ColorPicker';
 import { GridSkeleton } from '../shared/SkeletonLoader';
 
 const CATEGORIES = [
@@ -59,9 +63,28 @@ const PRESET_GRADIENTS = [
   'linear-gradient(135deg, #F59E0B 0%, #EF4444 100%)',
 ];
 
+function getColorClasses(color) {
+  switch (color) {
+    case 'yellow':
+      return 'bg-card-yellow border-yellow-200/50 dark:border-yellow-900/30';
+    case 'red':
+      return 'bg-card-red border-red-200/50 dark:border-red-900/30';
+    case 'blue':
+      return 'bg-card-blue border-blue-200/50 dark:border-blue-900/30';
+    case 'green':
+      return 'bg-card-green border-green-200/50 dark:border-green-900/30';
+    case 'purple':
+      return 'bg-card-purple border-purple-200/50 dark:border-purple-900/30';
+    default:
+      return 'bg-card-default border-black/5 dark:border-white/10';
+  }
+}
+
 export default function WishListView() {
   const { selectedNoteId, setSelectedNoteId, viewMode, setViewMode } = useUIStore();
   const { openSoftDelete } = useConfirmStore();
+  const { showToast } = useToastStore();
+  const [activeColorWishId, setActiveColorWishId] = useState(null);
 
   // Local View States
   const [quickAddInput, setQuickAddInput] = useState('');
@@ -288,6 +311,7 @@ export default function WishListView() {
     e.stopPropagation();
     openSoftDelete({
       title: wish.title || 'Untitled Wish',
+      count: 1,
       onConfirm: async () => {
         await softDeleteItem({
           id: wish.id,
@@ -298,6 +322,20 @@ export default function WishListView() {
         if (selectedNoteId === wish.id) {
           setSelectedNoteId(null);
         }
+        showToast({
+          message: `Moved "${wish.title || 'Wish'}" to Trash`,
+          action: {
+            label: 'Undo',
+            onClick: async () => {
+              await restoreItem({
+                id: wish.id,
+                type: 'note',
+                title: wish.title || 'Untitled Wish',
+                workspace: 'wishlist',
+              });
+            },
+          },
+        });
       },
     });
   };
@@ -314,6 +352,43 @@ export default function WishListView() {
     if (selectedNoteId === wish.id) {
       setSelectedNoteId(null);
     }
+    showToast({
+      message: `Archived "${wish.title || 'Wish'}"`,
+      action: {
+        label: 'Undo',
+        onClick: async () => {
+          await unarchiveItem({
+            id: wish.id,
+            type: 'note',
+            title: wish.title || 'Untitled Wish',
+            workspace: 'wishlist',
+          });
+        },
+      },
+    });
+  };
+
+  // 9. Pin Toggle
+  const handlePinWish = async (e, wish) => {
+    e.stopPropagation();
+    const nextPin = !wish.is_pinned;
+    await db.notes.update(wish.id, {
+      is_pinned: nextPin,
+      updated_at: new Date().toISOString(),
+    });
+    showToast({ message: nextPin ? 'Pinned wish' : 'Unpinned wish' });
+  };
+
+  // 10. Color Change
+  const handleColorWish = async (e, wish, colorId) => {
+    e.stopPropagation();
+    setActiveColorWishId(null);
+    await db.notes.update(wish.id, {
+      color: colorId,
+      updated_at: new Date().toISOString(),
+    });
+    const opt = COLOR_OPTIONS.find((c) => c.id === colorId);
+    showToast({ message: `Color changed to ${opt?.label || colorId}` });
   };
 
   const formatPrice = (val) => {
@@ -608,7 +683,9 @@ export default function WishListView() {
       <div
         key={wish.id}
         onClick={() => setSelectedNoteId(wish.id)}
-        className={`group relative flex flex-col justify-between h-full bg-card-default border rounded-xl overflow-hidden cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-lg dark:hover:shadow-black/40 ${
+        className={`group relative flex flex-col justify-between h-full border rounded-xl overflow-hidden cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-lg dark:hover:shadow-black/40 ${getColorClasses(
+          wish.color
+        )} ${
           isSelected
             ? 'ring-2 ring-[#8B5CF6] shadow-card-hover border-violet-500/50'
             : 'border-black/5 dark:border-white/10 hover:border-black/15 dark:hover:border-white/20'
@@ -647,21 +724,73 @@ export default function WishListView() {
             <span>{catMeta.label}</span>
           </span>
 
-          {/* Quick Hover Actions: Archive & Delete */}
-          <div className="absolute top-2.5 right-2.5 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          {/* Quick Actions: Color, Pin, Archive & Delete (Always visible on touch, hover on desktop, min 32px hit area) */}
+          <div className="absolute top-2.5 right-2.5 flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity z-10">
+            {/* Color */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveColorWishId(activeColorWishId === wish.id ? null : wish.id);
+                }}
+                title="Change color"
+                aria-label="Change wish color"
+                className="w-8 h-8 min-w-[32px] min-h-[32px] flex items-center justify-center rounded-lg bg-bg-primary/90 text-text-muted hover:text-text-primary backdrop-blur-md shadow-xs transition-colors"
+              >
+                <Palette className="w-3.5 h-3.5" />
+              </button>
+              {activeColorWishId === wish.id && (
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  className="absolute right-0 top-9 z-30 p-2 bg-bg-primary rounded-xl shadow-xl border border-black/10 dark:border-white/10 flex items-center gap-1.5"
+                >
+                  {COLOR_OPTIONS.map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={(e) => handleColorWish(e, wish, c.id)}
+                      title={c.label}
+                      aria-label={`Select ${c.label} color`}
+                      className={`w-6 h-6 rounded-full border transition-transform hover:scale-110 ${
+                        (wish.color || 'default') === c.id ? 'ring-2 ring-[var(--workspace-accent)] ring-offset-1 scale-105' : ''
+                      }`}
+                      style={{ backgroundColor: c.border }}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Pin */}
             <button
+              type="button"
+              onClick={(e) => handlePinWish(e, wish)}
+              title={wish.is_pinned ? 'Unpin wish' : 'Pin wish'}
+              aria-label={wish.is_pinned ? 'Unpin wish' : 'Pin wish'}
+              className="w-8 h-8 min-w-[32px] min-h-[32px] flex items-center justify-center rounded-lg bg-bg-primary/90 text-text-muted hover:text-text-primary backdrop-blur-md shadow-xs transition-colors"
+            >
+              <Pin className={`w-3.5 h-3.5 ${wish.is_pinned ? 'fill-current text-amber-500' : ''}`} />
+            </button>
+
+            {/* Archive */}
+            <button
+              type="button"
               onClick={(e) => handleArchiveWish(e, wish)}
               title="Archive wish"
               aria-label="Archive wish"
-              className="p-1.5 rounded-lg bg-bg-primary/90 text-text-muted hover:text-text-primary backdrop-blur-md shadow-xs"
+              className="w-8 h-8 min-w-[32px] min-h-[32px] flex items-center justify-center rounded-lg bg-bg-primary/90 text-text-muted hover:text-text-primary backdrop-blur-md shadow-xs transition-colors"
             >
               <Archive className="w-3.5 h-3.5" />
             </button>
+
+            {/* Delete */}
             <button
+              type="button"
               onClick={(e) => handleDeleteWish(e, wish)}
               title="Delete wish"
               aria-label="Delete wish"
-              className="p-1.5 rounded-lg bg-bg-primary/90 text-text-muted hover:text-red-500 backdrop-blur-md shadow-xs"
+              className="w-8 h-8 min-w-[32px] min-h-[32px] flex items-center justify-center rounded-lg bg-bg-primary/90 text-text-muted hover:text-red-500 backdrop-blur-md shadow-xs transition-colors"
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>
@@ -737,7 +866,9 @@ export default function WishListView() {
       <div
         key={wish.id}
         onClick={() => setSelectedNoteId(wish.id)}
-        className={`group flex items-center justify-between p-3 bg-card-default border rounded-xl cursor-pointer transition-all ${
+        className={`group flex items-center justify-between p-3 border rounded-xl cursor-pointer transition-all ${getColorClasses(
+          wish.color
+        )} ${
           isSelected
             ? 'ring-2 ring-[#8B5CF6] border-violet-500/50 shadow-xs'
             : 'border-black/5 dark:border-white/10 hover:border-black/15 dark:hover:border-white/20'
@@ -797,18 +928,72 @@ export default function WishListView() {
             {formatPrice(wish.price)}
           </span>
 
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+            {/* Color */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveColorWishId(activeColorWishId === wish.id ? null : wish.id);
+                }}
+                title="Change color"
+                aria-label="Change wish color"
+                className="w-8 h-8 min-w-[32px] min-h-[32px] flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+              >
+                <Palette className="w-3.5 h-3.5" />
+              </button>
+              {activeColorWishId === wish.id && (
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  className="absolute right-0 top-9 z-30 p-2 bg-bg-primary rounded-xl shadow-xl border border-black/10 dark:border-white/10 flex items-center gap-1.5"
+                >
+                  {COLOR_OPTIONS.map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={(e) => handleColorWish(e, wish, c.id)}
+                      title={c.label}
+                      aria-label={`Select ${c.label} color`}
+                      className={`w-6 h-6 rounded-full border transition-transform hover:scale-110 ${
+                        (wish.color || 'default') === c.id ? 'ring-2 ring-[var(--workspace-accent)] ring-offset-1 scale-105' : ''
+                      }`}
+                      style={{ backgroundColor: c.border }}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Pin */}
             <button
+              type="button"
+              onClick={(e) => handlePinWish(e, wish)}
+              title={wish.is_pinned ? 'Unpin wish' : 'Pin wish'}
+              aria-label={wish.is_pinned ? 'Unpin wish' : 'Pin wish'}
+              className="w-8 h-8 min-w-[32px] min-h-[32px] flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+            >
+              <Pin className={`w-3.5 h-3.5 ${wish.is_pinned ? 'fill-current text-amber-500' : ''}`} />
+            </button>
+
+            {/* Archive */}
+            <button
+              type="button"
               onClick={(e) => handleArchiveWish(e, wish)}
               title="Archive wish"
-              className="p-1 rounded text-text-muted hover:text-text-primary"
+              aria-label="Archive wish"
+              className="w-8 h-8 min-w-[32px] min-h-[32px] flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
             >
               <Archive className="w-3.5 h-3.5" />
             </button>
+
+            {/* Delete */}
             <button
+              type="button"
               onClick={(e) => handleDeleteWish(e, wish)}
               title="Delete wish"
-              className="p-1 rounded text-text-muted hover:text-red-500"
+              aria-label="Delete wish"
+              className="w-8 h-8 min-w-[32px] min-h-[32px] flex items-center justify-center rounded-lg text-text-muted hover:text-red-500 hover:bg-red-500/10 transition-colors"
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>

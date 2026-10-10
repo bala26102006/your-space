@@ -2,11 +2,29 @@
 
 > Update this file at the end of every stage.
 **Last updated:** 2026-10-10
-**Current stage:** UI Fix Phase 2 — Journal Panel UI Fix (COMPLETED)
+**Current stage:** UI Fix Phase 4 — Card Actions Fix (COMPLETED)
 
 ---
 
 ## ✅ What's Built
+- **UI Fix Phase 4 (Card Actions Fix) completed:**
+  - **Root Cause Resolution (Zero Swallowing):**
+    - Added `e.stopPropagation()` on every card action button, popover, and dropdown across `NoteCard.jsx`, `JournalView.jsx`, `WishListView.jsx`, `ArchiveView.jsx`, and `TrashView.jsx`, completely eliminating card-level click swallowing.
+  - **Universal Card Actions (Persists on Refresh):**
+    - **Change Colour:** Added 6-color interactive palette popover to Quick Notes, Journal, Wish List, and Checklists cards, updating Dexie `notes.color` and re-rendering instantly.
+    - **Pin / Unpin:** Wired reactive pin toggling across all workspace cards, updating Dexie `notes.is_pinned`.
+    - **Archive:** Integrated `archiveItem` with immediate removal from active list and instant visibility in `ArchiveView`.
+    - **Delete (Soft Delete to Trash):** Integrated `openSoftDelete` moving items to Trash with 7-day countdown.
+    - **Restore:** Enabled 1-click "Unarchive" in `ArchiveView` and "Restore" in `TrashView`.
+  - **Touch Accessibility & Hit Area Standard (>=32px):**
+    - Configured action toolbars with `opacity-100 sm:opacity-0 sm:group-hover:opacity-100` so actions are always accessible on touch devices while preserving clean hover aesthetics on desktop.
+    - Standardized all card action buttons to minimum 32px hit area (`w-8 h-8 min-w-[32px] min-h-[32px] flex items-center justify-center rounded-lg`).
+    - Added descriptive `title` tooltips and `aria-label` attributes to every button.
+  - **Global Toast Notification System with Undo:**
+    - Built lightweight Zustand `toastStore.js` and accessible `ToastContainer.jsx` mounted in `App.jsx`.
+    - Added instant feedback toasts on every action (e.g., "Archived '<title>'", "Moved '<title>' to Trash", "Color updated", "Pinned note") equipped with responsive interactive `Undo` buttons.
+  - **Permanent Delete Confirmation:**
+    - Verified permanent deletion strictly enforces typing "DELETE" in `DeleteConfirmModal.jsx` before removal.
 - **UI Fix Phase 2 (Journal Panel UI Fix) completed:**
   - **Responsive Header Wrapping (Zero Overlap):**
     - Refactored `JournalView.jsx` header to use flex with `flex-wrap gap-3` and responsive media wrapping (`max-[900px]:w-full max-[900px]:justify-start`).
@@ -250,6 +268,7 @@
 
 ## 🧭 Decisions Log
 | Date | Date | Decision | Reason |
+| 2026-10-10 | 2026-10-10 | UI Fix Phase 4 — Card Actions Fix | Added e.stopPropagation() across NoteCard, JournalView, WishListView, ArchiveView, TrashView; enabled color change, pin/unpin, archive, soft delete, and restore across all cards with Dexie persistence; added >=32px touch hit area & hover visibility; created global toastStore & ToastContainer with Undo support; enforced typed DELETE confirmation for permanent deletes. |
 | 2026-10-10 | 2026-10-10 | UI Fix Phase 2 — Journal Panel UI Fix | Refactored Journal header to flex-wrap with 900px breakpoint wrapping; replaced squeezed 12-col grid with 2-column desktop layout keeping right column min-w 320px and 1-column below 1024px; formatted prompt text with break-words normal-case; placed date chip inside card with internal padding (never over border); built empty entry auto-deletion on modal close and prepared cleanup service. |
 | 2026-10-10 | 2026-10-10 | UI Fix Phase 1 — Note Editor as Centered Modal | Eliminated right-side split pane completely; created shared NoteModal with focus trap, body-scroll lock, dim+blur backdrop (rgba(0,0,0,0.55)), auto-save on close (Esc, backdrop click, X), single-row header with responsive color picker popover, centered min(720px, 92vw) width, max 85vh height, and mobile (<640px) full-screen; notes grid maintains full width with zero reflow. |
 | 2026-10-09 | 2026-10-09 | UI Fix Phase 3 — Wish List Page | Built Wish List experience: Violet #8B5CF6 theme with underline; 8 comprehensive fields with Dexie v6 additive migration; Grid & List view toggle; equal-height cards with gradient placeholders; quick-add bar; multi-dimensional filters & sorting; live summary strip (wishes, cost, achieved this month); animated "Got it" completion flow; right-pane WishlistEditor with autosave; Phase 2 confirmation dialogs; WCAG AA dark mode & responsive down to 360px. |

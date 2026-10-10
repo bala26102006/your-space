@@ -19,8 +19,9 @@ import {
 } from 'lucide-react';
 import { useLiveQuery } from '../../hooks/useLiveQuery';
 import { db } from '../../lib/db';
-import { restoreItem, permanentDeleteItem, logActivity } from '../../lib/services/trashService';
+import { restoreItem, permanentDeleteItem, softDeleteItem, logActivity } from '../../lib/services/trashService';
 import { useConfirmStore } from '../../store/confirmStore';
+import { useToastStore } from '../../store/toastStore';
 
 const WORKSPACE_ICONS = {
   quicknotes: { icon: StickyNote, label: 'Quick Notes', color: 'text-amber-500 dark:text-amber-400 bg-amber-500/10 border-amber-500/20' },
@@ -36,6 +37,7 @@ export default function TrashView() {
   const [activeTab, setActiveTab] = useState('items'); // 'items' | 'history'
   const [selectedIds, setSelectedIds] = useState(new Set());
   const { openPermanentDelete } = useConfirmStore();
+  const { showToast } = useToastStore();
 
   // 1. Fetch deleted items
   const deletedNotes = useLiveQuery(
@@ -143,6 +145,20 @@ export default function TrashView() {
       next.delete(item.id);
       return next;
     });
+    showToast({
+      message: `Restored "${item.title}" to ${item.workspace}`,
+      action: {
+        label: 'Undo',
+        onClick: async () => {
+          await softDeleteItem({
+            id: item.id,
+            type: item.type,
+            title: item.title,
+            workspace: item.workspace,
+          });
+        },
+      },
+    });
   };
 
   const handleDeleteForever = (item) => {
@@ -161,6 +177,7 @@ export default function TrashView() {
           next.delete(item.id);
           return next;
         });
+        showToast({ message: `Permanently deleted "${item.title}"` });
       },
     });
   };
@@ -176,7 +193,9 @@ export default function TrashView() {
         workspace: item.workspace,
       });
     }
+    const count = selectedItems.length;
     setSelectedIds(new Set());
+    showToast({ message: `Restored ${count} items` });
   };
 
   const handleDeleteSelected = () => {
@@ -457,17 +476,27 @@ export default function TrashView() {
                     {/* Right: Actions */}
                     <div className="flex items-center gap-2 shrink-0 ml-4">
                       <button
-                        onClick={() => handleRestore(item)}
-                        className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 rounded transition-colors"
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRestore(item);
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 min-h-[32px] text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors"
                         title="Restore to original workspace"
+                        aria-label="Restore to original workspace"
                       >
                         <RefreshCw className="w-3.5 h-3.5" />
                         <span>Restore</span>
                       </button>
                       <button
-                        onClick={() => handleDeleteForever(item)}
-                        className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-500/10 rounded transition-colors"
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteForever(item);
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 min-h-[32px] text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
                         title="Delete permanently"
+                        aria-label="Delete permanently"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                         <span>Delete forever</span>

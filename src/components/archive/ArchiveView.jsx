@@ -14,8 +14,9 @@ import {
 } from 'lucide-react';
 import { useLiveQuery } from '../../hooks/useLiveQuery';
 import { db } from '../../lib/db';
-import { unarchiveItem, softDeleteItem } from '../../lib/services/trashService';
+import { unarchiveItem, archiveItem, softDeleteItem, restoreItem } from '../../lib/services/trashService';
 import { useConfirmStore } from '../../store/confirmStore';
+import { useToastStore } from '../../store/toastStore';
 
 const WORKSPACE_DEFINITIONS = [
   { id: 'quicknotes', label: 'Quick Notes', icon: StickyNote, color: 'text-amber-500 dark:text-amber-400 bg-amber-500/10 border-amber-500/20' },
@@ -29,6 +30,7 @@ const WORKSPACE_DEFINITIONS = [
 
 export default function ArchiveView() {
   const { openSoftDelete } = useConfirmStore();
+  const { showToast } = useToastStore();
 
   // Fetch archived items
   const archivedNotes = useLiveQuery(
@@ -101,6 +103,20 @@ export default function ArchiveView() {
       title: item.title,
       workspace: item.workspace,
     });
+    showToast({
+      message: `Restored "${item.title}" to ${item.workspace}`,
+      action: {
+        label: 'Undo',
+        onClick: async () => {
+          await archiveItem({
+            id: item.id,
+            type: item.type,
+            title: item.title,
+            workspace: item.workspace,
+          });
+        },
+      },
+    });
   };
 
   const handleMoveToTrash = (item) => {
@@ -120,6 +136,26 @@ export default function ArchiveView() {
           type: item.type,
           title: item.title,
           workspace: item.workspace,
+        });
+        showToast({
+          message: `Moved "${item.title}" to Trash`,
+          action: {
+            label: 'Undo',
+            onClick: async () => {
+              await restoreItem({
+                id: item.id,
+                type: item.type,
+                title: item.title,
+                workspace: item.workspace,
+              });
+              await archiveItem({
+                id: item.id,
+                type: item.type,
+                title: item.title,
+                workspace: item.workspace,
+              });
+            },
+          },
         });
       },
     });
@@ -238,18 +274,28 @@ export default function ArchiveView() {
                         {/* Bottom: Action Buttons */}
                         <div className="mt-4 pt-3 border-t border-black/5 dark:border-white/5 flex items-center justify-between">
                           <button
-                            onClick={() => handleUnarchive(item)}
-                            className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-text-primary hover:bg-black/5 dark:hover:bg-white/10 rounded transition-colors"
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleUnarchive(item);
+                            }}
+                            className="flex items-center gap-1.5 px-3 py-1.5 min-h-[32px] text-xs font-medium text-text-primary hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition-colors"
                             title="Restore back to workspace"
+                            aria-label="Restore back to workspace"
                           >
                             <RefreshCw className="w-3.5 h-3.5" />
                             <span>Unarchive</span>
                           </button>
 
                           <button
-                            onClick={() => handleMoveToTrash(item)}
-                            className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-500/10 rounded transition-colors"
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleMoveToTrash(item);
+                            }}
+                            className="flex items-center gap-1.5 px-3 py-1.5 min-h-[32px] text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
                             title="Move to trash"
+                            aria-label="Move item to trash"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                             <span>Move to Trash</span>
