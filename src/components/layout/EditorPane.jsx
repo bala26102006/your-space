@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { X, Pin, Archive, Trash2, Tag as TagIcon, Maximize2, Minimize2, Plus, ArrowRightLeft, Sparkles, Loader2 } from 'lucide-react';
 import { useUIStore } from '../../store/uiStore';
 import { useLiveQuery } from '../../hooks/useLiveQuery';
@@ -166,11 +166,11 @@ export default function EditorPane() {
   };
 
   // Close handler: resets active selection and closes modal
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     if (isProject) setSelectedProjectId(null);
     else if (isSubproject) setSelectedSubprojectId(null);
     else setSelectedNoteId(null);
-  };
+  }, [isProject, isSubproject, setSelectedProjectId, setSelectedSubprojectId, setSelectedNoteId]);
 
   // If no note or project item is selected, render nothing!
   // Split-view logic is completely removed: GridListPane maintains full width.
@@ -639,6 +639,8 @@ export default function EditorPane() {
     </>
   );
 
+  const isNewItem = Boolean(activeItem && (!activeItem.title || activeItem.title === '') && activeItem.created_at === activeItem.updated_at);
+
   return (
     <NoteModal
       isOpen={true}
@@ -655,9 +657,12 @@ export default function EditorPane() {
       onToggleExpand={() => setIsExpanded(!isExpanded)}
       headerRight={extraHeaderActions}
       footer={aiSuggestion || activeItem?.content?.isStarterKit ? modalFooter : null}
+      autoFocusTitle={isNewItem}
     >
       {/* Title Input */}
       <input
+        id="editor-title-input"
+        data-title-input="true"
         type="text"
         placeholder={isProject ? "Project Title..." : isSubproject ? "Section Title..." : "Title..."}
         value={title}
@@ -723,7 +728,12 @@ export default function EditorPane() {
           {/* Specialized Editors */}
           <div className="flex-1 min-h-[250px]">
             {note?.workspace_id === 'wishlist' ? (
-              <WishlistEditor content={content} onChange={handleEditorChange} />
+              <WishlistEditor
+                key={selectedNoteId}
+                itemId={selectedNoteId}
+                content={content}
+                onChange={handleEditorChange}
+              />
             ) : note?.workspace_id === 'checklists' ? (
               <ChecklistEditor noteId={selectedNoteId} content={content} onChange={handleEditorChange} />
             ) : (

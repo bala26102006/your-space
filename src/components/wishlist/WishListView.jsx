@@ -32,6 +32,7 @@ import { softDeleteItem, archiveItem, unarchiveItem, restoreItem } from '../../l
 import { useToastStore } from '../../store/toastStore';
 import { COLOR_OPTIONS } from '../shared/ColorPicker';
 import { GridSkeleton } from '../shared/SkeletonLoader';
+import WishlistCard from './WishlistCard';
 
 const CATEGORIES = [
   { id: 'All', label: 'All', icon: Sparkles },
@@ -634,7 +635,7 @@ export default function WishListView() {
 
                 {/* Render Grid or List */}
                 {viewMode === 'grid' ? (
-                  <div className="grid grid-cols-1 @min-[500px]:grid-cols-2 @min-[850px]:grid-cols-3 @min-[1150px]:grid-cols-4 gap-4 items-stretch">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-stretch">
                     {activeWishes.map((wish) => renderWishCard(wish))}
                   </div>
                 ) : (
@@ -656,7 +657,7 @@ export default function WishListView() {
                 )}
 
                 {viewMode === 'grid' ? (
-                  <div className="grid grid-cols-1 @min-[500px]:grid-cols-2 @min-[850px]:grid-cols-3 @min-[1150px]:grid-cols-4 gap-4 items-stretch opacity-75 hover:opacity-100 transition-opacity">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-stretch opacity-75 hover:opacity-100 transition-opacity">
                     {completedWishes.map((wish) => renderWishCard(wish, true))}
                   </div>
                 ) : (
@@ -674,185 +675,20 @@ export default function WishListView() {
 
   // Helper: Card Renderer for Grid View
   function renderWishCard(wish, isCompleted = false) {
-    const isSelected = selectedNoteId === wish.id;
-    const isAnimating = animatingId === wish.id;
-    const catMeta = getCategoryMeta(wish.category);
-    const CatIcon = catMeta.icon;
-
     return (
-      <div
+      <WishlistCard
         key={wish.id}
-        onClick={() => setSelectedNoteId(wish.id)}
-        className={`group relative flex flex-col justify-between h-full border rounded-xl overflow-hidden cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-lg dark:hover:shadow-black/40 ${getColorClasses(
-          wish.color
-        )} ${
-          isSelected
-            ? 'ring-2 ring-[#8B5CF6] shadow-card-hover border-violet-500/50'
-            : 'border-black/5 dark:border-white/10 hover:border-black/15 dark:hover:border-white/20'
-        } ${isCompleted ? 'bg-black/[0.01] dark:bg-white/[0.01]' : ''}`}
-      >
-        {/* Top: Image or Violet Gradient Placeholder */}
-        <div className="relative w-full aspect-video bg-black/5 dark:bg-white/5 overflow-hidden shrink-0">
-          {wish.image ? (
-            wish.image.startsWith('linear-gradient') ? (
-              <div className="w-full h-full" style={{ background: wish.image }} />
-            ) : (
-              <img
-                src={wish.image}
-                alt={wish.title}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                }}
-              />
-            )
-          ) : (
-            /* Violet Gradient Placeholder */
-            <div className="w-full h-full bg-gradient-to-br from-violet-500/20 via-purple-500/10 to-indigo-500/20 flex flex-col items-center justify-center p-3 text-violet-500">
-              <Sparkles className="w-7 h-7 mb-1 opacity-70 group-hover:scale-110 transition-transform" />
-              <span className="text-[10px] uppercase font-mono font-semibold tracking-wider opacity-60">
-                {wish.category}
-              </span>
-            </div>
-          )}
-
-          {/* Category Chip Badge Overlay */}
-          <span
-            className={`absolute top-2.5 left-2.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border backdrop-blur-md shadow-xs ${catMeta.color}`}
-          >
-            <CatIcon className="w-2.5 h-2.5" />
-            <span>{catMeta.label}</span>
-          </span>
-
-          {/* Quick Actions: Color, Pin, Archive & Delete (Always visible on touch, hover on desktop, min 32px hit area) */}
-          <div className="absolute top-2.5 right-2.5 flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity z-10">
-            {/* Color */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setActiveColorWishId(activeColorWishId === wish.id ? null : wish.id);
-                }}
-                title="Change color"
-                aria-label="Change wish color"
-                className="w-8 h-8 min-w-[32px] min-h-[32px] flex items-center justify-center rounded-lg bg-bg-primary/90 text-text-muted hover:text-text-primary backdrop-blur-md shadow-xs transition-colors"
-              >
-                <Palette className="w-3.5 h-3.5" />
-              </button>
-              {activeColorWishId === wish.id && (
-                <div
-                  onClick={(e) => e.stopPropagation()}
-                  className="absolute right-0 top-9 z-30 p-2 bg-bg-primary rounded-xl shadow-xl border border-black/10 dark:border-white/10 flex items-center gap-1.5"
-                >
-                  {COLOR_OPTIONS.map((c) => (
-                    <button
-                      key={c.id}
-                      type="button"
-                      onClick={(e) => handleColorWish(e, wish, c.id)}
-                      title={c.label}
-                      aria-label={`Select ${c.label} color`}
-                      className={`w-6 h-6 rounded-full border transition-transform hover:scale-110 ${
-                        (wish.color || 'default') === c.id ? 'ring-2 ring-[var(--workspace-accent)] ring-offset-1 scale-105' : ''
-                      }`}
-                      style={{ backgroundColor: c.border }}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Pin */}
-            <button
-              type="button"
-              onClick={(e) => handlePinWish(e, wish)}
-              title={wish.is_pinned ? 'Unpin wish' : 'Pin wish'}
-              aria-label={wish.is_pinned ? 'Unpin wish' : 'Pin wish'}
-              className="w-8 h-8 min-w-[32px] min-h-[32px] flex items-center justify-center rounded-lg bg-bg-primary/90 text-text-muted hover:text-text-primary backdrop-blur-md shadow-xs transition-colors"
-            >
-              <Pin className={`w-3.5 h-3.5 ${wish.is_pinned ? 'fill-current text-amber-500' : ''}`} />
-            </button>
-
-            {/* Archive */}
-            <button
-              type="button"
-              onClick={(e) => handleArchiveWish(e, wish)}
-              title="Archive wish"
-              aria-label="Archive wish"
-              className="w-8 h-8 min-w-[32px] min-h-[32px] flex items-center justify-center rounded-lg bg-bg-primary/90 text-text-muted hover:text-text-primary backdrop-blur-md shadow-xs transition-colors"
-            >
-              <Archive className="w-3.5 h-3.5" />
-            </button>
-
-            {/* Delete */}
-            <button
-              type="button"
-              onClick={(e) => handleDeleteWish(e, wish)}
-              title="Delete wish"
-              aria-label="Delete wish"
-              className="w-8 h-8 min-w-[32px] min-h-[32px] flex items-center justify-center rounded-lg bg-bg-primary/90 text-text-muted hover:text-red-500 backdrop-blur-md shadow-xs transition-colors"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
-
-        {/* Middle Content: Title, Priority, Price */}
-        <div className="p-3.5 flex flex-col justify-between flex-1 min-w-0">
-          <div>
-            <div className="flex items-start justify-between gap-2 mb-1.5">
-              <h3
-                className={`text-sm font-semibold text-text-primary line-clamp-2 leading-snug ${
-                  isCompleted ? 'line-through text-text-muted' : ''
-                }`}
-                title={wish.title}
-              >
-                {wish.title || 'Untitled Wish'}
-              </h3>
-            </div>
-
-            {/* Price & Target Date */}
-            <div className="flex items-center justify-between text-xs mt-1">
-              <span className="font-bold text-violet-600 dark:text-violet-400">
-                {formatPrice(wish.price)}
-              </span>
-
-              {wish.targetDate && (
-                <span className="flex items-center gap-1 text-[11px] text-text-muted">
-                  <Calendar className="w-3 h-3 opacity-60" />
-                  <span>{wish.targetDate}</span>
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Bottom Card Footer: Priority Dot & "Got it" Check Button */}
-          <div className="mt-3.5 pt-2.5 border-t border-black/5 dark:border-white/5 flex items-center justify-between">
-            <div className="flex items-center gap-1.5 text-[11px] text-text-muted">
-              <span className={`w-2 h-2 rounded-full ring-2 ${getPriorityDot(wish.priority)}`} />
-              <span>{wish.priority}</span>
-            </div>
-
-            {/* "Got it" Button */}
-            <button
-              onClick={(e) => handleToggleGotIt(e, wish)}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
-                isCompleted
-                  ? 'bg-emerald-500 text-white shadow-xs'
-                  : 'bg-black/5 dark:bg-white/5 text-text-muted hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20'
-              } ${isAnimating ? 'scale-110' : ''}`}
-              title={isCompleted ? 'Mark as wishing' : 'Mark as got it!'}
-            >
-              {isCompleted ? (
-                <CheckCircle2 className="w-3.5 h-3.5 fill-current" />
-              ) : (
-                <Circle className="w-3.5 h-3.5" />
-              )}
-              <span>{isCompleted ? 'Got it!' : 'Check'}</span>
-            </button>
-          </div>
-        </div>
-      </div>
+        wish={wish}
+        isSelected={selectedNoteId === wish.id}
+        isCompleted={isCompleted || wish.isGotIt}
+        onSelect={(id) => setSelectedNoteId(id)}
+        onToggleGotIt={handleToggleGotIt}
+        onColorChange={handleColorWish}
+        onPinToggle={handlePinWish}
+        onArchive={handleArchiveWish}
+        onDelete={handleDeleteWish}
+        isAnimating={animatingId === wish.id}
+      />
     );
   }
 
@@ -866,7 +702,7 @@ export default function WishListView() {
       <div
         key={wish.id}
         onClick={() => setSelectedNoteId(wish.id)}
-        className={`group flex items-center justify-between p-3 border rounded-xl cursor-pointer transition-all ${getColorClasses(
+        className={`group flex items-center justify-between h-14 min-h-[48px] max-h-[64px] px-3.5 py-2 border rounded-xl cursor-pointer transition-all ${getColorClasses(
           wish.color
         )} ${
           isSelected
@@ -874,16 +710,19 @@ export default function WishListView() {
             : 'border-black/5 dark:border-white/10 hover:border-black/15 dark:hover:border-white/20'
         } ${isCompleted ? 'bg-black/[0.01] dark:bg-white/[0.01]' : ''}`}
       >
-        <div className="flex items-center gap-3 min-w-0 flex-1">
+        <div className="flex items-center gap-2.5 min-w-0 flex-1">
           {/* Got it toggle */}
           <button
+            type="button"
             onClick={(e) => handleToggleGotIt(e, wish)}
-            className={`shrink-0 transition-transform ${
+            className={`w-8 h-8 min-w-[32px] min-h-[32px] flex items-center justify-center rounded-lg shrink-0 transition-transform ${
               isCompleted ? 'text-emerald-500' : 'text-text-muted hover:text-emerald-500'
             }`}
+            title={isCompleted ? 'Mark as wishing' : 'Mark as got it!'}
+            aria-label={isCompleted ? 'Mark as wishing' : 'Mark as got it'}
           >
             {isCompleted ? (
-              <CheckCircle2 className="w-4 h-4" />
+              <CheckCircle2 className="w-4 h-4 fill-current" />
             ) : (
               <Circle className="w-4 h-4" />
             )}

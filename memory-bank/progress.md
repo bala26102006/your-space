@@ -1,12 +1,49 @@
 # Memory Bank — Progress Tracker
 
 > Update this file at the end of every stage.
-**Last updated:** 2026-10-10
-**Current stage:** Journal Scroll & Split-View Layout Fix (COMPLETED — Steps 1-6)
+**Last updated:** 2026-10-11
+**Current stage:** Wish List Editor Focus Jump Fix (COMPLETED)
 
 ---
 
 ## ✅ What's Built
+- **Wish List Editor Focus Jump Fix completed:**
+  - **NoteModal Focus Stabilization (`NoteModal.jsx`):**
+    - Refactored `onClose` to `useRef(onClose)` so changes in callback references do not re-run the modal focus trap or body scroll lock effects.
+    - Decoupled auto-focus from general modal state. Introduced `autoFocusTitle` prop (defaults to `false`), using `hasFocusedRef` to ensure auto-focus triggers strictly once on initial mount for newly created items.
+    - Preserved focus when interacting with, typing in, or clicking any other input or field.
+  - **Editor Pane State & Props (`EditorPane.jsx`):**
+    - Wrapped `handleClose` in `useCallback` with stable dependencies (`[isProject, isSubproject, setSelectedProjectId, setSelectedSubprojectId, setSelectedNoteId]`).
+    - Added `isNewItem` calculation (`activeItem.created_at === activeItem.updated_at && !activeItem.title`) passing `autoFocusTitle={isNewItem}` to `NoteModal`.
+    - Added `id="editor-title-input"` and `data-title-input="true"` to Title input.
+    - Passed stable `key={selectedNoteId}` and `itemId={selectedNoteId}` to `WishlistEditor`.
+  - **Wishlist Form State Sync, Debounce & UX (`WishlistEditor.jsx`):**
+    - Local state syncs strictly when `itemId` changes (`[itemId, content]`), preventing autosave echo from resetting in-progress form inputs.
+    - Implemented ~600ms debounced autosave for text inputs (Price, Link, Notes, Cover Image URL) with immediate flush on `blur`, while category/status/priority button clicks save immediately.
+    - Updated Estimated Price input to `type="text"` with `inputMode="decimal"` and non-focusable `₹` prefix (`pointer-events-none`). Decimal typing, backspacing, and field clearing are smooth without premature number conversion. Formats cleanly on `blur`.
+    - Configured unique `id` and `<label htmlFor="...">` attributes across all editor fields (`wishlist-image`, `wishlist-price`, `wishlist-target-date`, `wishlist-link`, `wishlist-notes`).
+  - **Verification:**
+    - Verified `npm run build` succeeds cleanly with code 0 (`vite build` in 20.89s).
+    - Verified in browser: created new wish ("New Laptop"), entered price ("25000"), added link ("https://apple.com") and notes ("M3 Max 36GB RAM"), selected category ("Learn") and priority ("High") with zero focus jumping back to title. All data autosaved properly and persists in view.
+- **Wish List Card Size Fix completed:**
+  - **Compact Card Component (`WishlistCard.jsx`):**
+    - Created dedicated, modular `src/components/wishlist/WishlistCard.jsx`.
+    - Removed the massive `aspect-video` placeholder area. If a wish has no image, no placeholder image/gradient is rendered at all, displaying clean, breathable content.
+    - If a wish has an image, renders it as a compact 64x64 rounded thumbnail on the left side (`w-16 h-16 min-w-[64px] min-h-[64px] rounded-xl object-cover shrink-0`).
+    - Enforced a strict maximum card height of 120px (`max-h-[120px] h-full`), keeping cards roughly the same height as Quick Notes cards (~84-90px).
+    - Single-line title with ellipsis (`truncate font-semibold text-sm`).
+    - Inline price (`text-xs font-bold text-violet-600 dark:text-violet-400 shrink-0`), category pill, and priority dot.
+    - Right-aligned 32px height pill "Check" / "Got it!" button (`h-8 min-h-[32px] px-2.5 rounded-full flex items-center gap-1.5 text-xs font-medium`).
+    - Standardized card action buttons (Color palette, Pin, Archive, Delete) with min 32px hit area, `e.stopPropagation()`, visible on touch and on hover for desktop.
+  - **Grid Layout Standardization (`WishListView.jsx`):**
+    - Updated active and completed wish grids to `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-stretch`.
+    - Guaranteed uniform equal heights across all cards via `items-stretch` and `h-full`.
+  - **Compact List View Rows:**
+    - Standardized list view rows to compact 48-64px height (`h-14 min-h-[48px] max-h-[64px] px-3.5 py-2`).
+    - Thumbnail (or small category icon), title, category, priority, price, and actions positioned inline with zero vertical overflow.
+  - **Verification:**
+    - Verified production build compiles cleanly with code 0 (`vite build` in 8.11s).
+    - Verified in browser: multiple compact cards render cleanly across the screen without giant placeholders or empty whitespace.
 - **Journal Scroll & Split-View Layout Fix (Steps 1 through 6) completed:**
   - **Step 1 (Diagnose & Root Cause Audit):**
     - Identified nested scroll containers competing for vertical space in JournalView, Daily Prompt, Mood History, and TipTap canvas.

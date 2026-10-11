@@ -25,13 +25,20 @@ export default function NoteModal({
   footer,
   className = '',
   contentClassName = '',
+  autoFocusTitle = false,
 }) {
   const modalRef = useRef(null);
   const previousActiveElement = useRef(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+  const hasFocusedRef = useRef(false);
 
-  // Focus trap & body scroll lock
+  // Focus trap & body scroll lock (runs strictly when isOpen changes)
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      hasFocusedRef.current = false;
+      return;
+    }
 
     // Save previously focused element to restore on close
     previousActiveElement.current = document.activeElement;
@@ -40,23 +47,11 @@ export default function NoteModal({
     const prevBodyOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
-    // Auto-focus first meaningful input or button
-    const timer = setTimeout(() => {
-      if (!modalRef.current) return;
-      const targetInput = modalRef.current.querySelector('input:not([type="hidden"]), textarea, [data-autofocus="true"]');
-      if (targetInput) {
-        targetInput.focus();
-      } else {
-        const firstFocusable = modalRef.current.querySelector(FOCUSABLE_SELECTOR);
-        if (firstFocusable) firstFocusable.focus();
-      }
-    }, 40);
-
     // Keyboard handlers: Escape to close, Tab to cycle focus
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
         e.preventDefault();
-        onClose?.();
+        onCloseRef.current?.();
         return;
       }
 
@@ -91,14 +86,29 @@ export default function NoteModal({
     document.addEventListener('keydown', handleKeyDown);
 
     return () => {
-      clearTimeout(timer);
       document.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = prevBodyOverflow;
       if (previousActiveElement.current && typeof previousActiveElement.current.focus === 'function') {
         previousActiveElement.current.focus();
       }
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]);
+
+  // Title auto-focus: ONLY ONCE when brand-new wish/item requests it (autoFocusTitle === true)
+  useEffect(() => {
+    if (!isOpen || !autoFocusTitle || hasFocusedRef.current) return;
+    hasFocusedRef.current = true;
+
+    const timer = setTimeout(() => {
+      if (!modalRef.current) return;
+      const targetInput = modalRef.current.querySelector('[data-title-input="true"], input:not([type="hidden"]), textarea, [data-autofocus="true"]');
+      if (targetInput && document.activeElement !== targetInput) {
+        targetInput.focus();
+      }
+    }, 50);
+
+    return () => clearTimeout(timer);
+  }, [isOpen, autoFocusTitle]);
 
   if (!isOpen) return null;
 
