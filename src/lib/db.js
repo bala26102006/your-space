@@ -62,6 +62,11 @@ db.version(6).stores({
   notes: 'id, workspace_id, subproject_id, note_type, title, is_pinned, is_archived, is_deleted, deleted_at, archivedAt, deletedAt, deletedFrom, category, status, priority, updated_at'
 });
 
+db.version(7).stores({
+  attachments: 'id, note_id, type, title, created_at, updated_at'
+});
+
+
 db.on('populate', () => {
   db.workspaces.bulkAdd([
     { id: 'quicknotes', label: 'Quick Notes', icon: 'StickyNote', sort_order: 1 },

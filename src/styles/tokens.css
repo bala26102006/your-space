@@ -39,7 +39,14 @@ input:-webkit-autofill:active{
   --divider-color: rgba(0, 0, 0, 0.06);
 
   /* Per-Workspace Accent Colors (Light Mode) */
+  --accent-today: #F59E0B;
+  --accent-today-rgb: 245, 158, 11;
+  --accent-today-bg: rgba(245, 158, 11, 0.12);
+  --accent-today-hover: rgba(245, 158, 11, 0.20);
+  --accent-today-text: #FFFFFF;
+
   --accent-quicknotes: #F59E0B;
+
   --accent-quicknotes-rgb: 245, 158, 11;
   --accent-quicknotes-bg: rgba(245, 158, 11, 0.12);
   --accent-quicknotes-hover: rgba(245, 158, 11, 0.20);
@@ -132,7 +139,14 @@ input:-webkit-autofill:active{
   --card-purple: #241C2B;
 
   /* Workspace Accents in Dark Mode (Lighter Tints) */
+  --accent-today: #FBBF24;
+  --accent-today-rgb: 251, 191, 36;
+  --accent-today-bg: rgba(251, 191, 36, 0.15);
+  --accent-today-hover: rgba(251, 191, 36, 0.25);
+  --accent-today-text: #ECEEF2;
+
   --accent-quicknotes: #FBBF24;
+
   --accent-quicknotes-rgb: 251, 191, 36;
   --accent-quicknotes-bg: rgba(251, 191, 36, 0.15);
   --accent-quicknotes-hover: rgba(251, 191, 36, 0.25);
@@ -194,12 +208,20 @@ input:-webkit-autofill:active{
 }
 
 /* Dynamic Workspace Context Selectors */
+[data-workspace="today"] {
+  --workspace-accent: var(--accent-today);
+  --workspace-accent-rgb: var(--accent-today-rgb);
+  --workspace-accent-bg: var(--accent-today-bg);
+  --workspace-accent-hover: var(--accent-today-hover);
+}
+
 [data-workspace="quicknotes"] {
   --workspace-accent: var(--accent-quicknotes);
   --workspace-accent-rgb: var(--accent-quicknotes-rgb);
   --workspace-accent-bg: var(--accent-quicknotes-bg);
   --workspace-accent-hover: var(--accent-quicknotes-hover);
 }
+
 
 [data-workspace="projects"] {
   --workspace-accent: var(--accent-projects);

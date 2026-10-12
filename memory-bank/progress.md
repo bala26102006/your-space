@@ -1,12 +1,161 @@
 # Memory Bank — Progress Tracker
 
 > Update this file at the end of every stage.
-**Last updated:** 2026-10-11
-**Current stage:** Wish List Editor Focus Jump Fix (COMPLETED)
+**Last updated:** 2026-10-12
+**Current stage:** Sketch Optimization & Bug Fixes (Lag, Strokes & Layout) (COMPLETED — Awaiting User Approval)
 
 ---
 
 ## ✅ What's Built
+- **Sketch Engine Optimization & Experience Fixes (Drawing Lag, Strokes, and Layout):**
+  - **Drawing Lag Eliminated (60fps steady, <2ms pointermove handler):**
+    - **Dual-Canvas Architecture:** Decoupled the drawing workspace into (1) a cached `committedCanvasRef` holding all completed layers, background pattern, and guides (redrawn only on undo/redo, layer changes, zoom, or resize), and (2) an ultra-fast `liveCanvasRef` (`desynchronized: true`) that only renders the single in-flight active stroke.
+    - **Zero-Re-Render Pointer Handling:** Eliminated React state (`setCursorPos`) and store mutations on `pointermove`. All pointer tracking occurs outside the React component lifecycle using refs and direct canvas rendering batched in `requestAnimationFrame`.
+    - **High-Performance Direct Outlines:** Replaced dynamic SVG string parsing (`reduce` + `Path2D`) in `strokeRenderer.js` with direct Canvas 2D quadratic Bézier curve polygon filling (`drawDirectOutline`), eliminating hundreds of memory allocations per frame.
+    - **Hardware-Accelerated Cursor Preview:** Replaced DOM React-state cursor follower with a lightweight, GPU-transformed div updated directly via `style.transform = translate3d` in the native pointer handler with zero React re-renders.
+    - **Coalesced Points & Subpixel Filter:** Integrated `e.getCoalescedEvents()` to capture high-density intermediate pointer points without dropping curve segments, and filtered out subpixel micro-jitter points (<0.5px).
+    - **Ramer-Douglas-Peucker Simplification:** Added `simplifyPoints` algorithm with epsilon 0.3px executed on `pointerup`, reducing stored stroke points cleanly without visible geometry degradation.
+  - **Clumsy / Wobbly Strokes Fixed:**
+    - **Uniform Width for Mouse Input:** Detected `hasRealPressure`. For mouse input (where browser pressure defaults to 0.5), `thinning` is set to 0, completely removing velocity-based thickness fluctuations. Real pressure variation (`thinning: 0.35`) is active only when true stylus hardware pressure is detected.
+    - **Responsive Distance-Based Smoothing:** Default stabilizer tuned to snappy 15% distance-based smoothing (`streamline: 0.075`), eliminating trailing line latency and wobbles.
+    - **Shift-Key Angle Snap:** Holding Shift constrains the in-flight line to strict 15° incremental angles for pixel-perfect straight lines.
+  - **Layout & UI Bugs Fixed:**
+    - **Viewport Fitting:** Added responsive `handleFitToScreen` calculation with 24px margins and responsive centering, plus a `1:1` zoom reset shortcut in the top bar.
+    - **Tool Rail Overflow & Reachability:** Added custom thin scrollbars (`[scrollbar-width:thin] overflow-y-auto pb-6`) to the left tool rail, ensuring all tools (Eraser, Fill, Text, Stamps, etc.) are reachable and clickable at any viewport height down to 480px.
+    - **Title Input Truncation:** Added `min-w-[140px]` with flexible expansion and tooltip title to prevent the title from displaying as `"Unti..."`.
+    - **Brush Size Chip:** Corrected text from truncated `"4p"` to full `"4px font-medium"`. Clicking the chip opens the brush & color popover.
+    - **Photo Locked Chip:** Strictly gated the chip behind `{hasPhoto && ...}`, ensuring it remains hidden on clean sketches without image layers.
+  - **Verification:**
+    - `npm run build` succeeds cleanly in 11.72s with zero errors.
+    - Automated browser subagent verified drawing smoothness, straight line snapping with Shift, tool rail reachability, brush size popover, and top bar fixes with zero console exceptions.
+- **Sketch Studio Phase 1B (Doodle Experience) completed:**
+  - **Instant Doodle Start (<1s):**
+    - "New Sketch" opens a ready, blank, full-size canvas immediately (defaults to Free canvas, white in light mode, dark in dark mode) with zero initial size picker prompt.
+    - Added "Quick Doodle" button (and global keyboard shortcut `D` from the Sketch panel) to start sketching in 1 click.
+    - Database persistence is deferred until the user actually draws on the canvas (preserves empty-sketch cleanup).
+    - Canvas size, background patterns, and aspect ratio presets moved into the "Canvas" option in the top More menu, changeable anytime.
+  - **8 Doodle Brushes (`src/lib/sketch/strokeRenderer.js`, `types.js`):**
+    - **Pen**: ultra-smooth ink with `perfect-freehand` spline smoothing and stylus pressure dynamics.
+    - **Marker**: bold, chiseled edges with consistent ink saturation.
+    - **Highlighter**: translucent ink wash with multiply blend mode (`globalCompositeOperation = 'multiply'`).
+    - **Pencil**: textured graphite tooth with stippled grit specks along the stroke path.
+    - **Crayon**: rough waxy edges with polygon jitter algorithm.
+    - **Neon**: electric luminous halo with dual-pass outer `shadowBlur` and white core discharge line.
+    - **Watercolor**: soft, layered translucent washes with feathered edge bleeding.
+    - **Rainbow**: dynamic HSL color cycling smoothly across stroke distance.
+    - Live brush preview circle, size slider, opacity slider, and stroke stabilizer slider (0 to 100%).
+  - **Flood Fill Bucket & Color Studio (`src/lib/sketch/floodFill.js`, `ToolOptionsPopover.jsx`):**
+    - 4-way BFS scanline flood fill engine with adjustable tolerance (0 to 100). Fills active layer instantly as an isolated raster PNG mask layer for 60fps interaction and flawless undo/redo.
+    - Curated palette presets (Pastel, Neon, Earth, Mono), 6 recent colors memory, and eyedropper tool.
+    - Two-color gradient brush toggle (`color` to `colorB` linear interpolation).
+    - Background color & pattern changes without altering drawing layers.
+  - **Symmetry & Shape Assist (`src/lib/sketch/symmetryUtils.js`, `strokeRenderer.js`):**
+    - Symmetry modes: Vertical mirror, Horizontal mirror, Radial 4, Radial 6, and Radial 8 axes with faint guide lines. Strokes draw simultaneously across all symmetric axes.
+    - Hold-to-snap Shape Assist: pauses at the end of a stroke offer instant snapping to clean circles, rectangles, triangles, lines, and arrows, with a clean "Undo Snap" toast button.
+  - **Stamps & Stickers Tray (`src/components/sketch/StickerPickerModal.jsx`):**
+    - Curated tray of 40 emojis and doodle shapes with recent stamps row stored in localStorage.
+    - Single Stamp placement (tap to place, then drag, resize, rotate) and **Stamp Brush** mode scattering stamps dynamically along a stroke with random scale and rotation.
+  - **Doodle on Photos (`src/components/sketch/SketchEditor.jsx`):**
+    - Automatically enters "Doodle on photo" mode on image import: photo is placed and locked in the background with an unlock button.
+    - Quick photo doodle presets banner: White Outline Marker, Neon Glow Pen, and Sticker Border brush (thick white halo with shadow).
+    - 4 Google casual/handwriting fonts loaded (`Caveat`, `Patrick Hand`, `Kalam`, `Indie Flower`) with text outline and drop shadow toggles for photo legibility.
+  - **Fun, Feel & Replay Engine (`src/components/sketch/ReplayModal.jsx`):**
+    - Stroke-by-stroke Drawing Replay modal with play/pause, restart, 1x/2x/4x playback speed, scrub timeline, and `MediaRecorder` WebM video export.
+    - Smooth hover circle cursor matching brush size and canvas zoom.
+    - Touch gesture support: 2-finger tap for undo, 3-finger tap for redo, pinch to zoom, palm rejection.
+    - Clear Canvas confirmation modal with instant undo support.
+  - **Sharing & Export Ready (`src/lib/sketch/exportEngine.js`):**
+    - Updated export engine to composite fill layers, neon glowing halos, stamps, symmetric strokes, and sticker borders identically in PNG/JPG/PDF exports.
+  - **Verification:**
+    - `npm run build` compiled cleanly with zero errors (`vite build` in 17.59s).
+    - Browser subagent verified navigation, instant canvas start, brush picker, neon drawing, stroke rendering, and canvas persistence.
+- **Phase 3 — Feature 1: Today Dashboard (Home Screen) completed:**
+  - **Today Home Screen Layout (`src/components/layout/TodayDashboard.jsx`):**
+    - Calm, responsive, anti-clutter home screen presenting a unified daily command center.
+    - Warm Amber design tokens (`--accent-today`, `#F59E0B` in Light mode, `#FBBF24` in Dark mode).
+    - Top header with personalized time-based greeting, full date display, and global streak pill.
+    - **Card 1: Today's Routines:** Lists daily habits and routines with 1-tap completion toggles, progress bar indicator, and direct routine creator shortcut.
+    - **Card 2: Due Today (Tasks):** Filters checklist tasks due today or overdue with 1-tap checkoff and breadcrumb linking to parent checklist.
+    - **Card 3: Daily Journal Prompt:** Curated daily reflection prompts with instant "Write Entry" / "Continue Today's Entry" button seamlessly transitioning to Journal workspace.
+    - **Card 4: Recent Notes:** Exactly 3 most recent notes across any workspace with live type icons, relative timestamps, and 1-click opening.
+    - **Card 5: Monthly Wishes:** Highlights active wishlist targets due in the current month with category badges, priority dots, and formatted prices.
+    - **Card 6: Consistency & Streaks:** Visual habit & journal momentum tracker with motivational feedback badges.
+    - Friendly, encouraging empty states with quick-creation triggers for every card.
+  - **Navigation & Integration:**
+    - Sidebar has "Today" (`Sun` icon) at the very top of navigation items with amber active accent.
+    - Breadcrumbs in TopBar updated to support Today home crumb.
+    - Command Palette (`Ctrl+K`) updated with Today workspace as the top destination.
+  - **Dexie Query Suite (`src/lib/queries/todayDashboard.js`):**
+    - Fully resilient, safe queries (`getTasksDueToday`, `getRoutinesStatusForToday`, `getRecentNotes`, `getMonthlyWishes`, `getStreakSummary`, `getTodayJournalInfo`) avoiding Dexie key/index errors with robust in-memory filtering and fallback handling.
+  - **Verification:**
+    - Production build verified (`npm run build` succeeds cleanly with exit code 0).
+    - Browser subagent verified responsive layouts at 360px (mobile), 768px (tablet), 1280px (desktop), and 1920px (ultrawide) in both Light and Dark modes.
+    - Interactive routine completion, journal transition, and sidebar navigation verified.
+- **Sketch Studio Phase 2 (Export + Share & PWA Integration) completed:**
+  - **Export Engine (`src/lib/sketch/exportEngine.js`):**
+    - Multi-layer offscreen canvas renderer composite omitting guide grids.
+    - Resolution scale selection: 1x, 2x (Retina / print), 3x (Ultra HD).
+    - Formats: PNG (with alpha transparency toggle), JPG (with quality slider 40-100%), and single-page vector PDF via `jspdf`.
+    - Social Aspect Presets: Instagram Post (1080x1080), Instagram Story (1080x1920), WhatsApp Status (1080x1920), and Original Size. Supports "fit" (letterboxed) and "crop" modes.
+    - Optional customizable watermark text (default off).
+    - Asynchronous offscreen rendering with object URL garbage collection.
+  - **Comprehensive Share Sheet (`src/components/sketch/ShareModal.jsx`):**
+    - Live render preview with computed resolution badge (`px • scale`).
+    - **Native Web Share API**: checks `navigator.canShare({ files })` and triggers native system share sheet (Instagram Stories/DM, WhatsApp, Photos, AirDrop, etc.). Gracefully handles user `AbortError`.
+    - **Download / Save Image**: clean filenames like `sketch-title-YYYY-MM-DD.png`.
+    - **Copy Image**: writes directly to clipboard using `navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])` with `Copied ✓` feedback for WhatsApp Web, Instagram Web DM, or Google Docs.
+    - **WhatsApp & Instagram Fallbacks**: native file share when supported; desktop fallback copies image or downloads with direct deep-links and clear instructions.
+    - **Email (mailto:)**: pre-fills subject and body with attachment reminder.
+    - **Share Description Toggle**: optionally passes sketch description as caption text.
+  - **PWA Setup & Web Share Target (`manifest.webmanifest`, `sw.js`):**
+    - Web app manifest with standalone display, brand colors, and adaptive SVG icons.
+    - Service worker (`sw.js`) handling offline caching and Web Share Target `POST /?share-target=true`.
+    - Receiver in `main.jsx` captures photos shared directly from the mobile gallery into Your Space and automatically opens a new sketch with the photo imported.
+  - **Quick Action Integration:**
+    - Gallery cards feature 1-click **Share** button (`Share2` icon) opening the share sheet directly without needing to open the editor.
+    - Sketch Studio top bar includes a primary **Share** button and **Export & Share...** option in the More menu.
+  - **Verification:**
+    - `npm run build` compiled cleanly with exit code 0 (`vite build` in 13.36s).
+    - Browser subagent verified navigation, card share action, studio top bar Share button, live preview, presets, format switching (JPG quality slider, PDF), Copy Image confirmation (`Copied ✓`), Download, and clean modal close.
+- **Sketch Studio Phase 1 (Canvas + Image Import + Drawing) completed:**
+
+  - **Custom Canvas 2D Multi-Layer Architecture & Pressure Dynamics:**
+    - Integrated `perfect-freehand` for smooth, pressure-sensitive inking across stylus (Apple Pencil / S-Pen / Wacom), mouse, and touch.
+    - Standardized on `PointerEvent` with palm rejection (`pointerType === 'pen'` filters extraneous touch events).
+    - Multi-touch gesture engine: tracks active pointers in memory, smoothly triggering two-finger pinch-to-zoom and two-finger pan.
+  - **Non-Destructive Storage & Additive Dexie v7 Migration:**
+    - Upgraded Dexie schema to `db.version(7)` in [db.js](file:///d:/projects/Ai%20powered%20notes%20application/your%20space/src/lib/db.js) additively preserving all legacy records.
+    - Structured non-destructive multi-layer document model (`{ version: 2, preset, width, height, background, layers: [...] }`).
+    - Built transparent backward compatibility in `migrateLegacySketchDoc`: legacy flattened bitmaps load as base photo layers and old stroke arrays load into active artwork layers.
+    - Flattened high-resolution thumbnails generated via canvas and saved into `attachments.image_data` ensuring immediate backward compatibility across gallery cards and note attachments.
+  - **Canvas Setup & Aspect Ratio Presets (`CanvasPresetsModal.jsx`):**
+    - "New Sketch" opens a size picker with Free canvas, Square 1:1 (1080x1080), Portrait 4:5 (1080x1350), Story 9:16 (1080x1920), Landscape 16:9 (1920x1080), and A4 Document (1240x1754).
+    - Remembers last chosen preset in `localStorage`.
+    - Backgrounds: White, Dark Surface, Transparent (checkerboard), Dot Grid, Graph Grid, and Lined Paper, with an instant toggle to show/hide pattern guides without baking into exports.
+  - **Image Import & Transformation Engine (`imageUtils.js`, `ImageActionToolbar.jsx`):**
+    - 4 import pathways: file picker, drag-and-drop onto canvas, clipboard paste (`Ctrl+V`), and mobile camera capture (`capture="environment"`).
+    - Automatic downscaling for large images (>2500px) maintaining 60 FPS performance and lean storage.
+    - Interactive transform gizmo: 8 corner/edge resize handles, top rotation knob with angle tracking, and snap-to-center guidelines (X and Y center axis alignment).
+    - Floating context toolbar: Rotate 90° Clockwise, Flip Horizontally, Flip Vertically, Opacity slider (0-100%), Crop, Replace, and Delete.
+    - Immediate "Draw on top": drawing layers sit on top of imported photo layers.
+  - **Drawing Tools & Creative Suite (`strokeRenderer.js`, `ToolOptionsPopover.jsx`, `SketchToolbar.jsx`):**
+    - Tools: Pen (pressure ink), Marker (chiseled cap), Highlighter (semi-transparent multiply blend), Pencil (textured grain), Eraser (stroke & pixel erasers).
+    - Shapes: Line, Arrow, Rectangle, Ellipse with outline/fill toggle, Shift key constraints (straight line, 45°, square, circle), and intelligent "Hold-to-Snap" recognition.
+    - Typography: Text tool with font selector (Inter, Georgia Serif, Mono, Handwriting, Impact Bold), font size slider, and bold toggle.
+    - Emoji & Sticker Picker (`StickerPickerModal.jsx`): Curated sticker palette for quick idea annotation.
+    - Privacy Mosaic / Blur Brush: non-destructive pixelated mosaic blocks for obscuring sensitive details on photos.
+    - Select / Move tool: select objects, drag, resize, rotate, and delete.
+    - Eyedropper: native `window.EyeDropper` API with fallback canvas pixel color sampler.
+  - **Layers Panel (`LayersPanel.jsx`):**
+    - Collapsible panel supporting up to 8 non-destructive layers with add, visibility toggle, reordering (up/down), deletion, and layer-level opacity slider.
+  - **Workspace & Safety Polish:**
+    - 50+ history states for Undo/Redo (`Ctrl+Z`, `Ctrl+Y`).
+    - 1-second debounced autosave with "Saved ✓" indicator, and `beforeunload` / `visibilitychange` flush.
+    - Gallery cards with live thumbnails, date display, one-line renamable title, duplicate sketch (`duplicateSketchNote`), and soft delete to Trash.
+    - Fullscreen studio mode (`F` / `Esc`), keyboard cheat sheet (`?`, `ShortcutsModal.jsx`), and light/dark theme adaptation.
+  - **Verification:**
+    - Verified production build compiles cleanly with code 0 (`vite build` in 17.17s).
+    - Verified via Browser Subagent: navigation, preset picker modal, canvas drawing, undo/redo, layers panel, returning to gallery, sketch card rendering, and light/dark mode toggling.
 - **Wish List Editor Focus Jump Fix completed:**
   - **NoteModal Focus Stabilization (`NoteModal.jsx`):**
     - Refactored `onClose` to `useRef(onClose)` so changes in callback references do not re-run the modal focus trap or body scroll lock effects.

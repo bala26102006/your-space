@@ -73,6 +73,7 @@ export default function CommandPalette() {
 
   // Workspaces list
   const WORKSPACES = useMemo(() => [
+    { id: 'today', label: 'Today', icon: Sun, category: 'Workspaces' },
     { id: 'quicknotes', label: 'Quick Notes', icon: StickyNote, category: 'Workspaces' },
     { id: 'projects', label: 'Projects', icon: FolderKanban, category: 'Workspaces' },
     { id: 'journal', label: 'Journal', icon: BookOpen, category: 'Workspaces' },

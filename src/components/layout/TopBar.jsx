@@ -63,9 +63,13 @@ export default function TopBar() {
   };
 
   switch (activeWorkspace) {
+    case 'today':
+      addWorkspaceCrumb('Today');
+      break;
     case 'quicknotes':
       addWorkspaceCrumb('Quick Notes');
       break;
+
     case 'projects':
       addWorkspaceCrumb('Projects');
       if (activeProject) {

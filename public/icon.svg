@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <rect width="512" height="512" rx="128" fill="#0F1115" />
+  <rect x="24" y="24" width="464" height="464" rx="104" stroke="rgba(251, 146, 60, 0.25)" stroke-width="12" />
+  <!-- Studio / Space Brand Icon -->
+  <path d="M128 160C128 142.327 142.327 128 160 128H352C369.673 128 384 142.327 384 160V352C384 369.673 369.673 384 352 384H160C142.327 384 128 369.673 128 352V160Z" fill="url(#brand_grad)" />
+  <circle cx="216" cy="216" r="32" fill="#FFFFFF" fill-opacity="0.9" />
+  <path d="M168 344L240 272L312 344H168Z" fill="#0F1115" fill-opacity="0.6" />
+  <path d="M280 344L328 296L368 336V344H280Z" fill="#0F1115" fill-opacity="0.4" />
+  <!-- Pen Stylus Tip -->
+  <path d="M376 112L400 136L320 216L296 192L376 112Z" fill="#FB923C" />
+  <defs>
+    <linearGradient id="brand_grad" x1="128" y1="128" x2="384" y2="384" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FB923C" />
+      <stop offset="1" stop-color="#EA580C" />
+    </linearGradient>
+  </defs>
+</svg>

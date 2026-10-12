@@ -13,7 +13,9 @@ import RoutinesView from '../routines/RoutinesView';
 import SketchView from '../sketch/SketchView';
 import ArchiveView from '../archive/ArchiveView';
 import TrashView from '../trash/TrashView';
+import TodayDashboard from './TodayDashboard';
 import TopBar from './TopBar';
+
 import { autoOrganize } from '../../lib/ai/autoOrganize';
 import { Sparkles, Loader2, Check } from 'lucide-react';
 import { generateUUID } from '../../lib/uuid';
@@ -384,7 +386,9 @@ export default function GridListPane() {
   };
 
   const renderContent = () => {
+    if (activeWorkspace === 'today' && !isGlobalView) return <TodayDashboard />;
     if (activeWorkspace === 'projects' && !isGlobalView) return <ProjectsView />;
+
     if (activeWorkspace === 'journal' && !isGlobalView) return <JournalView />;
     if (activeWorkspace === 'wishlist' && !isGlobalView) return <WishListView />;
     if (activeWorkspace === 'checklists' && !isGlobalView) return <ChecklistsView />;

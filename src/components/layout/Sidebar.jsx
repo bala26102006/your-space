@@ -27,6 +27,7 @@ import TagPill from '../shared/TagPill';
 import { generateUUID } from '../../lib/uuid';
 
 const WORKSPACE_NAV_ITEMS = [
+  { id: 'today', label: 'Today', icon: Sun },
   { id: 'quicknotes', label: 'Quick Notes', icon: StickyNote },
   { id: 'projects', label: 'Projects', icon: FolderKanban },
   { id: 'journal', label: 'Journal', icon: BookOpen },
@@ -35,6 +36,7 @@ const WORKSPACE_NAV_ITEMS = [
   { id: 'routines', label: 'Routines', icon: Repeat },
   { id: 'sketch', label: 'Sketch', icon: Palette },
 ];
+
 
 const UTILITY_NAV_ITEMS = [
   { id: 'archive', label: 'Archive', icon: Archive },
