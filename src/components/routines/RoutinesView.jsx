@@ -33,7 +33,7 @@ import {
 } from '../../lib/routines/routineUtils';
 
 export default function RoutinesView() {
-  const { selectedNoteId, setSelectedNoteId, notesViewMode, toggleNotesViewMode } = useUIStore();
+  const { selectedNoteId, setSelectedNoteId, viewMode, toggleViewMode } = useUIStore();
   const { openSoftDelete } = useConfirmStore();
 
   // Search & Filter state
@@ -355,11 +355,11 @@ export default function RoutinesView() {
           <div className="flex items-center bg-black/5 dark:bg-white/5 p-1 rounded-xl border border-black/5 dark:border-white/5">
             <button
               type="button"
-              onClick={toggleNotesViewMode}
-              title={notesViewMode === 'grid' ? 'Switch to list view' : 'Switch to grid view'}
+              onClick={toggleViewMode}
+              title={viewMode === 'grid' ? 'Switch to list view' : 'Switch to grid view'}
               className="p-1.5 rounded-lg text-text-muted hover:text-text-primary transition-colors"
             >
-              {notesViewMode === 'grid' ? <List className="w-4 h-4" /> : <LayoutGrid className="w-4 h-4" />}
+              {viewMode === 'grid' ? <List className="w-4 h-4" /> : <LayoutGrid className="w-4 h-4" />}
             </button>
           </div>
 
@@ -518,7 +518,7 @@ export default function RoutinesView() {
 
                   {/* Responsive Grid or List */}
                   <div className={
-                    notesViewMode === 'list'
+                    viewMode === 'list'
                       ? 'space-y-2.5'
                       : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'
                   }>
@@ -535,7 +535,7 @@ export default function RoutinesView() {
                         onArchive={handleArchive}
                         onDelete={handleDelete}
                         onClick={() => setSelectedNoteId(routine.id)}
-                        isListView={notesViewMode === 'list'}
+                        isListView={viewMode === 'list'}
                       />
                     ))}
                   </div>

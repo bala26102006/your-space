@@ -19,6 +19,7 @@ export const useUIStore = create(
       activeWorkspace: 'quicknotes',
       activePane: 'grid', // 'sidebar', 'grid', 'editor'
       viewMode: 'grid',
+      notesViewMode: 'grid',
       workspaceViewModes: DEFAULT_WORKSPACE_VIEW_MODES,
       sortBy: 'date',
       sortOrder: 'desc',
@@ -56,6 +57,7 @@ export const useUIStore = create(
           return {
             activeWorkspace: workspaceId,
             viewMode: modes[workspaceId] || 'grid',
+            notesViewMode: modes[workspaceId] || 'grid',
             selectedNoteId: null,
             selectedProjectId: null,
             selectedSubprojectId: null,
@@ -76,11 +78,36 @@ export const useUIStore = create(
       setViewMode: (mode) =>
         set((state) => ({
           viewMode: mode,
+          notesViewMode: mode,
           workspaceViewModes: {
             ...(state.workspaceViewModes || DEFAULT_WORKSPACE_VIEW_MODES),
             [state.activeWorkspace]: mode,
           },
         })),
+      toggleViewMode: () =>
+        set((state) => {
+          const next = state.viewMode === 'grid' ? 'list' : 'grid';
+          return {
+            viewMode: next,
+            notesViewMode: next,
+            workspaceViewModes: {
+              ...(state.workspaceViewModes || DEFAULT_WORKSPACE_VIEW_MODES),
+              [state.activeWorkspace]: next,
+            },
+          };
+        }),
+      toggleNotesViewMode: () =>
+        set((state) => {
+          const next = (state.viewMode || state.notesViewMode) === 'grid' ? 'list' : 'grid';
+          return {
+            viewMode: next,
+            notesViewMode: next,
+            workspaceViewModes: {
+              ...(state.workspaceViewModes || DEFAULT_WORKSPACE_VIEW_MODES),
+              [state.activeWorkspace]: next,
+            },
+          };
+        }),
       setSelectedNoteId: (noteId) => set({ selectedNoteId: noteId }),
       setSelectedProjectId: (projectId) => set({ selectedProjectId: projectId, selectedSubprojectId: null, selectedNoteId: null }),
       setSelectedSubprojectId: (subprojectId) => set({ selectedSubprojectId: subprojectId, selectedNoteId: null }),
