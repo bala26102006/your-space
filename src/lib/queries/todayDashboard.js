@@ -1,12 +1,13 @@
 import { db } from '../db';
 import { generateUUID } from '../uuid';
+import { getTodayStr, formatLocalDate, isScheduledOn, isEntryComplete, calculateScheduledStreak } from '../routines/routineUtils';
 
 /**
  * Returns all checklist tasks due today or overdue.
  */
 export async function getTasksDueToday() {
   try {
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getTodayStr();
     const allItems = await db.checklist_items.toArray().catch(() => []);
     const pendingTasks = allItems.filter(
       i => (i.item_type === 'task' || !i.item_type) && !i.is_completed && i.due_date && i.due_date <= todayStr
@@ -27,28 +28,31 @@ export async function getTasksDueToday() {
 
 /**
  * Returns routine progress for today: total active routines and which are completed vs pending.
+ * Strictly respects scheduling (daily, weekdays, specific days, monthly) and paused routines.
  */
 export async function getRoutinesStatusForToday() {
   try {
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getTodayStr();
     const allNotes = await db.notes.toArray().catch(() => []);
+    // Filter active routines that are SCHEDULED for today and not paused
     const activeRoutines = allNotes.filter(
-      n => n.workspace_id === 'routines' && !n.is_archived && !n.is_deleted
+      n => n.workspace_id === 'routines' && !n.is_archived && !n.is_deleted && isScheduledOn(n, todayStr)
     );
 
     const allEntries = await db.routine_entries.toArray().catch(() => []);
     const todayEntries = allEntries.filter(e => e.entry_date === todayStr);
-    const completedMap = new Map();
+    const entryMap = new Map();
     todayEntries.forEach(e => {
-      if (e.is_completed) completedMap.set(e.note_id, e);
+      entryMap.set(e.note_id, e);
     });
 
     const completed = [];
     const pending = [];
 
     activeRoutines.forEach(routine => {
-      if (completedMap.has(routine.id)) {
-        completed.push({ ...routine, entry: completedMap.get(routine.id) });
+      const entry = entryMap.get(routine.id);
+      if (isEntryComplete(entry, routine)) {
+        completed.push({ ...routine, entry });
       } else {
         pending.push(routine);
       }
@@ -109,20 +113,23 @@ export async function getMonthlyWishes() {
  */
 export async function getStreakSummary() {
   try {
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getTodayStr();
 
-    // 1. Routine streaks
+    // 1. Routine streaks calculated from active routines
+    const allNotes = await db.notes.toArray().catch(() => []);
+    const activeRoutines = allNotes.filter(
+      n => n.workspace_id === 'routines' && !n.is_archived && !n.is_deleted
+    );
     const allEntries = await db.routine_entries.toArray().catch(() => []);
-    const completedEntries = allEntries.filter(e => Boolean(e.is_completed));
     let maxRoutineStreak = 0;
-    completedEntries.forEach(entry => {
-      if (entry.streak_count && entry.streak_count > maxRoutineStreak) {
-        maxRoutineStreak = entry.streak_count;
+    activeRoutines.forEach(routine => {
+      const s = calculateScheduledStreak(routine.id, allEntries, routine);
+      if (s > maxRoutineStreak) {
+        maxRoutineStreak = s;
       }
     });
 
     // 2. Journal streak: consecutive days with an entry leading to today or yesterday
-    const allNotes = await db.notes.toArray().catch(() => []);
     const journalEntries = allNotes.filter(
       n => n.workspace_id === 'journal' && !n.is_archived && !n.is_deleted && Boolean(n.entry_date)
     );
@@ -138,7 +145,7 @@ export async function getStreakSummary() {
     }
 
     while (true) {
-      const dStr = checkDate.toISOString().split('T')[0];
+      const dStr = formatLocalDate(checkDate);
       if (journalDates.has(dStr)) {
         journalStreak++;
         checkDate.setDate(checkDate.getDate() - 1);
@@ -184,7 +191,7 @@ const DAILY_PROMPTS = [
  */
 export async function getTodayJournalInfo() {
   try {
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getTodayStr();
 
     const dayOfYear = Math.floor(
       (new Date() - new Date(new Date().getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24)

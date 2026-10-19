@@ -172,7 +172,7 @@ export default function Sidebar() {
         </div>
 
         {/* Global Search Bar & Command Palette Trigger */}
-        <div className="p-3">
+        <div className="p-3 shrink-0">
           <div className="relative flex items-center">
             <Search className="w-4 h-4 absolute left-3 top-2.5 text-text-muted pointer-events-none" />
             <input
@@ -194,9 +194,9 @@ export default function Sidebar() {
           </div>
         </div>
 
-        {/* Workspace Navigation Links */}
-        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-2 py-1 space-y-0.5 pb-12">
-          <div className="px-2 py-1 text-xs font-semibold text-text-muted uppercase tracking-wider">
+        {/* Workspace Navigation Links with clear top padding */}
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-2 pt-1.5 pb-12 space-y-0.5">
+          <div className="px-2 pt-1 pb-1 text-xs font-semibold text-text-muted uppercase tracking-wider">
             Workspaces
           </div>
 

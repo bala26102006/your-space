@@ -28,6 +28,7 @@ import {
   getStreakSummary,
   getTodayJournalInfo
 } from '../../lib/queries/todayDashboard';
+import { getTodayStr } from '../../lib/routines/routineUtils';
 import { generateUUID } from '../../lib/uuid';
 import { WidgetSkeleton } from '../shared/SkeletonLoader';
 
@@ -35,7 +36,7 @@ export default function TodayDashboard() {
   const { setSelectedNoteId, setActiveWorkspace } = useUIStore();
 
   const today = new Date();
-  const todayStr = today.toISOString().split('T')[0];
+  const todayStr = getTodayStr();
 
   const getGreeting = () => {
     const hour = today.getHours();

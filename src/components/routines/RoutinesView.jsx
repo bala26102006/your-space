@@ -1,52 +1,51 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   Plus, 
-  Repeat, 
+  Search, 
+  LayoutGrid, 
+  List, 
+  Sparkles, 
+  Sun, 
+  Sunset, 
+  Moon, 
   Clock, 
-  CheckCircle2, 
-  Circle, 
-  MoreVertical, 
-  Edit3, 
-  Copy, 
-  Archive, 
-  Trash2,
-  Sparkles,
-  Flame
+  Flame,
+  CheckCircle2,
+  Filter
 } from 'lucide-react';
 import { useLiveQuery } from '../../hooks/useLiveQuery';
 import { useUIStore } from '../../store/uiStore';
 import { db } from '../../lib/db';
-import { getCardColorStyle, COLOR_OPTIONS } from '../shared/ColorPicker';
-import RoutineEditModal from './RoutineEditModal';
+import TodayHero from './TodayHero';
+import RoutineCard from './RoutineCard';
+import RoutineSheet from './RoutineSheet';
 import { generateUUID } from '../../lib/uuid';
 import { GridSkeleton } from '../shared/SkeletonLoader';
 import { softDeleteItem, archiveItem } from '../../lib/services/trashService';
 import { useConfirmStore } from '../../store/confirmStore';
+import { 
+  getTodayStr, 
+  isScheduledOn, 
+  isEntryComplete, 
+  calculateScheduledStreak, 
+  getWeekDaysMondayStart,
+  ROUTINE_TEMPLATES 
+} from '../../lib/routines/routineUtils';
 
 export default function RoutinesView() {
-  const { selectedNoteId, setSelectedNoteId } = useUIStore();
+  const { selectedNoteId, setSelectedNoteId, notesViewMode, toggleNotesViewMode } = useUIStore();
   const { openSoftDelete } = useConfirmStore();
-  const [newRoutineTitle, setNewRoutineTitle] = useState('');
-  const [newRoutineColor, setNewRoutineColor] = useState('default');
-  const [newRoutineFrequency, setNewRoutineFrequency] = useState('daily');
-  const [showNewRoutineForm, setShowNewRoutineForm] = useState(false);
-  const [openMenuId, setOpenMenuId] = useState(null);
+
+  // Search & Filter state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilter, setActiveFilter] = useState('all'); // 'all' | 'today' | 'done' | 'pending'
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [editingRoutine, setEditingRoutine] = useState(null);
+  const [prefillTemplate, setPrefillTemplate] = useState(null);
 
-  const menuRef = useRef(null);
+  const todayStr = getTodayStr();
 
-  // Close card menu on click outside
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) {
-        setOpenMenuId(null);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  // Fetch routines (notes in 'routines' workspace)
+  // Fetch active routines
   const rawRoutines = useLiveQuery(() => 
     db.notes.where('workspace_id').equals('routines')
       .filter(n => !n.is_archived && !n.is_deleted)
@@ -58,38 +57,181 @@ export default function RoutinesView() {
   // Fetch all routine entries
   const allEntries = useLiveQuery(() => db.routine_entries.toArray(), []) || [];
 
-  const handleCreateRoutine = async (e) => {
-    e.preventDefault();
-    if (!newRoutineTitle.trim()) return;
+  // -------------------------------------------------------------
+  // Calculations for TodayHero
+  // -------------------------------------------------------------
+  const { 
+    scheduledTodayCount, 
+    completedTodayCount, 
+    bestOverallStreak, 
+    weekCompletionRate 
+  } = useMemo(() => {
+    let scheduledToday = 0;
+    let completedToday = 0;
+    let maxStreak = 0;
 
-    const newId = generateUUID();
-    await db.notes.add({
-      id: newId,
-      user_id: 'local_user',
-      workspace_id: 'routines',
-      subproject_id: null,
-      note_type: 'routine',
-      title: newRoutineTitle.trim(),
-      color: newRoutineColor,
-      content: { frequency: newRoutineFrequency, color: newRoutineColor },
-      is_pinned: false,
-      is_archived: false,
-      is_deleted: false,
-      sort_order: Date.now(),
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+    // Check routines scheduled today
+    routines.forEach(routine => {
+      const isSched = isScheduledOn(routine, todayStr);
+      if (isSched) {
+        scheduledToday++;
+        const entry = allEntries.find(e => e.note_id === routine.id && e.entry_date === todayStr);
+        if (isEntryComplete(entry, routine)) {
+          completedToday++;
+        }
+      }
+
+      const s = calculateScheduledStreak(routine.id, allEntries, routine);
+      if (s > maxStreak) {
+        maxStreak = s;
+      }
     });
 
-    setNewRoutineTitle('');
-    setNewRoutineColor('default');
-    setNewRoutineFrequency('daily');
-    setShowNewRoutineForm(false);
-    setSelectedNoteId(newId);
+    // Compute weekly completion percentage
+    const weekDays = getWeekDaysMondayStart(todayStr);
+    let totalScheduledWeekSlots = 0;
+    let totalDoneWeekSlots = 0;
+
+    routines.forEach(routine => {
+      weekDays.forEach(day => {
+        if (isScheduledOn(routine, day.dateStr)) {
+          totalScheduledWeekSlots++;
+          const entry = allEntries.find(e => e.note_id === routine.id && e.entry_date === day.dateStr);
+          if (isEntryComplete(entry, routine) || entry?.is_freeze) {
+            totalDoneWeekSlots++;
+          }
+        }
+      });
+    });
+
+    const rate = totalScheduledWeekSlots > 0 
+      ? Math.round((totalDoneWeekSlots / totalScheduledWeekSlots) * 100) 
+      : 0;
+
+    return {
+      scheduledTodayCount: scheduledToday,
+      completedTodayCount: completedToday,
+      bestOverallStreak: maxStreak,
+      weekCompletionRate: rate
+    };
+  }, [routines, allEntries, todayStr]);
+
+  // -------------------------------------------------------------
+  // Filter & Search Evaluation
+  // -------------------------------------------------------------
+  const filteredRoutines = useMemo(() => {
+    return routines.filter(routine => {
+      const content = routine.content || {};
+      const titleMatch = (routine.title || '').toLowerCase().includes(searchQuery.toLowerCase());
+      const whyMatch = (content.whyNote || '').toLowerCase().includes(searchQuery.toLowerCase());
+      if (searchQuery && !titleMatch && !whyMatch) {
+        return false;
+      }
+
+      const isScheduledToday = isScheduledOn(routine, todayStr);
+      const entry = allEntries.find(e => e.note_id === routine.id && e.entry_date === todayStr);
+      const isDone = isEntryComplete(entry, routine);
+
+      switch (activeFilter) {
+        case 'today':
+          return isScheduledToday;
+        case 'done':
+          return isScheduledToday && isDone;
+        case 'pending':
+          return isScheduledToday && !isDone;
+        default:
+          return true;
+      }
+    });
+  }, [routines, allEntries, searchQuery, activeFilter, todayStr]);
+
+  // Group routines by Time of Day
+  const groupedSections = useMemo(() => {
+    const sections = [
+      { id: 'morning', label: 'Morning', icon: Sun, items: [] },
+      { id: 'afternoon', label: 'Afternoon', icon: Sunset, items: [] },
+      { id: 'evening', label: 'Evening', icon: Moon, items: [] },
+      { id: 'anytime', label: 'Anytime', icon: Clock, items: [] },
+    ];
+
+    filteredRoutines.forEach(routine => {
+      const time = routine.content?.timeOfDay || 'anytime';
+      const targetSec = sections.find(s => s.id === time) || sections[3];
+      targetSec.items.push(routine);
+    });
+
+    return sections.filter(s => s.items.length > 0);
+  }, [filteredRoutines]);
+
+  // -------------------------------------------------------------
+  // Handlers for Routine Actions
+  // -------------------------------------------------------------
+  const handleToggleToday = async (routine, willBeDone) => {
+    const existing = allEntries.find(e => e.note_id === routine.id && e.entry_date === todayStr);
+    if (existing) {
+      await db.routine_entries.update(existing.id, {
+        is_completed: willBeDone,
+        is_freeze: false // Unfreeze if toggled
+      });
+    } else {
+      await db.routine_entries.add({
+        id: generateUUID(),
+        note_id: routine.id,
+        period: 'daily',
+        entry_date: todayStr,
+        is_completed: willBeDone,
+        is_freeze: false,
+        streak_count: 1,
+        habit_note: ''
+      });
+    }
   };
 
-  const handleDuplicate = async (routine, e) => {
-    e?.stopPropagation();
-    setOpenMenuId(null);
+  const handleToggleDay = async (routine, dateStr, willBeDone) => {
+    if (dateStr > todayStr) return; // Never allow future dates
+    const existing = allEntries.find(e => e.note_id === routine.id && e.entry_date === dateStr);
+    if (existing) {
+      await db.routine_entries.update(existing.id, {
+        is_completed: willBeDone,
+        is_freeze: false
+      });
+    } else {
+      await db.routine_entries.add({
+        id: generateUUID(),
+        note_id: routine.id,
+        period: 'daily',
+        entry_date: dateStr,
+        is_completed: willBeDone,
+        is_freeze: false,
+        streak_count: 1,
+        habit_note: ''
+      });
+    }
+  };
+
+  const handleFreezeToday = async (routine) => {
+    const existing = allEntries.find(e => e.note_id === routine.id && e.entry_date === todayStr);
+    if (existing) {
+      const willFreeze = !existing.is_freeze;
+      await db.routine_entries.update(existing.id, {
+        is_freeze: willFreeze,
+        is_completed: false
+      });
+    } else {
+      await db.routine_entries.add({
+        id: generateUUID(),
+        note_id: routine.id,
+        period: 'daily',
+        entry_date: todayStr,
+        is_completed: false,
+        is_freeze: true,
+        streak_count: 1,
+        habit_note: ''
+      });
+    }
+  };
+
+  const handleDuplicate = async (routine) => {
     const newId = generateUUID();
     await db.notes.add({
       id: newId,
@@ -109,288 +251,293 @@ export default function RoutinesView() {
     });
   };
 
-  const handleArchive = async (routineId, e) => {
-    e?.stopPropagation();
-    setOpenMenuId(null);
-    const note = await db.notes.get(routineId);
+  const handleArchive = async (routine) => {
     await archiveItem({
-      id: routineId,
+      id: routine.id,
       type: 'note',
-      title: note?.title || 'Untitled routine',
+      title: routine.title || 'Untitled routine',
       workspace: 'routines',
     });
-    if (selectedNoteId === routineId) setSelectedNoteId(null);
+    if (selectedNoteId === routine.id) setSelectedNoteId(null);
   };
 
-  const handleDelete = (routineId, e) => {
-    e?.stopPropagation();
-    setOpenMenuId(null);
-    db.notes.get(routineId).then((note) => {
-      openSoftDelete({
-        title: note?.title || 'Untitled routine',
-        onConfirm: async () => {
-          await softDeleteItem({
-            id: routineId,
-            type: 'note',
-            title: note?.title || 'Untitled routine',
-            workspace: 'routines',
-          });
-          if (selectedNoteId === routineId) setSelectedNoteId(null);
-        },
-      });
+  const handleDelete = (routine) => {
+    openSoftDelete({
+      title: routine.title || 'Untitled routine',
+      onConfirm: async () => {
+        await softDeleteItem({
+          id: routine.id,
+          type: 'note',
+          title: routine.title || 'Untitled routine',
+          workspace: 'routines',
+        });
+        if (selectedNoteId === routine.id) setSelectedNoteId(null);
+      },
     });
   };
 
-  const calculateStreak = (routineId) => {
-    const entries = allEntries.filter(e => e.note_id === routineId);
-    let streak = 0;
-    let d = new Date();
-    let dateStr = d.toISOString().split('T')[0];
-    let entry = entries.find(e => e.entry_date === dateStr);
-    
-    if (!entry || (!entry.is_completed && !entry.is_freeze)) {
-      d.setDate(d.getDate() - 1);
-      dateStr = d.toISOString().split('T')[0];
-      entry = entries.find(e => e.entry_date === dateStr);
+  const handleSaveRoutineSheet = async (routineData) => {
+    if (editingRoutine) {
+      await db.notes.update(editingRoutine.id, {
+        title: routineData.title,
+        color: routineData.color,
+        content: {
+          ...(editingRoutine.content || {}),
+          ...(routineData.content || {}),
+        },
+        updated_at: new Date().toISOString()
+      });
+    } else {
+      const newId = generateUUID();
+      await db.notes.add({
+        id: newId,
+        user_id: 'local_user',
+        workspace_id: 'routines',
+        subproject_id: null,
+        note_type: 'routine',
+        title: routineData.title,
+        color: routineData.color || 'sky',
+        content: routineData.content,
+        is_pinned: false,
+        is_archived: false,
+        is_deleted: false,
+        sort_order: Date.now(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+      setSelectedNoteId(newId);
     }
-
-    while (entry && (entry.is_completed || entry.is_freeze)) {
-      if (entry.is_completed) streak++;
-      d.setDate(d.getDate() - 1);
-      dateStr = d.toISOString().split('T')[0];
-      entry = entries.find(e => e.entry_date === dateStr);
-    }
-    return streak;
   };
 
-  const todayStr = new Date().toISOString().split('T')[0];
-  const hour = new Date().getHours();
-  const showReminder = hour >= 18;
-
-  const renderCompletionGrid = (routineId) => {
-    // Show last 7 days
-    const days = [];
-    const today = new Date();
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(today);
-      d.setDate(today.getDate() - i);
-      const dateStr = d.toISOString().split('T')[0];
-      const dayLetter = ['S', 'M', 'T', 'W', 'T', 'F', 'S'][d.getDay()];
-      days.push({ dateStr, dayLetter, isToday: i === 0 });
-    }
-
-    const entries = allEntries.filter(e => e.note_id === routineId);
-    
-    return (
-      <div className="flex items-center justify-between pt-3 mt-3 border-t border-black/5 dark:border-white/5">
-        {days.map(({ dateStr, dayLetter, isToday }) => {
-          const entry = entries.find(e => e.entry_date === dateStr);
-          const isDone = entry?.is_completed;
-          const isFreeze = entry?.is_freeze;
-          
-          let dotStyle = 'bg-black/5 dark:bg-white/10 text-text-muted';
-          if (isDone) {
-            dotStyle = 'bg-blue-500 text-white font-medium shadow-sm';
-          } else if (isFreeze) {
-            dotStyle = 'bg-sky-200 dark:bg-sky-900/60 text-sky-800 dark:text-sky-200 border border-sky-300 dark:border-sky-700 border-dashed';
-          }
-
-          return (
-            <div key={dateStr} className="relative group/day flex flex-col items-center gap-1">
-              <span className={`text-[10px] font-medium ${isToday ? 'text-text-primary font-bold' : 'text-text-muted opacity-60'}`}>
-                {dayLetter}
-              </span>
-              <div 
-                className={`w-6 h-6 rounded-md flex items-center justify-center text-[10px] transition-all ${dotStyle} ${isToday && !isDone && !isFreeze ? 'ring-1 ring-black/20 dark:ring-white/20' : ''}`}
-              >
-                {isDone ? '✓' : isFreeze ? '❄' : ''}
-              </div>
-              {/* Hover Tooltip */}
-              {(isDone || isFreeze || entry?.habit_note) && (
-                <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover/day:flex flex-col items-center z-30 animate-in fade-in duration-100">
-                  <div className="bg-[#2C2A28] dark:bg-[#1E1E1E] text-white text-[10px] font-medium px-2 py-0.5 rounded-lg shadow-lg border border-white/10 whitespace-nowrap text-center truncate max-w-[150px]">
-                    {entry?.habit_note ? `"${entry.habit_note}"` : isDone ? 'Completed ✓' : 'Frozen ❄'}
-                  </div>
-                  <div className="w-1.5 h-1.5 bg-[#2C2A28] dark:bg-[#1E1E1E] rotate-45 -mt-0.5 border-r border-b border-white/10" />
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    );
+  const openNewRoutineWithTemplate = (template) => {
+    setPrefillTemplate(template);
+    setEditingRoutine(null);
+    setIsSheetOpen(true);
   };
 
+  const openNewRoutineEmpty = () => {
+    setPrefillTemplate(null);
+    setEditingRoutine(null);
+    setIsSheetOpen(true);
+  };
+
+  const openEditRoutine = (routine) => {
+    setEditingRoutine(routine);
+    setPrefillTemplate(null);
+    setIsSheetOpen(true);
+  };
+
+  // -------------------------------------------------------------
+  // RENDER
+  // -------------------------------------------------------------
   return (
-    <div className="flex flex-col min-h-full relative min-w-0 overflow-x-hidden">
-      {/* Header Polish with 24px padding */}
-      <div className="flex items-center justify-between pb-6 shrink-0 min-w-0">
+    <div className="flex flex-col min-h-full relative min-w-0 overflow-x-hidden space-y-6 pb-16">
+      
+      {/* 1. Header Row */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-1">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-[var(--workspace-accent)] inline-block"></span>
-            <span className="text-xs font-semibold tracking-wider uppercase text-[var(--workspace-accent)]">Routines Workspace</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-[var(--workspace-accent)] inline-block animate-pulse"></span>
+            <span className="text-xs font-bold tracking-wider uppercase text-[var(--workspace-accent)]">
+              Habits & Routines
+            </span>
           </div>
-          <h1 className="text-[28px] sm:text-[32px] font-bold capitalize text-text-primary tracking-tight leading-tight">Routines & Habits</h1>
-          <p className="text-xs text-text-muted mt-1">Calm, sustainable tracking designed for mindful consistency.</p>
+          <h1 className="text-[28px] sm:text-[32px] font-extrabold text-text-primary tracking-tight leading-tight">
+            Daily Habits
+          </h1>
+          <p className="text-xs text-text-muted mt-0.5">
+            Mindful consistency with zero guilt, built for sustainable momentum.
+          </p>
         </div>
-        
-        <button
-          onClick={() => setShowNewRoutineForm(true)}
-          className="flex items-center gap-1.5 px-3.5 py-2 bg-[var(--workspace-accent)] text-white rounded-button text-xs font-medium hover:opacity-90 active:scale-95 transition-all shadow-sm shrink-0"
-          aria-label="Create new routine"
-        >
-          <Plus className="w-4 h-4" />
-          <span>New Routine</span>
-        </button>
+
+        {/* Top Action Buttons: Grid/List Toggle + New Routine */}
+        <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+          <div className="flex items-center bg-black/5 dark:bg-white/5 p-1 rounded-xl border border-black/5 dark:border-white/5">
+            <button
+              type="button"
+              onClick={toggleNotesViewMode}
+              title={notesViewMode === 'grid' ? 'Switch to list view' : 'Switch to grid view'}
+              className="p-1.5 rounded-lg text-text-muted hover:text-text-primary transition-colors"
+            >
+              {notesViewMode === 'grid' ? <List className="w-4 h-4" /> : <LayoutGrid className="w-4 h-4" />}
+            </button>
+          </div>
+
+          <button
+            type="button"
+            onClick={openNewRoutineEmpty}
+            className="flex items-center gap-1.5 px-4 py-2.5 bg-sky-500 hover:bg-sky-600 text-white rounded-xl text-xs font-bold shadow-sm hover:shadow active:scale-95 transition-all"
+            aria-label="Create new routine"
+          >
+            <Plus className="w-4 h-4 stroke-[2.5]" />
+            <span>New Routine</span>
+          </button>
+        </div>
       </div>
 
-      {showReminder && routines.length > 0 && (
-        <div className="mb-6 p-3.5 bg-blue-50/60 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30 rounded-card flex items-center gap-3 text-xs text-blue-900 dark:text-blue-200">
-          <Clock className="w-4 h-4 text-blue-500 opacity-80 shrink-0" />
-          <p>Evening reminder: take a peaceful moment for your routines. Remember, there's no penalty or guilt if today didn't happen!</p>
-        </div>
-      )}
+      {/* 2. Today Hero (Top of Page) */}
+      <TodayHero
+        completedCount={completedTodayCount}
+        totalCount={scheduledTodayCount}
+        bestStreak={bestOverallStreak}
+        weekCompletionRate={weekCompletionRate}
+        activeRoutinesCount={routines.length}
+      />
 
-      {/* Routine Cards Grid with gap: 16px (gap-4) and smooth scrolling */}
-      <div className="flex-1 pb-12 min-w-0">
+      {/* 3. Filter Chips & Search Bar */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
+        {/* Filter Pills */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+          {[
+            { id: 'all', label: 'All Habits', count: routines.length },
+            { id: 'today', label: 'Today', count: scheduledTodayCount },
+            { id: 'pending', label: 'Pending', count: Math.max(0, scheduledTodayCount - completedTodayCount) },
+            { id: 'done', label: 'Done', count: completedTodayCount },
+          ].map(f => (
+            <button
+              key={f.id}
+              type="button"
+              onClick={() => setActiveFilter(f.id)}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-150 flex items-center gap-1.5 ${
+                activeFilter === f.id
+                  ? 'bg-sky-500 text-white shadow-xs'
+                  : 'bg-black/5 dark:bg-white/5 text-text-muted hover:text-text-primary hover:bg-black/10 dark:hover:bg-white/10'
+              }`}
+            >
+              <span>{f.label}</span>
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                activeFilter === f.id ? 'bg-white/20 text-white' : 'bg-black/10 dark:bg-white/10 text-text-secondary'
+              }`}>
+                {f.count}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        {/* In-page Search */}
+        <div className="relative w-full sm:w-64 shrink-0">
+          <Search className="w-4 h-4 absolute left-3 top-2.5 text-text-muted pointer-events-none" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search routines..."
+            className="w-full pl-9 pr-3 py-1.5 text-xs bg-bg-sidebar border border-black/10 dark:border-white/10 rounded-xl text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-sky-500/30 transition-all"
+          />
+        </div>
+      </div>
+
+      {/* 4. Routine Cards Content Area */}
+      <div className="flex-1 min-w-0">
         {isLoading ? (
           <GridSkeleton count={4} />
         ) : routines.length === 0 ? (
-          <div className="h-72 flex flex-col items-center justify-center text-text-muted border border-dashed border-black/10 dark:border-white/10 rounded-2xl p-8 text-center bg-card-default max-w-md mx-auto my-12 shadow-sm">
-            <div className="w-12 h-12 rounded-2xl bg-[var(--workspace-accent-bg)] text-[var(--workspace-accent)] flex items-center justify-center mb-3">
-              <Sparkles className="w-6 h-6" />
+          /* 5. Friendly Empty State + 8 Starter Templates */
+          <div className="rounded-3xl border border-dashed border-sky-500/30 dark:border-sky-500/20 bg-sky-50/30 dark:bg-sky-950/10 p-8 sm:p-12 text-center max-w-2xl mx-auto my-6">
+            <div className="w-14 h-14 rounded-2xl bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center mx-auto mb-4 shadow-2xs">
+              <Sparkles className="w-7 h-7" />
             </div>
-            <p className="text-base font-semibold text-text-primary">No routines yet</p>
-            <p className="text-xs text-text-muted mt-1.5 max-w-xs leading-relaxed">
-              Create a quiet habit like drinking water, daily journaling, or light reading. Click below to begin.
+            
+            <h3 className="text-xl font-bold text-text-primary tracking-tight">
+              Build your first routine
+            </h3>
+            
+            <p className="text-xs text-text-muted mt-1.5 max-w-md mx-auto leading-relaxed">
+              Start with a small, rewarding habit. Tap any template below to launch instantly, or design your own routine from scratch.
             </p>
+
+            {/* Quick Template Chips */}
+            <div className="mt-6">
+              <div className="text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-3">
+                Quick-Start Templates
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 max-w-xl mx-auto">
+                {ROUTINE_TEMPLATES.map(tpl => (
+                  <button
+                    key={tpl.title}
+                    type="button"
+                    onClick={() => openNewRoutineWithTemplate(tpl)}
+                    className="p-3 rounded-2xl border border-black/10 dark:border-white/10 bg-white dark:bg-bg-primary hover:border-sky-500 hover:shadow-md transition-all text-left flex flex-col justify-between group active:scale-95"
+                  >
+                    <span className="text-2xl mb-1 group-hover:scale-110 transition-transform inline-block">
+                      {tpl.icon}
+                    </span>
+                    <span className="text-xs font-bold text-text-primary line-clamp-1">
+                      {tpl.title}
+                    </span>
+                    <span className="text-[10px] text-text-muted capitalize mt-0.5">
+                      {tpl.timeOfDay}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <button
-              onClick={() => setShowNewRoutineForm(true)}
-              className="mt-4 flex items-center gap-1.5 px-4 py-2 bg-[var(--workspace-accent)] text-white rounded-button text-xs font-medium hover:opacity-90 active:scale-95 transition-opacity shadow-sm"
+              type="button"
+              onClick={openNewRoutineEmpty}
+              className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 bg-sky-500 hover:bg-sky-600 text-white rounded-xl text-xs font-bold shadow-sm transition-all"
             >
-              <Plus className="w-3.5 h-3.5" />
-              <span>+ New Routine</span>
+              <Plus className="w-4 h-4 stroke-[2.5]" />
+              <span>Create Custom Routine</span>
+            </button>
+          </div>
+        ) : filteredRoutines.length === 0 ? (
+          /* Search / Filter Zero State */
+          <div className="text-center py-16 text-text-muted">
+            <Filter className="w-8 h-8 mx-auto opacity-30 mb-2" />
+            <p className="text-sm font-semibold text-text-primary">No habits match your filter</p>
+            <p className="text-xs text-text-muted mt-1">Try resetting the search or selecting "All Habits".</p>
+            <button
+              type="button"
+              onClick={() => { setSearchQuery(''); setActiveFilter('all'); }}
+              className="mt-3 text-xs font-semibold text-sky-600 dark:text-sky-400 hover:underline"
+            >
+              Clear filters
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {routines.map(routine => {
-              const todayEntry = allEntries.find(e => e.note_id === routine.id && e.entry_date === todayStr);
-              const isDoneToday = todayEntry?.is_completed;
-              const streak = calculateStreak(routine.id);
-              const isMenuOpen = openMenuId === routine.id;
-              const cardColor = routine.color || routine.content?.color || 'default';
-              const frequency = routine.content?.frequency || 'daily';
-
+          /* Sticky Time-of-Day Sections with Responsive Grid */
+          <div className="space-y-8">
+            {groupedSections.map(section => {
+              const SectionIcon = section.icon;
               return (
-                <div 
-                  key={routine.id} 
-                  onClick={() => setSelectedNoteId(routine.id)}
-                  className={`group relative p-4 rounded-card cursor-pointer border transition-all duration-200 ease-out hover:scale-[1.02] flex flex-col justify-between bg-sky-500/5 hover:bg-sky-500/10 border-sky-500/20 dark:bg-sky-950/25 dark:border-sky-800/30 ${
-                    selectedNoteId === routine.id 
-                      ? 'border-sky-500 shadow-md ring-2 ring-sky-500/40' 
-                      : 'hover:shadow-lg dark:hover:shadow-black/40 hover:border-sky-500/40'
-                  }`}
-                >
-                  {/* Top line with title, streak & action menu */}
-                  <div>
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0 pr-1">
-                        <h3 className="text-[18px] font-semibold text-text-primary tracking-tight truncate leading-tight">
-                          {routine.title}
-                        </h3>
-                        <div className="flex items-center gap-2 mt-1 min-w-0">
-                          <span className="text-xs text-text-muted font-medium flex items-center gap-1 whitespace-nowrap shrink-0">
-                            <Flame className={`w-3.5 h-3.5 ${streak > 0 ? 'text-amber-500' : 'text-text-muted opacity-40'} shrink-0`} />
-                            <span className="whitespace-nowrap">{streak} {streak === 1 ? 'day' : 'days'} streak</span>
-                          </span>
-                          <span className="text-[10px] uppercase font-semibold text-text-muted/60 bg-black/5 dark:bg-white/5 px-1.5 py-0.5 rounded whitespace-nowrap shrink-0">
-                            {frequency}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Right icons: Today's check & 3-dots menu button */}
-                      <div className="flex items-center gap-1 shrink-0">
-                        {isDoneToday ? (
-                          <CheckCircle2 className="w-5 h-5 text-blue-500 shrink-0" />
-                        ) : (
-                          <Circle className="w-5 h-5 text-text-muted opacity-30 shrink-0" />
-                        )}
-
-                        {/* Three-dots menu trigger */}
-                        <div className="relative" ref={isMenuOpen ? menuRef : null}>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setOpenMenuId(isMenuOpen ? null : routine.id);
-                            }}
-                            className={`p-1 rounded-md transition-all text-text-muted hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/10 ${
-                              isMenuOpen ? 'opacity-100 bg-black/5 dark:bg-white/10 text-text-primary' : 'opacity-0 group-hover:opacity-100'
-                            }`}
-                            title="Routine actions"
-                          >
-                            <MoreVertical className="w-4 h-4" />
-                          </button>
-
-                          {/* Dropdown Menu */}
-                          {isMenuOpen && (
-                            <div 
-                              className="absolute right-0 top-full mt-1 w-36 bg-bg-primary rounded-xl shadow-xl border border-black/10 dark:border-white/10 py-1.5 z-30 text-xs font-medium animate-in fade-in zoom-in-95 duration-100"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setOpenMenuId(null);
-                                  setEditingRoutine(routine);
-                                }}
-                                className="w-full flex items-center gap-2 px-3 py-1.5 text-left text-text-primary hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
-                              >
-                                <Edit3 className="w-3.5 h-3.5 text-text-muted" />
-                                <span>Edit</span>
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={(e) => handleDuplicate(routine, e)}
-                                className="w-full flex items-center gap-2 px-3 py-1.5 text-left text-text-primary hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
-                              >
-                                <Copy className="w-3.5 h-3.5 text-text-muted" />
-                                <span>Duplicate</span>
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={(e) => handleArchive(routine.id, e)}
-                                className="w-full flex items-center gap-2 px-3 py-1.5 text-left text-text-primary hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
-                              >
-                                <Archive className="w-3.5 h-3.5 text-text-muted" />
-                                <span>Archive</span>
-                              </button>
-
-                              <div className="my-1 border-t border-black/5 dark:border-white/5" />
-
-                              <button
-                                type="button"
-                                onClick={(e) => handleDelete(routine.id, e)}
-                                className="w-full flex items-center gap-2 px-3 py-1.5 text-left text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                                <span>Delete</span>
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
+                <div key={section.id} className="space-y-3">
+                  {/* Sticky Section Heading */}
+                  <div className="sticky top-0 z-20 py-1.5 bg-bg-primary/95 backdrop-blur-xs flex items-center justify-between border-b border-black/5 dark:border-white/5">
+                    <div className="flex items-center gap-2">
+                      <SectionIcon className="w-4 h-4 text-sky-500" />
+                      <h2 className="text-xs font-bold uppercase tracking-wider text-text-primary">
+                        {section.label}
+                      </h2>
+                      <span className="text-[11px] font-semibold text-text-muted bg-black/5 dark:bg-white/5 px-2 py-0.2 rounded-full">
+                        {section.items.length}
+                      </span>
                     </div>
                   </div>
-                  
-                  {/* Mini completion grid with clear dots */}
-                  <div className="mt-3">
-                    {renderCompletionGrid(routine.id)}
+
+                  {/* Responsive Grid or List */}
+                  <div className={
+                    notesViewMode === 'list'
+                      ? 'space-y-2.5'
+                      : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'
+                  }>
+                    {section.items.map(routine => (
+                      <RoutineCard
+                        key={routine.id}
+                        routine={routine}
+                        entries={allEntries.filter(e => e.note_id === routine.id)}
+                        onToggleToday={handleToggleToday}
+                        onToggleDay={handleToggleDay}
+                        onFreezeToday={handleFreezeToday}
+                        onEdit={openEditRoutine}
+                        onDuplicate={handleDuplicate}
+                        onArchive={handleArchive}
+                        onDelete={handleDelete}
+                        onClick={() => setSelectedNoteId(routine.id)}
+                        isListView={notesViewMode === 'list'}
+                      />
+                    ))}
                   </div>
                 </div>
               );
@@ -399,108 +546,18 @@ export default function RoutinesView() {
         )}
       </div>
 
-      {/* New Routine Modal */}
-      {showNewRoutineForm && (
-        <div 
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-150"
-          onClick={() => setShowNewRoutineForm(false)}
-        >
-          <form 
-            onSubmit={handleCreateRoutine} 
-            className="bg-bg-primary w-full max-w-sm rounded-2xl shadow-2xl border border-black/10 dark:border-white/10 p-6 flex flex-col gap-5"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 className="text-lg font-semibold text-text-primary tracking-tight">Create Routine</h2>
-            <div>
-              <label className="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">
-                Routine Name
-              </label>
-              <input 
-                autoFocus
-                type="text" 
-                value={newRoutineTitle}
-                onChange={e => setNewRoutineTitle(e.target.value)}
-                className="w-full bg-bg-sidebar border border-black/10 dark:border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-text-primary/20 transition-all placeholder:text-text-muted"
-                placeholder="e.g. Morning Meditation"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">
-                Frequency
-              </label>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { id: 'daily', label: 'Daily' },
-                  { id: 'weekly', label: 'Weekly' },
-                  { id: 'monthly', label: 'Monthly' },
-                ].map(opt => (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    onClick={() => setNewRoutineFrequency(opt.id)}
-                    className={`py-2 px-3 text-xs font-medium rounded-xl border transition-all ${
-                      newRoutineFrequency === opt.id
-                        ? 'bg-bg-sidebar border-black/20 dark:border-white/20 text-text-primary shadow-sm font-semibold'
-                        : 'border-transparent text-text-muted hover:bg-black/5 dark:hover:bg-white/5'
-                    }`}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">
-                Card Color
-              </label>
-              <div className="flex items-center gap-3 py-1">
-                {COLOR_OPTIONS.map(opt => (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    onClick={() => setNewRoutineColor(opt.id)}
-                    title={opt.label}
-                    className={`w-7 h-7 rounded-full flex items-center justify-center transition-all hover:scale-110 relative border ${
-                      newRoutineColor === opt.id ? 'ring-2 ring-offset-2 ring-text-primary scale-105' : 'border-black/10 dark:border-white/10'
-                    }`}
-                    style={{ backgroundColor: opt.bgLight, borderColor: opt.border }}
-                  >
-                    {newRoutineColor === opt.id && <span className="text-gray-800 text-xs font-bold">✓</span>}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2 pt-2 border-t border-black/5 dark:border-white/5">
-              <button 
-                type="button" 
-                onClick={() => setShowNewRoutineForm(false)} 
-                className="px-4 py-2 text-xs font-medium text-text-muted hover:bg-black/5 dark:hover:bg-white/5 rounded-button transition-colors"
-              >
-                Cancel
-              </button>
-              <button 
-                type="submit" 
-                className="px-5 py-2 text-xs font-semibold bg-[var(--workspace-accent)] text-white rounded-button shadow-sm hover:opacity-90 active:scale-95 transition-all"
-              >
-                Create
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* Routine Edit Modal */}
-      {editingRoutine && (
-        <RoutineEditModal
-          routine={editingRoutine}
-          isOpen={!!editingRoutine}
-          onClose={() => setEditingRoutine(null)}
-        />
-      )}
+      {/* Routine Sheet Modal / Bottom Sheet */}
+      <RoutineSheet
+        isOpen={isSheetOpen}
+        onClose={() => {
+          setIsSheetOpen(false);
+          setEditingRoutine(null);
+          setPrefillTemplate(null);
+        }}
+        onSave={handleSaveRoutineSheet}
+        routine={editingRoutine}
+        prefill={prefillTemplate}
+      />
     </div>
   );
 }
