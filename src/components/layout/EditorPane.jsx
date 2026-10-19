@@ -207,9 +207,11 @@ export default function EditorPane() {
           setSelectedNoteId(null);
         }}
         customHeader={<></>}
-        contentClassName="p-0"
-        isExpanded={sketchFullscreen}
-        className={sketchFullscreen ? 'fixed inset-0 w-screen h-screen max-w-none max-h-none rounded-none' : ''}
+        contentClassName="p-0 h-full flex-1 overflow-hidden"
+        isExpanded={true}
+        className={sketchFullscreen 
+          ? 'fixed inset-0 w-screen h-screen max-w-none max-h-none rounded-none z-[60]' 
+          : 'w-full h-full sm:!w-[min(1600px,96vw)] sm:!h-[92vh] sm:!max-h-[92vh] sm:rounded-2xl shadow-2xl'}
       >
         <SketchEditor 
           note={note} 

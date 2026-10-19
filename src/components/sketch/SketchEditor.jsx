@@ -78,6 +78,33 @@ function simplifyPoints(points, tolerance = 0.3) {
   }
 }
 
+// Computes bounding box of all existing artwork to prevent content loss on resize
+const getMaxArtworkBounds = (doc) => {
+  let maxX = 0;
+  let maxY = 0;
+  (doc?.layers || []).forEach(layer => {
+    (layer.items || []).forEach(item => {
+      if (item.points) {
+        item.points.forEach(([px, py]) => {
+          if (px > maxX) maxX = px;
+          if (py > maxY) maxY = py;
+        });
+      }
+      if (item.x !== undefined && item.width !== undefined) {
+        maxX = Math.max(maxX, item.x + item.width);
+      }
+      if (item.y !== undefined && item.height !== undefined) {
+        maxY = Math.max(maxY, item.y + item.height);
+      }
+      if (item.startX !== undefined && item.endX !== undefined) {
+        maxX = Math.max(maxX, item.startX, item.endX);
+        maxY = Math.max(maxY, item.startY, item.endY);
+      }
+    });
+  });
+  return { maxX, maxY };
+};
+
 export default function SketchEditor({ 
   note, 
   onClose,
@@ -262,11 +289,25 @@ export default function SketchEditor({
     return { x, y };
   }, [offset, scale]);
 
-  // Fit canvas to available viewport (clean 24px margin, responsive centering)
+  // Fit canvas to available viewport (clean responsive centering or 100% full box for free canvas)
   const handleFitToScreen = useCallback(() => {
     if (!containerRef.current) return;
     const { clientWidth: w, clientHeight: h } = containerRef.current;
     if (!w || !h) return;
+
+    if (canvasDoc.preset === 'free') {
+      setScale(1);
+      setOffset({ x: 0, y: 0 });
+      setCanvasDoc(prev => {
+        if (prev.preset !== 'free') return prev;
+        const { maxX, maxY } = getMaxArtworkBounds(prev);
+        const targetW = Math.max(w, prev.width || w, maxX + 20);
+        const targetH = Math.max(h, prev.height || h, maxY + 20);
+        if (prev.width === targetW && prev.height === targetH) return prev;
+        return { ...prev, width: targetW, height: targetH };
+      });
+      return;
+    }
 
     const margin = 24;
     const availableW = Math.max(100, w - margin);
@@ -283,7 +324,7 @@ export default function SketchEditor({
 
     setScale(newScale);
     setOffset({ x: newOffsetX, y: newOffsetY });
-  }, [canvasDoc.width, canvasDoc.height]);
+  }, [canvasDoc.preset, canvasDoc.width, canvasDoc.height]);
 
   // 1:1 Actual Size Zoom
   const handleResetZoom = useCallback(() => {
@@ -337,10 +378,13 @@ export default function SketchEditor({
     ctx.scale(scale, scale);
 
     // 1. Draw Canvas Shadow & Background
+    const isFreeFull = canvasDoc.preset === 'free' && offset.x === 0 && offset.y === 0 && scale === 1;
     ctx.save();
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.22)';
-    ctx.shadowBlur = 12;
-    ctx.shadowOffsetY = 4;
+    if (!isFreeFull) {
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.22)';
+      ctx.shadowBlur = 12;
+      ctx.shadowOffsetY = 4;
+    }
     ctx.fillStyle = '#FFFFFF';
     ctx.fillRect(0, 0, width, height);
     ctx.restore();
@@ -348,6 +392,13 @@ export default function SketchEditor({
     // 2. Render Background & Pattern Guides
     const isDarkMode = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
     renderBackground(ctx, width, height, canvasDoc.background, isDarkMode);
+
+    // CRITICAL: Strictly clip all layers, strokes, and shapes to the canvas paper bounds
+    // Prevents drawings from moving or spilling out of the box
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, 0, width, height);
+    ctx.clip();
 
     // 2b. Render Faint Symmetry Guides (if active)
     if (symmetryMode && symmetryMode !== 'off') {
@@ -479,7 +530,8 @@ export default function SketchEditor({
       ctx.restore();
     }
 
-    ctx.restore();
+    ctx.restore(); // End clipping
+    ctx.restore(); // End viewport transform
   }, [canvasDoc, offset, scale, selectedImage, symmetryMode]);
 
   // Live Canvas: renders ONLY the active in-progress stroke at 60 FPS
@@ -505,16 +557,27 @@ export default function SketchEditor({
     ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr);
 
     if (currentItemRef.current) {
+      ctx.save();
       ctx.translate(offset.x, offset.y);
       ctx.scale(scale, scale);
+
+      // Clip active in-progress stroke strictly to canvas paper bounds
+      const docW = canvasDoc.width || 1200;
+      const docH = canvasDoc.height || 900;
+      ctx.beginPath();
+      ctx.rect(0, 0, docW, docH);
+      ctx.clip();
+
       const active = currentItemRef.current;
       if (active.type?.startsWith('shape_')) {
         renderShape(ctx, active);
       } else if (active.type === 'mosaic') {
-        renderMosaic(ctx, active, canvasDoc.width || 1200, canvasDoc.height || 900);
+        renderMosaic(ctx, active, docW, docH);
       } else {
         renderStroke(ctx, active);
       }
+
+      ctx.restore();
     }
 
     ctx.restore();
@@ -528,11 +591,34 @@ export default function SketchEditor({
   // ResizeObserver for clean responsive auto-fit and canvas sync
   useEffect(() => {
     if (!containerRef.current) return;
-    const observer = new ResizeObserver(() => {
+    const container = containerRef.current;
+
+    const syncFreeCanvas = (cw, ch) => {
+      if (cw <= 0 || ch <= 0) return;
+      setCanvasDoc(prev => {
+        if (prev.preset !== 'free') return prev;
+        const { maxX, maxY } = getMaxArtworkBounds(prev);
+        const isInitialDefault = (prev.width === 1200 && prev.height === 900) && maxX === 0 && maxY === 0;
+        const targetW = isInitialDefault ? cw : Math.max(cw, prev.width || cw, maxX + 20);
+        const targetH = isInitialDefault ? ch : Math.max(ch, prev.height || ch, maxY + 20);
+        if (prev.width === targetW && prev.height === targetH) return prev;
+        return { ...prev, width: targetW, height: targetH };
+      });
+    };
+
+    // Initial check
+    syncFreeCanvas(container.clientWidth, container.clientHeight);
+
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry) {
+        const { width: currentW, height: currentH } = entry.contentRect;
+        syncFreeCanvas(currentW, currentH);
+      }
       renderCommitted();
       renderLive();
     });
-    observer.observe(containerRef.current);
+    observer.observe(container);
     return () => observer.disconnect();
   }, [renderCommitted, renderLive]);
 
@@ -543,6 +629,11 @@ export default function SketchEditor({
     if (!containerRef.current) return;
     const canvas = liveCanvasRef.current || committedCanvasRef.current;
     if (!canvas) return;
+
+    // Set pointer capture to prevent dropping strokes during fast movements
+    try {
+      e.target.setPointerCapture?.(e.pointerId);
+    } catch (err) {}
 
     // Track pointers & touch gestures
     activePointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -995,6 +1086,11 @@ export default function SketchEditor({
       transformStartRef.current = null;
       setTransformHandle(null);
     }
+
+    // Release pointer capture
+    try {
+      e.target.releasePointerCapture?.(e.pointerId);
+    } catch (err) {}
 
     // Commit current in-progress item with stroke simplification
     if (currentItemRef.current) {
