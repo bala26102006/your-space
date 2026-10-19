@@ -4,6 +4,7 @@ import { db } from '../../lib/db';
 import { useLiveQuery } from '../../hooks/useLiveQuery';
 import { getStarterKitItems } from '../../lib/starterKits';
 import { generateUUID } from '../../lib/uuid';
+import { isItemCompleted, toggleChecklistItemCompletion } from '../../lib/checklists/checklistUtils';
 import {
   DndContext,
   closestCenter,
@@ -82,12 +83,12 @@ function SortableItem({
           <button 
             onClick={() => {
               if (isTemplate || readOnly) return;
-              onUpdate(item.id, 'is_completed', !item.is_completed);
+              onUpdate(item.id, 'is_completed', !isItemCompleted(item));
             }}
             disabled={isTemplate || readOnly}
             className={`p-1 mt-0.5 rounded transition-colors ${isTemplate ? 'opacity-50 cursor-not-allowed' : 'hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer'}`}
           >
-            {item.is_completed ? <CheckSquare className="w-5 h-5 text-green-500" /> : <Square className="w-5 h-5 text-text-muted" />}
+            {isItemCompleted(item) ? <CheckSquare className="w-5 h-5 text-green-500" /> : <Square className="w-5 h-5 text-text-muted" />}
           </button>
         )}
         
@@ -298,7 +299,11 @@ export default function ChecklistEditor({ noteId, content, onChange, readOnly })
   };
 
   const updateItem = async (id, field, value) => {
-    await db.checklist_items.update(id, { [field]: value });
+    if (field === 'is_completed') {
+      await toggleChecklistItemCompletion(id, value);
+    } else {
+      await db.checklist_items.update(id, { [field]: value });
+    }
   };
 
   const removeItem = async (id) => {

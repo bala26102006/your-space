@@ -29,6 +29,7 @@ import {
   getTodayJournalInfo
 } from '../../lib/queries/todayDashboard';
 import { getTodayStr } from '../../lib/routines/routineUtils';
+import { toggleChecklistItemCompletion } from '../../lib/checklists/checklistUtils';
 import { generateUUID } from '../../lib/uuid';
 import { WidgetSkeleton } from '../shared/SkeletonLoader';
 
@@ -76,9 +77,7 @@ export default function TodayDashboard() {
   // 1. Toggle task completion
   const handleToggleTask = async (e, task) => {
     e.stopPropagation();
-    await db.checklist_items.update(task.id, {
-      is_completed: 1
-    });
+    await toggleChecklistItemCompletion(task.id, true);
   };
 
   // 2. Tap to complete / uncomplete routine
