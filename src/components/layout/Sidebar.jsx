@@ -195,8 +195,8 @@ export default function Sidebar() {
         </div>
 
         {/* Workspace Navigation Links with clear top padding */}
-        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-2 pt-1.5 pb-12 space-y-0.5">
-          <div className="px-2 pt-1 pb-1 text-xs font-semibold text-text-muted uppercase tracking-wider">
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-2 pt-2.5 pb-12 space-y-0.5 scroll-pt-3">
+          <div className="px-2 pt-1.5 pb-1.5 text-xs font-semibold text-text-muted uppercase tracking-wider select-none">
             Workspaces
           </div>
 

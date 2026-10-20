@@ -1,4 +1,5 @@
 import { db } from '../db';
+import { isJournalEntryEmptyWithPrompt, extractTextPreview } from '../journal/journalUtils';
 
 /**
  * Checks if a TipTap document or content structure contains any actual text.
@@ -21,14 +22,44 @@ export function isContentEmpty(content) {
 }
 
 /**
- * Determines whether a journal entry has no meaningful title and no content.
+ * Determines whether a journal entry has no meaningful title and no user-written content.
+ * An entry that only contains an inserted prompt quote (and no personal writing)
+ * is recognized as empty and safely cleaned up on close.
  */
 export function isJournalEntryEmpty(note) {
   if (!note) return true;
   const title = (note.title || '').trim();
-  const hasTitle = title.length > 0 && title !== 'Journal Entry' && title !== 'Daily Reflection';
-  const hasContent = !isContentEmpty(note.content);
-  return !hasTitle && !hasContent;
+  const promptText = (note.journal_meta?.prompt || '').trim();
+
+  // Check if title is default or matches the prompt
+  const hasCustomTitle = title.length > 0 && 
+    title !== 'Journal Entry' && 
+    title !== 'Daily Reflection' &&
+    title !== 'Untitled reflection' &&
+    title !== promptText;
+
+  // Extract all text inside content
+  const textContent = extractTextPreview(note.content).trim();
+  
+  // Clean text from wrapping quotes/blockquotes for comparison
+  const cleanContentText = textContent.replace(/^["'“‘]+|["'”’]+$/g, '').trim();
+  const cleanTitle = title.replace(/^["'“‘]+|["'”’]+$/g, '').trim();
+  const cleanPrompt = promptText.replace(/^["'“‘]+|["'”’]+$/g, '').trim();
+
+  // If textContent matches the prompt or title exactly, user has not typed anything
+  const isPromptOnly = textContent.length > 0 && (
+    (cleanPrompt && cleanContentText === cleanPrompt) ||
+    (cleanTitle && cleanContentText === cleanTitle)
+  );
+
+  const hasContent = textContent.length > 0 && !isPromptOnly;
+
+  // If also checked against known prompt catalog
+  if (!hasCustomTitle && !hasContent) {
+    return true;
+  }
+
+  return isJournalEntryEmptyWithPrompt(note);
 }
 
 /**

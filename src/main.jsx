@@ -2,6 +2,11 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import './styles/tokens.css';
+import '@fontsource/lora/latin-400.css';
+import '@fontsource/lora/latin-500.css';
+import '@fontsource/lora/latin-600.css';
+import '@fontsource/lora/latin-400-italic.css';
+import './styles/journalTheme.css';
 
 // PERMANENT AUTH REMOVAL: Clear browser cache to force old auth state to be forgotten.
 localStorage.clear();

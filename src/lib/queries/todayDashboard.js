@@ -1,6 +1,7 @@
 import { db } from '../db';
 import { generateUUID } from '../uuid';
 import { getTodayStr, formatLocalDate, isScheduledOn, isEntryComplete, calculateScheduledStreak } from '../routines/routineUtils';
+import { calculateJournalStreak, getDailyPrompt } from '../journal/journalUtils';
 
 /**
  * Returns all checklist tasks due today or overdue.
@@ -129,36 +130,17 @@ export async function getStreakSummary() {
       }
     });
 
-    // 2. Journal streak: consecutive days with an entry leading to today or yesterday
+    // 2. Journal streak: unified gentle streak logic from journalUtils
     const journalEntries = allNotes.filter(
-      n => n.workspace_id === 'journal' && !n.is_archived && !n.is_deleted && Boolean(n.entry_date)
+      n => n.workspace_id === 'journal' && !n.is_archived && !n.is_deleted
     );
-
-    const journalDates = new Set(journalEntries.map(e => e.entry_date));
-    let journalStreak = 0;
-    let checkDate = new Date();
-
-    // If didn't write today yet, check if wrote yesterday
-    const todayEntryExists = journalDates.has(todayStr);
-    if (!todayEntryExists) {
-      checkDate.setDate(checkDate.getDate() - 1);
-    }
-
-    while (true) {
-      const dStr = formatLocalDate(checkDate);
-      if (journalDates.has(dStr)) {
-        journalStreak++;
-        checkDate.setDate(checkDate.getDate() - 1);
-      } else {
-        break;
-      }
-    }
+    const { currentStreak: journalStreak, wroteToday } = calculateJournalStreak(journalEntries);
 
     return {
       routineStreak: maxRoutineStreak,
       journalStreak,
       totalStreak: Math.max(maxRoutineStreak, journalStreak),
-      wroteToday: todayEntryExists
+      wroteToday
     };
   } catch (err) {
     console.error('Error fetching streak summary:', err);
@@ -171,32 +153,14 @@ export async function getStreakSummary() {
   }
 }
 
-const DAILY_PROMPTS = [
-  "What made you smile today?",
-  "What is something you learned this week?",
-  "Describe a challenge you faced and how you overcame it.",
-  "What are three things you are grateful for right now?",
-  "If today was a chapter in your book, what would it be called?",
-  "What is one intention you have for tomorrow?",
-  "Who inspired you recently, and why?",
-  "Write about a small moment of peace you experienced today.",
-  "What drained your energy today? What restored it?",
-  "What is a decision you made that you feel good about?",
-  "What boundary did you protect or need to set?",
-  "What is something beautiful you noticed today?"
-];
-
 /**
  * Returns today's journal prompt and current entry status.
+ * Uses shared getDailyPrompt so JournalView and TodayDashboard always agree.
  */
 export async function getTodayJournalInfo() {
   try {
     const todayStr = getTodayStr();
-
-    const dayOfYear = Math.floor(
-      (new Date() - new Date(new Date().getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24)
-    );
-    const prompt = DAILY_PROMPTS[dayOfYear % DAILY_PROMPTS.length];
+    const dailyPromptObj = getDailyPrompt('all', new Date());
 
     const allNotes = await db.notes.toArray().catch(() => []);
     const todayEntry = allNotes.find(
@@ -204,14 +168,16 @@ export async function getTodayJournalInfo() {
     );
 
     return {
-      prompt,
+      prompt: dailyPromptObj.text,
+      category: dailyPromptObj.category,
       hasEntry: Boolean(todayEntry),
       entry: todayEntry || null
     };
   } catch (err) {
     console.error('Error fetching today journal info:', err);
     return {
-      prompt: DAILY_PROMPTS[0],
+      prompt: "If today was a chapter in your book, what would it be called?",
+      category: "Daily Reflection",
       hasEntry: false,
       entry: null
     };

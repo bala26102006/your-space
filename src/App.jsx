@@ -52,6 +52,18 @@ export default function App() {
     }
   }, [theme]);
 
+  // Apply warm theme style attribute to document.documentElement when in Journal workspace
+  useEffect(() => {
+    if (activeWorkspace === 'journal') {
+      document.documentElement.setAttribute('data-style', 'warm');
+    } else {
+      document.documentElement.removeAttribute('data-style');
+    }
+    return () => {
+      document.documentElement.removeAttribute('data-style');
+    };
+  }, [activeWorkspace]);
+
   return (
     <div
       data-workspace={activeWorkspace}

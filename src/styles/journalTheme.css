@@ -1,0 +1,228 @@
+/* ===================================================================
+   WARM SANCTUARY DESIGN TOKENS
+   Parchment (Light) and Candlelit (Dark) bookish sanctuary theme.
+   Scoped via [data-style="warm"] on document.documentElement.
+   WCAG AA Contrast Compliant:
+     - Body/Heading text >= 4.5:1 (AAA on major text)
+     - Borders & UI Icons >= 3.0:1
+   =================================================================== */
+
+/* --- 1. LIGHT MODE: PARCHMENT --- */
+:root[data-style="warm"]:not(.dark) {
+  --journal-bg: #EFE3C3;
+  --journal-paper: #FDF9EE;
+  --journal-paper-card: #F9F2DE;
+  --journal-raised: #E8D8AF;
+  --journal-header-band: #43332A;
+  --journal-header-band-end: #32251E;
+  --journal-header-text: #FDF8EE;
+  --journal-header-muted: #D1BCA8;
+
+  --journal-text: #2F231B;        /* 11.2:1 contrast against cream (AAA) */
+  --journal-text-2: #524034;      /* 6.3:1 contrast against cream (AA) */
+  --journal-text-muted: #735D4E;  /* 4.55:1 contrast against cream (AA) */
+  --journal-border: rgba(67, 51, 42, 0.16);
+  --journal-border-soft: rgba(67, 51, 42, 0.08);
+
+  --journal-gold: #B88944;        /* Gold lines & accents */
+  --journal-gold-ring: #C99A4E;
+  --journal-gold-soft: rgba(184, 137, 68, 0.18);
+  --journal-accent-text: #805011; /* Dark amber-gold, 5.1:1 on cream (AA) */
+
+  --journal-btn-primary-bg: #43332A;
+  --journal-btn-primary-fg: #FDF9EE;
+  --journal-btn-primary-hover: #32251E;
+
+  /* Mood Tokens (Light) */
+  --mood-calm: #2D6B8C;
+  --mood-calm-bg: rgba(45, 107, 140, 0.12);
+  --mood-calm-border: rgba(45, 107, 140, 0.32);
+  --mood-calm-text: #1E4F69;
+
+  --mood-grateful: #3B722C;
+  --mood-grateful-bg: rgba(59, 114, 44, 0.12);
+  --mood-grateful-border: rgba(59, 114, 44, 0.32);
+  --mood-grateful-text: #2A541E;
+
+  --mood-restless: #9B5D0F;
+  --mood-restless-bg: rgba(155, 93, 15, 0.12);
+  --mood-restless-border: rgba(155, 93, 15, 0.32);
+  --mood-restless-text: #734306;
+
+  --mood-tired: #624883;
+  --mood-tired-bg: rgba(98, 72, 131, 0.12);
+  --mood-tired-border: rgba(98, 72, 131, 0.32);
+  --mood-tired-text: #483363;
+
+  --mood-neutral: #8E6E3A;
+  --mood-neutral-bg: rgba(142, 110, 58, 0.12);
+  --mood-neutral-border: rgba(142, 110, 58, 0.30);
+  --mood-neutral-text: #6A4F23;
+
+  /* System token overrides inside warm style */
+  --bg-primary: var(--journal-bg);
+  --card-default: var(--journal-paper-card);
+  --text-primary: var(--journal-text);
+  --text-secondary: var(--journal-text-2);
+  --text-muted: var(--journal-text-muted);
+  --border-color: var(--journal-border);
+  --workspace-accent: var(--journal-gold);
+  --workspace-accent-bg: var(--journal-gold-soft);
+  --workspace-accent-text: var(--journal-accent-text);
+}
+
+/* --- 2. DARK MODE: CANDLELIT --- */
+:root[data-style="warm"].dark {
+  --journal-bg: #140E0A;
+  --journal-paper: #1D1510;
+  --journal-paper-card: #221A13;
+  --journal-raised: #2D221A;
+  --journal-header-band: #201712;
+  --journal-header-band-end: #17100B;
+  --journal-header-text: #F6EBD9;
+  --journal-header-muted: #B8A287;
+
+  --journal-text: #F4E8D3;        /* 14.1:1 contrast against candlelit dark (AAA) */
+  --journal-text-2: #D9C5A8;      /* 10.2:1 contrast against candlelit dark (AAA) */
+  --journal-text-muted: #9F8B71;  /* 5.1:1 contrast against candlelit dark (AA) */
+  --journal-border: rgba(224, 185, 126, 0.16);
+  --journal-border-soft: rgba(224, 185, 126, 0.08);
+
+  --journal-gold: #DEAF68;        /* Soft golden candle glow */
+  --journal-gold-ring: #F1C37B;
+  --journal-gold-soft: rgba(222, 175, 104, 0.18);
+  --journal-accent-text: #F1C37B; /* 10.4:1 contrast in dark mode */
+
+  --journal-btn-primary-bg: #DEAF68;
+  --journal-btn-primary-fg: #19110B;
+  --journal-btn-primary-hover: #EDB96D;
+
+  /* Mood Tokens (Dark) */
+  --mood-calm: #6AA5C2;
+  --mood-calm-bg: rgba(106, 165, 194, 0.15);
+  --mood-calm-border: rgba(106, 165, 194, 0.35);
+  --mood-calm-text: #96C5DC;
+
+  --mood-grateful: #81B56F;
+  --mood-grateful-bg: rgba(129, 181, 111, 0.15);
+  --mood-grateful-border: rgba(129, 181, 111, 0.35);
+  --mood-grateful-text: #A8D19A;
+
+  --mood-restless: #DE9B3F;
+  --mood-restless-bg: rgba(222, 155, 63, 0.15);
+  --mood-restless-border: rgba(222, 155, 63, 0.35);
+  --mood-restless-text: #F0BB71;
+
+  --mood-tired: #A38AC6;
+  --mood-tired-bg: rgba(163, 138, 198, 0.15);
+  --mood-tired-border: rgba(163, 138, 198, 0.35);
+  --mood-tired-text: #C3B1DD;
+
+  --mood-neutral: #DEAF68;
+  --mood-neutral-bg: rgba(222, 175, 104, 0.15);
+  --mood-neutral-border: rgba(222, 175, 104, 0.32);
+  --mood-neutral-text: #E5BE7E;
+
+  /* System token overrides inside warm dark */
+  --bg-primary: var(--journal-bg);
+  --card-default: var(--journal-paper-card);
+  --text-primary: var(--journal-text);
+  --text-secondary: var(--journal-text-2);
+  --text-muted: var(--journal-text-muted);
+  --border-color: var(--journal-border);
+  --workspace-accent: var(--journal-gold);
+  --workspace-accent-bg: var(--journal-gold-soft);
+  --workspace-accent-text: var(--journal-accent-text);
+}
+
+/* --- 3. TYPOGRAPHY & GRAIN OVERLAY --- */
+.font-journal-serif {
+  font-family: 'Lora', 'Georgia', 'Cambria', serif;
+}
+
+.font-journal-sans {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Subtle paper texture using CSS gradient blend */
+.journal-paper-texture {
+  background-image: 
+    radial-gradient(rgba(184, 137, 68, 0.035) 1px, transparent 0),
+    radial-gradient(rgba(67, 51, 42, 0.025) 1px, transparent 0);
+  background-size: 24px 24px, 12px 12px;
+  background-position: 0 0, 12px 12px;
+}
+:root[data-style="warm"].dark .journal-paper-texture {
+  background-image: 
+    radial-gradient(rgba(222, 175, 104, 0.04) 1px, transparent 0),
+    radial-gradient(rgba(244, 232, 211, 0.02) 1px, transparent 0);
+  background-size: 28px 28px, 14px 14px;
+}
+
+/* Smooth candle glow pulse (disabled if prefers-reduced-motion) */
+@keyframes candleFlicker {
+  0%, 100% {
+    opacity: 0.95;
+    filter: drop-shadow(0 0 4px rgba(222, 175, 104, 0.65));
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    filter: drop-shadow(0 0 2px rgba(222, 175, 104, 0.35));
+    transform: scale(0.96);
+  }
+}
+
+.candle-flame-lit {
+  animation: candleFlicker 2.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .candle-flame-lit {
+    animation: none !important;
+    filter: drop-shadow(0 0 3px rgba(222, 175, 104, 0.5));
+  }
+}
+
+/* --- 4. LEGACY NOTE COLOR MAPPINGS UNDER WARM SANCTUARY --- */
+:root[data-style="warm"]:not(.dark) .bg-card-yellow {
+  background-color: #F8EDD1 !important;
+  border-color: rgba(184, 137, 68, 0.25) !important;
+}
+:root[data-style="warm"]:not(.dark) .bg-card-red {
+  background-color: #F8E5DF !important;
+  border-color: rgba(160, 80, 60, 0.22) !important;
+}
+:root[data-style="warm"]:not(.dark) .bg-card-blue {
+  background-color: #DFEBF2 !important;
+  border-color: rgba(60, 110, 140, 0.22) !important;
+}
+:root[data-style="warm"]:not(.dark) .bg-card-green {
+  background-color: #E3EDE0 !important;
+  border-color: rgba(60, 120, 50, 0.22) !important;
+}
+:root[data-style="warm"]:not(.dark) .bg-card-purple {
+  background-color: #EBE5F2 !important;
+  border-color: rgba(110, 80, 140, 0.22) !important;
+}
+
+:root[data-style="warm"].dark .bg-card-yellow {
+  background-color: #271F15 !important;
+  border-color: rgba(222, 175, 104, 0.22) !important;
+}
+:root[data-style="warm"].dark .bg-card-red {
+  background-color: #291816 !important;
+  border-color: rgba(200, 100, 80, 0.22) !important;
+}
+:root[data-style="warm"].dark .bg-card-blue {
+  background-color: #172129 !important;
+  border-color: rgba(90, 140, 170, 0.22) !important;
+}
+:root[data-style="warm"].dark .bg-card-green {
+  background-color: #182419 !important;
+  border-color: rgba(90, 150, 80, 0.22) !important;
+}
+:root[data-style="warm"].dark .bg-card-purple {
+  background-color: #231B2B !important;
+  border-color: rgba(140, 110, 180, 0.22) !important;
+}

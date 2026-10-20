@@ -2,17 +2,19 @@ import React, { useState, useMemo } from 'react';
 import { 
   Plus, 
   Calendar as CalendarIcon, 
-  Smile, 
   Sparkles, 
-  BookOpen, 
-  Flame, 
   Shuffle, 
   PenTool, 
   Clock, 
   Pin, 
   Archive, 
   Trash2,
-  Palette
+  Palette,
+  CheckCircle2,
+  BookOpen,
+  ArrowRight,
+  Flame,
+  ChevronDown
 } from 'lucide-react';
 import { useUIStore } from '../../store/uiStore';
 import { useLiveQuery } from '../../hooks/useLiveQuery';
@@ -25,124 +27,45 @@ import { useConfirmStore } from '../../store/confirmStore';
 import { useToastStore } from '../../store/toastStore';
 import { COLOR_OPTIONS } from '../shared/ColorPicker';
 
-const PROMPTS = [
-  "What made you smile today?",
-  "What is something you learned this week?",
-  "Describe a challenge you faced and how you overcame it.",
-  "What are three things you are grateful for right now?",
-  "If today was a chapter in your book, what would it be called?",
-  "What is one intention you have for tomorrow?",
-  "Who inspired you recently, and why?",
-  "Write about a small moment of peace you experienced today.",
-  "What is something you want to let go of?",
-  "How did you take care of yourself today?",
-  "What is a dream you've been thinking about lately?",
-  "What drained your energy today? What restored it?",
-  "What is a conversation you remember from this week?",
-  "Describe your surroundings right now in detail.",
-  "What would you tell yourself one year ago?",
-  "What are you looking forward to this month?",
-  "How did you show kindness to someone recently?",
-  "What is a decision you made that you feel good about?",
-  "Write about an emotion you felt strongly today.",
-  "What is something beautiful you noticed today?",
-  "What boundary did you protect or need to set?",
-  "If you had an extra hour today, how would you spend it?",
-  "What is a song that matches your mood today?",
-  "Describe a place where you feel most comfortable.",
-  "What are you proud of achieving recently?",
-  "How are you feeling physically today?",
-  "Write about someone you admire.",
-  "What is a quote that speaks to you right now?",
-  "How did you step out of your comfort zone?",
-  "What are three things you love about yourself?"
-];
-
-const MOOD_CONFIG = {
-  'Calm': { label: 'Calm', emoji: '😌', color: '#3B82F6', bgClass: 'bg-blue-500', textClass: 'text-blue-500 dark:text-blue-400', badgeBg: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20' },
-  'Restless': { label: 'Restless', emoji: '🏃', color: '#F59E0B', bgClass: 'bg-amber-500', textClass: 'text-amber-500 dark:text-amber-400', badgeBg: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20' },
-  'Grateful': { label: 'Grateful', emoji: '🙏', color: '#10B981', bgClass: 'bg-emerald-500', textClass: 'text-emerald-500 dark:text-emerald-400', badgeBg: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' },
-  'Tired': { label: 'Tired', emoji: '😴', color: '#8B5CF6', bgClass: 'bg-purple-500', textClass: 'text-purple-500 dark:text-purple-400', badgeBg: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20' },
-};
-
-function formatEntryDate(dateStr) {
-  if (!dateStr) return 'Recent';
-  const today = new Date().toISOString().split('T')[0];
-  const d = new Date();
-  d.setDate(d.getDate() - 1);
-  const yesterday = d.toISOString().split('T')[0];
-
-  if (dateStr === today) return 'Today';
-  if (dateStr === yesterday) return 'Yesterday';
-
-  try {
-    const [y, m, day] = dateStr.split('-');
-    const dateObj = new Date(Number(y), Number(m) - 1, Number(day));
-    return dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  } catch (e) {
-    return dateStr;
-  }
-}
-
-function extractTextPreview(content) {
-  if (!content) return '';
-  if (typeof content === 'string') return content.trim();
-
-  const extract = (node) => {
-    if (!node) return '';
-    if (node.text) return node.text;
-    if (Array.isArray(node.content)) {
-      return node.content.map(extract).join(' ');
-    }
-    return '';
-  };
-
-  return extract(content).trim();
-}
-
-function getColorClasses(color) {
-  switch (color) {
-    case 'yellow':
-      return 'bg-card-yellow border-yellow-200/50 dark:border-yellow-900/30';
-    case 'red':
-      return 'bg-card-red border-red-200/50 dark:border-red-900/30';
-    case 'blue':
-      return 'bg-card-blue border-blue-200/50 dark:border-blue-900/30';
-    case 'green':
-      return 'bg-card-green border-green-200/50 dark:border-green-900/30';
-    case 'purple':
-      return 'bg-card-purple border-purple-200/50 dark:border-purple-900/30';
-    default:
-      return 'bg-card-default border-black/5 dark:border-white/10';
-  }
-}
+import {
+  getTodayLocalDateStr,
+  formatEntryDate,
+  formatMonthHeading,
+  getMoodConfig,
+  MOOD_CONFIG,
+  PROMPT_PACKS,
+  getDailyPrompt,
+  shufflePrompt,
+  calculateJournalStreak,
+  buildMoodHeatmap,
+  extractTextPreview,
+} from '../../lib/journal/journalUtils';
 
 export default function JournalView() {
   const { setSelectedNoteId, selectedNoteId } = useUIStore();
   const { openSoftDelete } = useConfirmStore();
   const { showToast } = useToastStore();
+
   const [activeColorNoteId, setActiveColorNoteId] = useState(null);
+  const [selectedPackId, setSelectedPackId] = useState('all');
 
-  const today = new Date();
-  const offset = today.getTimezoneOffset();
-  const todayStr = new Date(today.getTime() - (offset * 60 * 1000)).toISOString().split('T')[0];
+  const todayStr = useMemo(() => getTodayLocalDateStr(), []);
 
-  // Daily prompt state with shuffle
-  const [promptIndex, setPromptIndex] = useState(() => (today.getDate() - 1) % PROMPTS.length);
-  const currentPrompt = PROMPTS[promptIndex % PROMPTS.length];
+  // Shared deterministic daily prompt initialized for today
+  const [currentPrompt, setCurrentPrompt] = useState(() => getDailyPrompt('all', new Date()));
 
-  const handleShufflePrompt = (e) => {
-    e.stopPropagation();
-    setPromptIndex((prev) => (prev + Math.floor(Math.random() * 5) + 1) % PROMPTS.length);
-  };
-
-  // Live Query: Journal notes
+  // Live Query: Fetch all journal notes (sorted by entry_date descending)
   const rawJournalNotes = useLiveQuery(async () => {
     const all = await db.notes.where('workspace_id').equals('journal').toArray();
     return all
       .filter((n) => !n.is_archived && !n.is_deleted)
-      .sort((a, b) => new Date(b.entry_date || b.created_at) - new Date(a.entry_date || a.created_at));
+      .sort((a, b) => {
+        const dateA = a.entry_date || a.created_at || '';
+        const dateB = b.entry_date || b.created_at || '';
+        return dateB.localeCompare(dateA);
+      });
   }, []);
+
   const journalNotes = rawJournalNotes || [];
   const isLoading = rawJournalNotes === undefined;
 
@@ -152,98 +75,81 @@ export default function JournalView() {
   const noteTagsMap = useMemo(() => {
     const map = {};
     const tMap = {};
-    allTags.forEach(t => tMap[t.id] = t);
-    allNoteTags.forEach(nt => {
+    allTags.forEach((t) => (tMap[t.id] = t));
+    allNoteTags.forEach((nt) => {
       if (!map[nt.note_id]) map[nt.note_id] = [];
       if (tMap[nt.tag_id]) map[nt.note_id].push(tMap[nt.tag_id]);
     });
     return map;
   }, [allTags, allNoteTags]);
 
-  // On This Day (Same MM-DD, different YYYY)
-  const mmdd = todayStr.substring(5);
-  const onThisDay = useMemo(() => {
-    return journalNotes.filter(n => n.entry_date?.substring(5) === mmdd && n.entry_date !== todayStr);
-  }, [journalNotes, mmdd, todayStr]);
-
-  // Streak logic (accurate consecutive days written)
-  const streak = useMemo(() => {
-    if (!journalNotes || journalNotes.length === 0) return 0;
-    const validDates = journalNotes
-      .map(n => n.entry_date)
-      .filter(d => typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d));
-
-    if (validDates.length === 0) return 0;
-
-    const toDayNumber = (dStr) => {
-      const [y, m, d] = dStr.split('-').map(Number);
-      return Math.floor(Date.UTC(y, m - 1, d) / 86400000);
-    };
-
-    const uniqueDays = Array.from(new Set(validDates.map(toDayNumber))).sort((a, b) => b - a);
-    const todayNum = toDayNumber(todayStr);
-    const latestDay = uniqueDays[0];
-
-    // Streak is active if written today or yesterday
-    if (latestDay !== todayNum && latestDay !== todayNum - 1) {
-      return 0;
-    }
-
-    let count = 0;
-    let expected = latestDay;
-    for (const day of uniqueDays) {
-      if (day === expected) {
-        count++;
-        expected--;
-      } else if (day < expected) {
-        break;
-      }
-    }
-    return count;
+  // Check if an entry for today already exists
+  const todayEntry = useMemo(() => {
+    return journalNotes.find((n) => n.entry_date === todayStr);
   }, [journalNotes, todayStr]);
 
-  // GitHub-style Mood Heatmap (last 35 days, 5 weeks x 7 days)
-  const heatmapWeeks = useMemo(() => {
-    const days = [];
-    for (let i = 34; i >= 0; i--) {
-      const d = new Date(today);
-      d.setDate(d.getDate() - i);
-      const dStr = new Date(d.getTime() - (offset * 60 * 1000)).toISOString().split('T')[0];
-      const entry = journalNotes.find(n => n.entry_date === dStr || (n.created_at && n.created_at.startsWith(dStr)));
-      const moodConfig = entry?.mood ? MOOD_CONFIG[entry.mood] : null;
+  // On This Day: same month-day from previous years
+  const mmdd = todayStr.substring(5);
+  const onThisDay = useMemo(() => {
+    return journalNotes.filter(
+      (n) => n.entry_date && n.entry_date.substring(5) === mmdd && n.entry_date !== todayStr
+    );
+  }, [journalNotes, mmdd, todayStr]);
 
-      days.push({
-        date: dStr,
-        dayOfWeek: d.getDay(),
-        formattedDate: d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }),
-        hasEntry: !!entry,
-        entryTitle: entry?.title || (entry ? 'Journal Entry' : null),
-        mood: entry?.mood || null,
-        moodConfig,
-        isToday: dStr === todayStr
-      });
-    }
+  // Streak & monthly stats (gentle streak with 1 grace day per week)
+  const streakStats = useMemo(() => {
+    return calculateJournalStreak(journalNotes);
+  }, [journalNotes]);
 
-    const weeks = [];
-    for (let i = 0; i < days.length; i += 7) {
-      weeks.push(days.slice(i, i + 7));
-    }
-    return weeks;
-  }, [journalNotes, today, offset, todayStr]);
+  // 35-day Mood Heatmap (5 weeks x 7 days)
+  const heatmap = useMemo(() => {
+    return buildMoodHeatmap(journalNotes);
+  }, [journalNotes]);
 
-  const allHeatmapDays = useMemo(() => heatmapWeeks.flat(), [heatmapWeeks]);
+  // Group timeline entries by Month
+  const entriesByMonth = useMemo(() => {
+    const groups = [];
+    let currentHeading = null;
+    let currentList = [];
 
-  // Create new journal entry with blank title, or open existing today's entry
-  const handleCreateEntry = async (promptTitle = null) => {
-    // If Write Today without specific prompt title, open existing entry for today if one already exists
-    if (!promptTitle) {
-      const existingToday = journalNotes.find(
-        (n) => n.entry_date === todayStr && !n.is_archived && !n.is_deleted
-      );
-      if (existingToday) {
-        setSelectedNoteId(existingToday.id);
-        return;
+    journalNotes.forEach((note) => {
+      const heading = formatMonthHeading(note.entry_date || note.created_at);
+      if (heading !== currentHeading) {
+        if (currentList.length > 0) {
+          groups.push({ heading: currentHeading, notes: currentList });
+        }
+        currentHeading = heading;
+        currentList = [note];
+      } else {
+        currentList.push(note);
       }
+    });
+
+    if (currentList.length > 0) {
+      groups.push({ heading: currentHeading, notes: currentList });
+    }
+    return groups;
+  }, [journalNotes]);
+
+  // Shuffle prompt within selected pack
+  const handleShuffle = (e) => {
+    e.stopPropagation();
+    const shuffled = shufflePrompt(selectedPackId, currentPrompt.text);
+    setCurrentPrompt(shuffled);
+  };
+
+  // Switch pack
+  const handleSelectPack = (packId) => {
+    setSelectedPackId(packId);
+    const newPrompt = getDailyPrompt(packId, new Date());
+    setCurrentPrompt(newPrompt);
+  };
+
+  // Open existing today's entry or create a new one
+  const handleOpenOrCreateToday = async (isTiny = false) => {
+    if (todayEntry) {
+      setSelectedNoteId(todayEntry.id);
+      return;
     }
 
     const newId = generateUUID();
@@ -252,13 +158,18 @@ export default function JournalView() {
       user_id: 'local_user',
       workspace_id: 'journal',
       subproject_id: null,
-      note_type: 'plain',
-      title: promptTitle || '',
+      note_type: 'journal',
+      title: currentPrompt.text || '',
       content: { type: 'doc', content: [] },
       color: 'default',
       is_pinned: false,
       mood: null,
       entry_date: todayStr,
+      journal_meta: {
+        prompt: currentPrompt.text,
+        promptPack: currentPrompt.packId,
+        isTinyEntry: isTiny,
+      },
       is_archived: false,
       is_deleted: false,
       deleted_at: null,
@@ -266,6 +177,7 @@ export default function JournalView() {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
+
     await db.notes.add(newNote);
     setSelectedNoteId(newId);
   };
@@ -278,359 +190,558 @@ export default function JournalView() {
   };
 
   return (
-    <div className="space-y-6 pb-16 min-w-0 w-full">
-      {/* 1. Page Header: flex-wrap with gap-x-4 gap-y-2. Title & badge on left, streak & Write Today below on narrow panes */}
-      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 min-w-0 w-full">
-        {/* Left: title + badge */}
-        <div className="flex items-center gap-2.5 shrink-0 whitespace-nowrap min-w-0">
-          <h1 className="text-[28px] sm:text-[32px] font-bold tracking-tight text-text-primary capitalize leading-tight shrink-0 whitespace-nowrap">
-            Journal
-          </h1>
-          <span className="px-2 py-0.5 text-[11px] font-semibold rounded-full bg-[var(--workspace-accent-bg)] text-[var(--workspace-accent)] border border-[var(--workspace-accent)]/20 uppercase tracking-wider shrink-0 whitespace-nowrap">
-            Workspace
-          </span>
-        </div>
-
-        {/* Right: streak + Write Today (wraps cleanly below when pane is narrow) */}
-        <div className="flex items-center gap-2.5 flex-wrap shrink-0">
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-rose-500 bg-rose-500/10 px-3 py-1.5 rounded-xl border border-rose-500/20 shrink-0 whitespace-nowrap">
-            <Flame className="w-3.5 h-3.5 fill-rose-500/20 text-rose-500" />
-            <span>{streak} Day Streak</span>
+    <div className="space-y-6 pb-20 min-w-0 w-full journal-paper-texture">
+      
+      {/* ===================================================================
+          1. HEADER BAND: Espresso (Light) or Deep Warm (Dark)
+          Serif Title + Custom Tagline + Lit Candle Icon + Write Today
+          =================================================================== */}
+      <header
+        role="banner"
+        aria-label="Journal Sanctuary Header"
+        className="rounded-2xl p-5 sm:p-6 text-[var(--journal-header-text)] shadow-md border border-[var(--journal-gold)]/25 transition-all duration-200"
+        style={{
+          background: 'linear-gradient(135deg, var(--journal-header-band) 0%, var(--journal-header-band-end) 100%)',
+        }}
+      >
+        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 min-w-0 w-full">
+          {/* Left Title & Tagline */}
+          <div className="min-w-0">
+            <div className="flex items-center gap-3">
+              <h1 className="font-journal-serif text-3xl sm:text-[34px] font-bold tracking-tight text-[var(--journal-header-text)] leading-tight">
+                Journal
+              </h1>
+              <span className="px-2.5 py-0.5 text-[11px] font-journal-sans font-semibold rounded-full border border-[var(--journal-gold)]/40 text-[var(--journal-gold)] bg-[var(--journal-gold)]/10 uppercase tracking-widest">
+                Sanctuary
+              </span>
+            </div>
+            <p className="font-journal-serif italic text-xs sm:text-sm text-[var(--journal-header-muted)] mt-1 tracking-wide">
+              A quiet place for your thoughts
+            </p>
           </div>
-          <button
-            onClick={() => handleCreateEntry()}
-            className="flex items-center gap-1.5 px-3.5 sm:px-4 py-2 bg-[var(--workspace-accent)] text-white rounded-button text-xs font-semibold hover:opacity-90 active:scale-95 transition-all shadow-sm shrink-0 whitespace-nowrap"
-            aria-label="Write today's journal entry"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Write Today</span>
-          </button>
-        </div>
-      </div>
 
-      {/* 2. Container-query layout: >=720px is 2 columns (Timeline left, Widgets right). <720px is 1 column (Daily Prompt -> Mood History -> Timeline -> On This Day) */}
-      <div className="grid grid-cols-1 @min-[720px]:grid-cols-[minmax(0,1fr)_340px] gap-6 min-w-0 w-full items-start">
+          {/* Right: Lit/Unlit Candle Streak & Write Today Action */}
+          <div className="flex items-center gap-3 flex-wrap shrink-0">
+            {/* Candle Streak Badge */}
+            <div
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-medium backdrop-blur-xs transition-all ${
+                streakStats.isLit
+                  ? 'bg-[var(--journal-gold)]/15 border-[var(--journal-gold)]/35 text-[var(--journal-gold)]'
+                  : 'bg-black/20 border-white/10 text-[var(--journal-header-muted)]'
+              }`}
+              title={streakStats.statusText}
+            >
+              {/* Custom SVG Candle: lit flame when written today */}
+              <div className="relative w-4 h-5 flex items-center justify-center shrink-0">
+                {streakStats.isLit ? (
+                  <span className="candle-flame-lit text-[var(--journal-gold)]" aria-label="Lit Candle">
+                    🔥
+                  </span>
+                ) : (
+                  <Flame className="w-4 h-4 text-[var(--journal-header-muted)]/60" aria-label="Unlit Candle" />
+                )}
+              </div>
+              <div className="flex flex-col leading-none">
+                <span className="font-bold text-xs">
+                  {streakStats.currentStreak} {streakStats.currentStreak === 1 ? 'Day Run' : 'Days Run'}
+                </span>
+                <span className="text-[10px] opacity-75 mt-0.5">
+                  {streakStats.monthWritingDays} written this month
+                </span>
+              </div>
+            </div>
+
+            {/* Write Today Button */}
+            <button
+              type="button"
+              onClick={() => handleOpenOrCreateToday(false)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-journal-sans text-xs font-semibold shadow-sm transition-all active:scale-95 hover:opacity-95 text-[var(--journal-btn-primary-fg)] bg-[var(--journal-btn-primary-bg)] hover:bg-[var(--journal-btn-primary-hover)] border border-[var(--journal-gold)]/30"
+              aria-label={todayEntry ? "Continue today's entry" : "Write today's entry"}
+            >
+              <PenTool className="w-3.5 h-3.5" />
+              <span>{todayEntry ? "Continue Today" : "Write Today"}</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* ===================================================================
+          2. RESPONSIVE CONTAINER LAYOUT:
+             - >=720px: 2 columns (Timeline on Left, Writing Card + Heatmap on Right)
+             - <720px: 1 column (Writing Card -> Heatmap -> Timeline -> On This Day)
+          =================================================================== */}
+      <div className="grid grid-cols-1 @min-[720px]:grid-cols-[minmax(0,1fr)_330px] gap-6 min-w-0 w-full items-start">
         
-        {/* Left Column (Timeline of Entries): order-3 on narrow panes, spans all rows on left on >=720px */}
-        <div className="order-3 @min-[720px]:order-none @min-[720px]:col-start-1 @min-[720px]:row-start-1 @min-[720px]:row-span-3 flex flex-col min-w-0 space-y-4 w-full">
-          <div className="flex items-center justify-between text-xs font-semibold text-text-muted uppercase tracking-wider px-1">
-            <span>Timeline</span>
-            <span>{isLoading ? 'Loading...' : `${journalNotes.length} ${journalNotes.length === 1 ? 'entry' : 'entries'}`}</span>
+        {/* ===================================================================
+            COLUMN 1: TIMELINE OF JOURNAL ENTRIES (Left on desktop)
+            =================================================================== */}
+        <section
+          aria-label="Journal Entries Timeline"
+          className="order-3 @min-[720px]:order-none @min-[720px]:col-start-1 @min-[720px]:row-start-1 @min-[720px]:row-span-3 flex flex-col min-w-0 space-y-5 w-full"
+        >
+          {/* Timeline Section Header */}
+          <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-[var(--journal-text-muted)] px-1">
+            <span className="font-journal-sans">Pages of Reflection</span>
+            <span className="font-mono text-[11px]">
+              {isLoading ? 'Loading...' : `${journalNotes.length} ${journalNotes.length === 1 ? 'entry' : 'entries'}`}
+            </span>
           </div>
 
           {isLoading ? (
             <TimelineSkeleton count={4} />
           ) : journalNotes.length === 0 ? (
-            /* Empty State */
-            <div className="flex flex-col items-center justify-center p-8 sm:p-12 text-center bg-card-default border border-dashed border-black/10 dark:border-white/10 rounded-2xl min-w-0 shadow-2xs">
-              <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-rose-500/20 via-amber-500/15 to-rose-500/10 text-rose-500 flex items-center justify-center mb-4 shadow-sm border border-rose-500/20 ring-4 ring-rose-500/5">
-                <BookOpen className="w-8 h-8" />
+            /* Friendly Handcrafted Empty State */
+            <div className="flex flex-col items-center justify-center p-8 sm:p-12 text-center bg-[var(--journal-paper-card)] border border-[var(--journal-border)] rounded-2xl min-w-0 shadow-xs">
+              {/* Original SVG Candle-and-Book Line Illustration */}
+              <div className="w-20 h-20 mb-4 text-[var(--journal-gold)] flex items-center justify-center p-2 rounded-2xl bg-[var(--journal-gold-soft)] border border-[var(--journal-gold)]/20">
+                <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-14 h-14" aria-hidden="true">
+                  {/* Open Book Base */}
+                  <path d="M32 46C26 43 14 43 8 46V18C14 15 26 15 32 18M32 46C38 43 50 43 56 46V18C50 15 38 15 32 18M32 46V18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  {/* Candle Stick */}
+                  <rect x="42" y="24" width="6" height="14" rx="1.5" stroke="currentColor" strokeWidth="2" fill="var(--journal-paper)"/>
+                  {/* Candle Wick & Flame */}
+                  <path d="M45 24V21" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                  <path d="M45 15C43.5 17 43 18.5 45 20.5C47 18.5 46.5 17 45 15Z" fill="currentColor"/>
+                </svg>
               </div>
-              <h3 className="text-base font-semibold text-text-primary">
-                Your journal is waiting for its first thought
-              </h3>
-              <p className="text-xs text-text-muted mt-1.5 max-w-sm leading-relaxed">
+
+              <h2 className="font-journal-serif text-lg font-bold text-[var(--journal-text)]">
+                Your first page is waiting
+              </h2>
+              <p className="font-journal-serif italic text-xs text-[var(--journal-text-muted)] mt-1.5 max-w-sm leading-relaxed">
                 A mindful space to capture reflections, track your emotional patterns, and write freely.
               </p>
               <button
-                onClick={() => handleCreateEntry()}
-                className="mt-5 flex items-center gap-2 px-6 py-2.5 bg-[var(--workspace-accent)] text-white rounded-button text-sm font-semibold hover:opacity-90 active:scale-95 transition-all shadow-md"
+                type="button"
+                onClick={() => handleOpenOrCreateToday(false)}
+                className="mt-5 flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-semibold font-journal-sans text-[var(--journal-btn-primary-fg)] bg-[var(--journal-btn-primary-bg)] hover:bg-[var(--journal-btn-primary-hover)] active:scale-95 transition-all shadow-sm border border-[var(--journal-gold)]/30"
               >
                 <Plus className="w-4 h-4" />
                 <span>Write your first entry</span>
               </button>
             </div>
           ) : (
-            /* Entry Cards: Date chip placed inside card with proper padding, never absolutely positioned over border */
-            <div className="space-y-3.5 min-w-0 w-full">
-              {journalNotes.map((note) => {
-                const isSelected = selectedNoteId === note.id;
-                const moodObj = note.mood ? MOOD_CONFIG[note.mood] : null;
-                const preview = extractTextPreview(note.content);
-                const tags = noteTagsMap[note.id] || [];
+            /* Month Grouped Timeline */
+            <div className="space-y-7 min-w-0 w-full">
+              {entriesByMonth.map((group) => (
+                <div key={group.heading} className="space-y-3.5 min-w-0">
+                  {/* Sticky Month Heading with subtle thin gold divider */}
+                  <div className="sticky top-0 z-10 flex items-center gap-3 py-1.5 bg-[var(--journal-bg)]/90 backdrop-blur-xs select-none">
+                    <span className="font-journal-serif font-bold text-sm tracking-wide text-[var(--journal-text)]">
+                      {group.heading}
+                    </span>
+                    <div className="flex-1 h-px bg-[var(--journal-gold)]/25" />
+                    <span className="text-[11px] font-mono text-[var(--journal-text-muted)]">
+                      {group.notes.length}
+                    </span>
+                  </div>
 
-                return (
-                  <div
-                    key={note.id}
-                    onClick={(e) => handleSelectEntry(e, note.id)}
-                    className={`group relative border rounded-2xl p-5 sm:p-5.5 cursor-pointer transition-all duration-200 hover:scale-[1.01] hover:shadow-lg dark:hover:shadow-black/40 min-w-0 ${getColorClasses(
-                      note.color
-                    )} ${
-                      isSelected
-                        ? 'border-[var(--workspace-accent)] ring-2 ring-[var(--workspace-accent)] shadow-card-hover'
-                        : 'border-black/5 dark:border-white/10'
-                    }`}
-                  >
-                    {/* Top Row: Date chip + Mood Emoji Badge + Actions */}
-                    <div className="flex items-center justify-between gap-2 min-w-0 mb-2.5">
-                      <div className="flex items-center gap-2 flex-wrap min-w-0">
-                        {/* Date chip: placed inside card with proper padding */}
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-black/5 dark:bg-white/10 text-text-muted shrink-0">
-                          <CalendarIcon className="w-3 h-3 opacity-60" />
-                          <span>{formatEntryDate(note.entry_date)}</span>
-                        </div>
+                  {/* Entry Cards */}
+                  <div className="space-y-3 min-w-0 w-full">
+                    {group.notes.map((note) => {
+                      const isSelected = selectedNoteId === note.id;
+                      const moodObj = getMoodConfig(note.mood);
+                      const hasSpecificMood = Boolean(note.mood);
+                      const preview = extractTextPreview(note.content);
+                      const tags = noteTagsMap[note.id] || [];
 
-                        {/* Mood Emoji Badge */}
-                        {moodObj && (
-                          <div className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium border shrink-0 ${moodObj.badgeBg}`}>
-                            <span>{moodObj.emoji}</span>
-                            <span>{moodObj.label}</span>
-                          </div>
-                        )}
-
-                        {note.is_pinned && (
-                          <span className="p-0.5 text-amber-500">
-                            <Pin className="w-3.5 h-3.5 fill-amber-500 transform rotate-45" />
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Card Actions Menu: Always visible on touch, hover on desktop, min 32px hit area */}
-                      <div className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                        {/* Color Picker Button & Popover */}
-                        <div className="relative">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setActiveColorNoteId(activeColorNoteId === note.id ? null : note.id);
-                            }}
-                            title="Change color"
-                            aria-label="Change journal entry color"
-                            className="w-8 h-8 min-w-[32px] min-h-[32px] flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
-                          >
-                            <Palette className="w-3.5 h-3.5" />
-                          </button>
-
-                          {activeColorNoteId === note.id && (
-                            <div
-                              onClick={(e) => e.stopPropagation()}
-                              className="absolute right-0 top-9 z-30 p-2 bg-bg-primary rounded-xl shadow-xl border border-black/10 dark:border-white/10 flex items-center gap-1.5"
-                            >
-                              {COLOR_OPTIONS.map((c) => (
-                                <button
-                                  key={c.id}
-                                  type="button"
-                                  onClick={async (e) => {
-                                    e.stopPropagation();
-                                    await db.notes.update(note.id, {
-                                      color: c.id,
-                                      updated_at: new Date().toISOString(),
-                                    });
-                                    setActiveColorNoteId(null);
-                                    showToast({ message: `Color changed to ${c.label}` });
-                                  }}
-                                  title={c.label}
-                                  aria-label={`Select ${c.label} color`}
-                                  className={`w-6 h-6 rounded-full border transition-transform hover:scale-110 ${
-                                    (note.color || 'default') === c.id ? 'ring-2 ring-[var(--workspace-accent)] ring-offset-1 scale-105' : ''
-                                  }`}
-                                  style={{ backgroundColor: c.border }}
-                                />
-                              ))}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Pin Button */}
-                        <button
-                          type="button"
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            const nextPin = !note.is_pinned;
-                            await db.notes.update(note.id, {
-                              is_pinned: nextPin,
-                              updated_at: new Date().toISOString(),
-                            });
-                            showToast({ message: nextPin ? 'Pinned journal entry' : 'Unpinned journal entry' });
+                      return (
+                        <article
+                          key={note.id}
+                          onClick={(e) => handleSelectEntry(e, note.id)}
+                          className={`group relative rounded-2xl p-4 sm:p-5 cursor-pointer transition-all duration-200 hover:shadow-md min-w-0 border ${
+                            isSelected
+                              ? 'ring-2 ring-[var(--journal-gold-ring)] shadow-sm'
+                              : 'hover:border-[var(--journal-gold)]/40'
+                          }`}
+                          style={{
+                            backgroundColor: 'var(--journal-paper-card)',
+                            borderColor: isSelected ? 'var(--journal-gold)' : 'var(--journal-border)',
                           }}
-                          className="w-8 h-8 min-w-[32px] min-h-[32px] flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
-                          title={note.is_pinned ? 'Unpin entry' : 'Pin entry'}
-                          aria-label={note.is_pinned ? 'Unpin entry' : 'Pin entry'}
                         >
-                          <Pin className={`w-3.5 h-3.5 ${note.is_pinned ? 'fill-current text-amber-500' : ''}`} />
-                        </button>
+                          {/* Mood-colored Book Spine on left edge */}
+                          <div
+                            className="absolute left-0 top-3 bottom-3 w-1 rounded-r-full transition-all group-hover:w-1.5"
+                            style={{
+                              backgroundColor: hasSpecificMood ? moodObj.dotColor : 'var(--journal-gold)',
+                            }}
+                            title={hasSpecificMood ? `Mood: ${moodObj.label}` : 'Journal Entry'}
+                          />
 
-                        {/* Archive Button */}
-                        <button
-                          type="button"
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            await archiveItem({
-                              id: note.id,
-                              type: 'note',
-                              title: note.title || 'Journal Entry',
-                              workspace: 'journal',
-                            });
-                            if (selectedNoteId === note.id) setSelectedNoteId(null);
-                            showToast({
-                              message: `Archived "${note.title || 'Journal Entry'}"`,
-                              action: {
-                                label: 'Undo',
-                                onClick: async () => {
-                                  await unarchiveItem({
+                          {/* Top Row: Date Chip + Mood Badge + Card Actions */}
+                          <div className="flex items-center justify-between gap-2 min-w-0 mb-2 pl-1.5">
+                            <div className="flex items-center gap-2 flex-wrap min-w-0">
+                              {/* Date chip */}
+                              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium font-journal-sans bg-black/5 dark:bg-white/5 text-[var(--journal-text-muted)] shrink-0 border border-[var(--journal-border-soft)]">
+                                <CalendarIcon className="w-3 h-3 opacity-60" />
+                                <span>{formatEntryDate(note.entry_date)}</span>
+                              </div>
+
+                              {/* Mood Badge */}
+                              {hasSpecificMood && (
+                                <div
+                                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium font-journal-sans border shrink-0"
+                                  style={{
+                                    backgroundColor: moodObj.bgVar,
+                                    borderColor: moodObj.borderVar,
+                                    color: moodObj.textVar,
+                                  }}
+                                >
+                                  <span>{moodObj.emoji}</span>
+                                  <span>{moodObj.label}</span>
+                                </div>
+                              )}
+
+                              {/* Pinned Bookmark Ribbon Indicator */}
+                              {note.is_pinned && (
+                                <span className="p-0.5 text-[var(--journal-gold)]" title="Pinned to top">
+                                  <Pin className="w-3.5 h-3.5 fill-[var(--journal-gold)] transform rotate-45" />
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Card Actions Menu */}
+                            <div className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                              {/* Color Picker */}
+                              <div className="relative">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActiveColorNoteId(activeColorNoteId === note.id ? null : note.id);
+                                  }}
+                                  title="Change color"
+                                  aria-label="Change journal entry tint"
+                                  className="w-7 h-7 flex items-center justify-center rounded-lg text-[var(--journal-text-muted)] hover:text-[var(--journal-text)] hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                                >
+                                  <Palette className="w-3.5 h-3.5" />
+                                </button>
+
+                                {activeColorNoteId === note.id && (
+                                  <div
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="absolute right-0 top-8 z-30 p-2 bg-[var(--journal-paper)] rounded-xl shadow-xl border border-[var(--journal-border)] flex items-center gap-1.5"
+                                  >
+                                    {COLOR_OPTIONS.map((c) => (
+                                      <button
+                                        key={c.id}
+                                        type="button"
+                                        onClick={async (e) => {
+                                          e.stopPropagation();
+                                          await db.notes.update(note.id, {
+                                            color: c.id,
+                                            updated_at: new Date().toISOString(),
+                                          });
+                                          setActiveColorNoteId(null);
+                                          showToast({ message: `Card tint changed to ${c.label}` });
+                                        }}
+                                        title={c.label}
+                                        aria-label={`Select ${c.label} tint`}
+                                        className={`w-5 h-5 rounded-full border transition-transform hover:scale-110 ${
+                                          (note.color || 'default') === c.id ? 'ring-2 ring-[var(--journal-gold)] ring-offset-1 scale-105' : ''
+                                        }`}
+                                        style={{ backgroundColor: c.border }}
+                                      />
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Pin Button */}
+                              <button
+                                type="button"
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  const nextPin = !note.is_pinned;
+                                  await db.notes.update(note.id, {
+                                    is_pinned: nextPin,
+                                    updated_at: new Date().toISOString(),
+                                  });
+                                  showToast({ message: nextPin ? 'Pinned journal entry' : 'Unpinned journal entry' });
+                                }}
+                                className="w-7 h-7 flex items-center justify-center rounded-lg text-[var(--journal-text-muted)] hover:text-[var(--journal-text)] hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                                title={note.is_pinned ? 'Unpin entry' : 'Pin entry'}
+                                aria-label={note.is_pinned ? 'Unpin entry' : 'Pin entry'}
+                              >
+                                <Pin className={`w-3.5 h-3.5 ${note.is_pinned ? 'fill-current text-[var(--journal-gold)]' : ''}`} />
+                              </button>
+
+                              {/* Archive Button */}
+                              <button
+                                type="button"
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  await archiveItem({
                                     id: note.id,
                                     type: 'note',
                                     title: note.title || 'Journal Entry',
                                     workspace: 'journal',
                                   });
-                                },
-                              },
-                            });
-                          }}
-                          className="w-8 h-8 min-w-[32px] min-h-[32px] flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
-                          title="Archive entry"
-                          aria-label="Archive journal entry"
-                        >
-                          <Archive className="w-3.5 h-3.5" />
-                        </button>
+                                  if (selectedNoteId === note.id) setSelectedNoteId(null);
+                                  showToast({
+                                    message: `Archived "${note.title || 'Journal Entry'}"`,
+                                    action: {
+                                      label: 'Undo',
+                                      onClick: async () => {
+                                        await unarchiveItem({
+                                          id: note.id,
+                                          type: 'note',
+                                          title: note.title || 'Journal Entry',
+                                          workspace: 'journal',
+                                        });
+                                      },
+                                    },
+                                  });
+                                }}
+                                className="w-7 h-7 flex items-center justify-center rounded-lg text-[var(--journal-text-muted)] hover:text-[var(--journal-text)] hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                                title="Archive entry"
+                                aria-label="Archive journal entry"
+                              >
+                                <Archive className="w-3.5 h-3.5" />
+                              </button>
 
-                        {/* Delete Button */}
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openSoftDelete({
-                              title: note.title || 'Journal Entry',
-                              count: 1,
-                              onConfirm: async () => {
-                                await softDeleteItem({
-                                  id: note.id,
-                                  type: 'note',
-                                  title: note.title || 'Journal Entry',
-                                  workspace: 'journal',
-                                });
-                                if (selectedNoteId === note.id) setSelectedNoteId(null);
-                                showToast({
-                                  message: `Moved "${note.title || 'Journal Entry'}" to Trash`,
-                                  action: {
-                                    label: 'Undo',
-                                    onClick: async () => {
-                                      await restoreItem({
+                              {/* Delete Button */}
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openSoftDelete({
+                                    title: note.title || 'Journal Entry',
+                                    count: 1,
+                                    onConfirm: async () => {
+                                      await softDeleteItem({
                                         id: note.id,
                                         type: 'note',
                                         title: note.title || 'Journal Entry',
                                         workspace: 'journal',
                                       });
+                                      if (selectedNoteId === note.id) setSelectedNoteId(null);
+                                      showToast({
+                                        message: `Moved "${note.title || 'Journal Entry'}" to Trash`,
+                                        action: {
+                                          label: 'Undo',
+                                          onClick: async () => {
+                                            await restoreItem({
+                                              id: note.id,
+                                              type: 'note',
+                                              title: note.title || 'Journal Entry',
+                                              workspace: 'journal',
+                                            });
+                                          },
+                                        },
+                                      });
                                     },
-                                  },
-                                });
-                              },
-                            });
-                          }}
-                          className="w-8 h-8 min-w-[32px] min-h-[32px] flex items-center justify-center rounded-lg text-text-muted hover:text-red-500 hover:bg-red-500/10 transition-colors"
-                          title="Delete entry"
-                          aria-label="Delete journal entry"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
+                                  });
+                                }}
+                                className="w-7 h-7 flex items-center justify-center rounded-lg text-[var(--journal-text-muted)] hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                                title="Delete entry"
+                                aria-label="Delete journal entry"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
 
-                    {/* Title */}
-                    <h3 className="text-base font-semibold text-text-primary truncate">
-                      {note.title || 'Untitled reflection'}
-                    </h3>
+                          {/* Entry Title (Serif) */}
+                          <h3 className="font-journal-serif font-bold text-base sm:text-[17px] text-[var(--journal-text)] tracking-tight truncate pl-1.5 leading-snug">
+                            {note.title || 'Untitled reflection'}
+                          </h3>
 
-                    {/* 2-line preview */}
-                    <p className="text-xs text-text-muted line-clamp-2 leading-relaxed mt-1">
-                      {preview || 'Empty reflection...'}
-                    </p>
+                          {/* 2-line Text Preview */}
+                          <p className="font-journal-serif text-xs sm:text-[13px] text-[var(--journal-text-2)] line-clamp-2 leading-relaxed mt-1 pl-1.5">
+                            {preview || 'Empty reflection...'}
+                          </p>
 
-                    {/* Tags Footer */}
-                    {tags.length > 0 && (
-                      <div className="mt-3 pt-2.5 flex flex-wrap gap-1 border-t border-black/5 dark:border-white/5">
-                        {tags.map((tag) => (
-                          <TagPill key={tag.id} label={tag.label} />
-                        ))}
-                      </div>
-                    )}
+                          {/* Tags Footer */}
+                          {tags.length > 0 && (
+                            <div className="mt-3 pt-2.5 flex flex-wrap gap-1 border-t border-[var(--journal-border-soft)] pl-1.5">
+                              {tags.map((tag) => (
+                                <TagPill key={tag.id} label={tag.label} />
+                              ))}
+                            </div>
+                          )}
+                        </article>
+                      );
+                    })}
                   </div>
-                );
-              })}
+                </div>
+              ))}
             </div>
           )}
-        </div>
+        </section>
 
-        {/* 3. Daily Prompt Card: order-1 on narrow panes (<720px), col-start-2 row-start-1 on >=720px */}
-        <div className="order-1 @min-[720px]:order-none @min-[720px]:col-start-2 @min-[720px]:row-start-1 min-w-0 w-full">
-          <div className="bg-card-default border border-black/10 dark:border-white/10 rounded-2xl p-4 sm:p-5 shadow-sm relative min-w-0 flex flex-col justify-between">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-1.5 text-rose-500">
+        {/* ===================================================================
+            COLUMN 2: WRITING CARD (Top of page on mobile, right on desktop)
+            "What's on your mind?" + Today's Prompt + Shuffle + Start Writing
+            =================================================================== */}
+        <section
+          aria-label="Daily Writing Prompt"
+          className="order-1 @min-[720px]:order-none @min-[720px]:col-start-2 @min-[720px]:row-start-1 min-w-0 w-full"
+        >
+          <div className="bg-[var(--journal-paper-card)] border border-[var(--journal-border)] rounded-2xl p-5 shadow-xs relative min-w-0 flex flex-col justify-between">
+            {/* Header: Label + Pack Selector Dropdown */}
+            <div className="flex items-center justify-between gap-2 mb-2.5">
+              <div className="flex items-center gap-1.5 text-[var(--journal-gold)]">
                 <Sparkles className="w-4 h-4 shrink-0" />
-                <span className="text-xs font-bold uppercase tracking-wider text-text-muted whitespace-nowrap">
-                  Daily Prompt
+                <span className="text-xs font-bold uppercase tracking-wider font-journal-sans text-[var(--journal-accent-text)]">
+                  What&apos;s on your mind?
                 </span>
               </div>
+
+              {/* Pack Chip Selector */}
+              <select
+                value={selectedPackId}
+                onChange={(e) => handleSelectPack(e.target.value)}
+                className="text-[11px] font-journal-sans font-medium bg-black/5 dark:bg-white/5 border border-[var(--journal-border-soft)] rounded-lg px-2 py-1 text-[var(--journal-text-muted)] focus:outline-none cursor-pointer"
+                title="Select prompt category pack"
+                aria-label="Select prompt category pack"
+              >
+                <option value="all">All Packs</option>
+                {PROMPT_PACKS.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
             </div>
 
-            <p className="text-sm sm:text-base font-medium text-text-primary italic leading-relaxed my-2 break-words normal-case">
-              &ldquo;{currentPrompt}&rdquo;
-            </p>
+            {/* Prompt Quote */}
+            <blockquote className="font-journal-serif italic text-sm sm:text-base font-medium text-[var(--journal-text)] leading-relaxed my-2.5 pl-3 border-l-2 border-[var(--journal-gold)] break-words">
+              &ldquo;{currentPrompt.text}&rdquo;
+            </blockquote>
 
-            <div className="pt-2 flex flex-wrap items-center justify-between gap-2 border-t border-black/5 dark:border-white/5 mt-2">
+            {/* Bottom Actions: Shuffle + Start Writing / Tiny Entry */}
+            <div className="pt-3 flex flex-wrap items-center justify-between gap-2 border-t border-[var(--journal-border-soft)] mt-2">
               <button
-                onClick={handleShufflePrompt}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium text-text-muted hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
-                title="Shuffle prompt"
+                type="button"
+                onClick={handleShuffle}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium font-journal-sans text-[var(--journal-text-muted)] hover:text-[var(--journal-text)] hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                title="Shuffle to another prompt in this pack"
                 aria-label="Shuffle prompt"
               >
                 <Shuffle className="w-3.5 h-3.5" />
                 <span>Shuffle</span>
               </button>
-              <button
-                onClick={() => handleCreateEntry(currentPrompt)}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 active:scale-95 rounded-lg text-xs font-semibold transition-all shadow-2xs whitespace-nowrap"
-              >
-                <PenTool className="w-3.5 h-3.5" />
-                <span>Use this prompt</span>
-              </button>
+
+              <div className="flex items-center gap-2">
+                {/* Tiny Entry (3 lines) */}
+                <button
+                  type="button"
+                  onClick={() => handleOpenOrCreateToday(true)}
+                  className="px-3 py-1.5 text-xs font-medium font-journal-sans rounded-lg border border-[var(--journal-border)] text-[var(--journal-text-2)] hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                  title="Quick 3-line entry with mood"
+                >
+                  Tiny entry
+                </button>
+
+                {/* Primary Action Button */}
+                <button
+                  type="button"
+                  onClick={() => handleOpenOrCreateToday(false)}
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold font-journal-sans text-[var(--journal-btn-primary-fg)] bg-[var(--journal-btn-primary-bg)] hover:bg-[var(--journal-btn-primary-hover)] active:scale-95 transition-all shadow-2xs border border-[var(--journal-gold)]/30 shrink-0 whitespace-nowrap"
+                >
+                  {todayEntry ? (
+                    <>
+                      <CheckCircle2 className="w-3.5 h-3.5 text-[var(--journal-gold)]" />
+                      <span>Continue today&apos;s entry</span>
+                    </>
+                  ) : (
+                    <>
+                      <PenTool className="w-3.5 h-3.5" />
+                      <span>Start writing</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* 4. Mood History Heatmap: order-2 on narrow panes (<720px), col-start-2 row-start-2 on >=720px */}
-        <div className="order-2 @min-[720px]:order-none @min-[720px]:col-start-2 @min-[720px]:row-start-2 min-w-0 w-full">
-          <div className="bg-card-default border border-black/10 dark:border-white/10 rounded-2xl p-4 sm:p-5 shadow-sm min-w-0">
+        {/* ===================================================================
+            COLUMN 2: MOOD HISTORY COMPACT CARD (7 cols x 5 rows)
+            Last 35 days with weekday headers & portal-style safe tooltips
+            =================================================================== */}
+        <section
+          aria-label="Mood History 35-Day Heatmap"
+          className="order-2 @min-[720px]:order-none @min-[720px]:col-start-2 @min-[720px]:row-start-2 min-w-0 w-full"
+        >
+          <div className="bg-[var(--journal-paper-card)] border border-[var(--journal-border)] rounded-2xl p-5 shadow-xs min-w-0">
+            {/* Header: Label + Sublabel */}
             <div className="flex items-center justify-between mb-3 min-w-0">
               <div className="flex items-center gap-2 min-w-0">
-                <Smile className="w-4 h-4 text-rose-500 shrink-0" />
-                <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider truncate">
+                <span className="text-base" role="img" aria-label="Mood calendar">
+                  🕯️
+                </span>
+                <h2 className="text-xs font-bold font-journal-sans text-[var(--journal-text-muted)] uppercase tracking-wider truncate">
                   Mood History (Last 35 Days)
-                </h3>
+                </h2>
               </div>
-              <span className="text-[11px] font-mono text-text-muted shrink-0">7×5 grid</span>
+              <span className="text-[10px] font-mono text-[var(--journal-text-muted)] shrink-0">
+                7×5 grid
+              </span>
             </div>
 
-            {/* Heatmap Grid of 7 columns with square cells */}
-            <div className="p-3 bg-bg-primary/50 rounded-xl border border-black/5 dark:border-white/5 min-w-0">
+            {/* Heatmap Container */}
+            <div className="p-3 bg-black/[0.03] dark:bg-white/[0.03] rounded-xl border border-[var(--journal-border-soft)] min-w-0">
+              {/* Weekday Column Letters (Mon - Sun) */}
+              <div className="grid grid-cols-7 gap-1.5 sm:gap-2 mb-1.5 text-center text-[10px] font-semibold text-[var(--journal-text-muted)] font-mono select-none">
+                <span>M</span>
+                <span>T</span>
+                <span>W</span>
+                <span>T</span>
+                <span>F</span>
+                <span>S</span>
+                <span>S</span>
+              </div>
+
+              {/* 35-Day Grid (Square cells with 4px gaps) */}
               <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
-                {allHeatmapDays.map((day, dIdx) => {
-                  const bgStyle = day.moodConfig
-                    ? day.moodConfig.bgClass
-                    : day.hasEntry
-                    ? 'bg-blue-400'
-                    : 'bg-black/5 dark:bg-white/10';
-
+                {heatmap.allDays.map((day, dIdx) => {
                   return (
-                    <div key={dIdx} className="relative group/cell aspect-square flex items-center justify-center">
+                    <div
+                      key={day.date}
+                      tabIndex={0}
+                      aria-label={`${day.formattedDate}: ${day.mood ? day.mood : day.hasEntry ? 'Entry recorded' : 'No entry'}`}
+                      className="relative group/cell aspect-square flex items-center justify-center outline-none focus-visible:ring-2 focus-visible:ring-[var(--journal-gold)]"
+                    >
                       <div
-                        className={`w-full h-full aspect-square rounded-md ${bgStyle} ${
-                          day.isToday ? 'ring-2 ring-rose-500 ring-offset-1 ring-offset-card-default' : ''
-                        } transition-transform duration-100 hover:scale-110 cursor-pointer`}
-                      />
+                        className={`w-full h-full aspect-square rounded-md transition-transform duration-150 hover:scale-110 cursor-pointer flex items-center justify-center ${
+                          day.isToday ? 'ring-2 ring-[var(--journal-gold-ring)] ring-offset-1 ring-offset-[var(--journal-paper-card)]' : ''
+                        }`}
+                        style={{
+                          backgroundColor: day.moodConfig
+                            ? day.moodConfig.dotColor
+                            : day.hasEntry
+                            ? 'var(--journal-gold)'
+                            : 'rgba(0, 0, 0, 0.05)',
+                        }}
+                      >
+                        {/* Empty day subtle dot indicator */}
+                        {!day.hasEntry && (
+                          <div className="w-1 h-1 rounded-full bg-[var(--journal-text-muted)]/20" />
+                        )}
+                      </div>
 
-                      {/* Hover Tooltip - opens downward */}
-                      <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1.5 hidden group-hover/cell:flex flex-col items-center z-50 pointer-events-none whitespace-nowrap">
-                        <div className="w-2 h-2 bg-card-default border-t border-l border-black/10 dark:border-[var(--border-color)] rotate-45 -mb-1" />
-                        <div className="bg-card-default text-text-primary border border-black/10 dark:border-[var(--border-color)] px-2.5 py-1.5 rounded-lg shadow-xl text-[11px] leading-tight flex flex-col gap-0.5">
-                          <span className="font-semibold">{day.formattedDate}</span>
-                          <span className="text-text-muted">
-                            {day.mood ? `${day.moodConfig.emoji} ${day.mood}` : day.hasEntry ? '📝 Entry recorded' : 'No entry'}
+                      {/* Portal-safe Tooltip (opens downward or upward without covering titles) */}
+                      <div
+                        role="tooltip"
+                        className={`absolute ${
+                          dIdx < 14 ? 'top-full mt-2' : 'bottom-full mb-2'
+                        } left-1/2 -translate-x-1/2 hidden group-hover/cell:flex group-focus/cell:flex flex-col items-center z-50 pointer-events-none whitespace-nowrap`}
+                      >
+                        <div
+                          className="bg-[var(--journal-paper)] text-[var(--journal-text)] border border-[var(--journal-border)] px-3 py-1.5 rounded-lg shadow-xl text-[11px] leading-tight flex flex-col gap-0.5"
+                          style={{ minWidth: '130px' }}
+                        >
+                          <span className="font-bold text-[var(--journal-text)] font-journal-serif">
+                            {day.formattedDate}
+                          </span>
+                          <span className="text-[var(--journal-text-muted)] font-journal-sans">
+                            {day.mood ? `${day.moodConfig.emoji} ${day.mood}` : day.hasEntry ? '📝 Entry recorded' : 'No entry recorded'}
                           </span>
                           {day.entryTitle && (
-                            <span className="text-[10px] text-text-muted/80 truncate max-w-[140px]">
-                              {day.entryTitle}
+                            <span className="text-[10px] text-[var(--journal-text-2)] truncate max-w-[150px] italic">
+                              &ldquo;{day.entryTitle}&rdquo;
                             </span>
                           )}
                         </div>
@@ -642,39 +753,49 @@ export default function JournalView() {
             </div>
 
             {/* Heatmap Legend */}
-            <div className="flex flex-wrap gap-2 sm:gap-3.5 mt-3.5 text-[11px] text-text-muted font-medium justify-center">
-              <span className="flex items-center gap-1">
-                <span className="w-2.5 h-2.5 rounded-sm bg-blue-500 inline-block"></span>
-                <span>Calm 😌</span>
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="w-2.5 h-2.5 rounded-sm bg-amber-500 inline-block"></span>
-                <span>Restless 🏃</span>
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="w-2.5 h-2.5 rounded-sm bg-emerald-500 inline-block"></span>
-                <span>Grateful 🙏</span>
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="w-2.5 h-2.5 rounded-sm bg-purple-500 inline-block"></span>
-                <span>Tired 😴</span>
-              </span>
+            <div className="flex flex-wrap gap-2.5 mt-3 text-[11px] text-[var(--journal-text-muted)] font-medium font-journal-sans justify-center">
+              {Object.values(MOOD_CONFIG).map((m) => (
+                <span key={m.id} className="flex items-center gap-1">
+                  <span
+                    className="w-2.5 h-2.5 rounded-xs inline-block"
+                    style={{ backgroundColor: m.dotColor }}
+                  />
+                  <span>{m.label} {m.emoji}</span>
+                </span>
+              ))}
             </div>
-          </div>
-        </div>
 
-        {/* 5. On This Day Card: order-4 on narrow panes (<720px), col-start-2 row-start-3 on >=720px */}
-        <div className="order-4 @min-[720px]:order-none @min-[720px]:col-start-2 @min-[720px]:row-start-3 min-w-0 w-full">
-          <div className="bg-card-default border border-black/10 dark:border-white/10 rounded-2xl p-4 sm:p-5 shadow-sm min-w-0">
+            {/* Mood of the Week Summary Line */}
+            {heatmap.topMoodThisWeek && (
+              <div className="mt-3 pt-2.5 border-t border-[var(--journal-border-soft)] text-center text-xs font-journal-serif text-[var(--journal-text-2)]">
+                <span>Mood of the week: </span>
+                <span className="font-bold text-[var(--journal-text)]">
+                  {heatmap.topMoodThisWeek.emoji} {heatmap.topMoodThisWeek.label}
+                </span>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* ===================================================================
+            COLUMN 2: ON THIS DAY CARD
+            Past memories from previous years on this local month/day
+            =================================================================== */}
+        <section
+          aria-label="On This Day Memories"
+          className="order-4 @min-[720px]:order-none @min-[720px]:col-start-2 @min-[720px]:row-start-3 min-w-0 w-full"
+        >
+          <div className="bg-[var(--journal-paper-card)] border border-[var(--journal-border)] rounded-2xl p-5 shadow-xs min-w-0">
             <div className="flex items-center gap-2 mb-3">
-              <Clock className="w-4 h-4 text-rose-500 shrink-0" />
-              <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider">
+              <Clock className="w-4 h-4 text-[var(--journal-gold)] shrink-0" />
+              <h2 className="text-xs font-bold font-journal-sans text-[var(--journal-text-muted)] uppercase tracking-wider">
                 On This Day
-              </h3>
+              </h2>
             </div>
+
             {onThisDay.length === 0 ? (
-              <p className="text-xs text-text-muted italic">
-                No past memories for this date from previous years yet.
+              <p className="text-xs font-journal-serif italic text-[var(--journal-text-muted)] leading-relaxed">
+                No past memories recorded on this date from previous years yet.
               </p>
             ) : (
               <div className="space-y-2">
@@ -682,12 +803,12 @@ export default function JournalView() {
                   <div
                     key={note.id}
                     onClick={(e) => handleSelectEntry(e, note.id)}
-                    className="p-3 bg-bg-primary border border-black/5 dark:border-white/5 rounded-xl cursor-pointer hover:border-[var(--workspace-accent)] transition-colors"
+                    className="p-3 bg-[var(--journal-paper)] border border-[var(--journal-border-soft)] rounded-xl cursor-pointer hover:border-[var(--journal-gold)] transition-colors"
                   >
-                    <div className="text-[10px] font-mono text-text-muted mb-0.5">
+                    <div className="text-[10px] font-mono text-[var(--journal-text-muted)] mb-0.5">
                       {note.entry_date?.substring(0, 4)}
                     </div>
-                    <div className="font-semibold text-xs text-text-primary truncate break-words">
+                    <div className="font-journal-serif font-semibold text-xs text-[var(--journal-text)] truncate">
                       {note.title || 'Untitled reflection'}
                     </div>
                   </div>
@@ -695,8 +816,7 @@ export default function JournalView() {
               </div>
             )}
           </div>
-        </div>
-
+        </section>
 
       </div>
     </div>
