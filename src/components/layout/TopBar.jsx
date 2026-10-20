@@ -1,5 +1,6 @@
-import React from 'react';
-import { ChevronRight, Maximize, Minimize, LayoutGrid, List, ArrowDownUp } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import { ChevronRight, Maximize, Minimize, LayoutGrid, List, ArrowDownUp, ChevronDown } from 'lucide-react';
 import { useUIStore } from '../../store/uiStore';
 import { useLiveQuery } from '../../hooks/useLiveQuery';
 import { db } from '../../lib/db';
@@ -20,10 +21,27 @@ export default function TopBar() {
     setFocusMode,
     sortOrder,
     setSortOrder,
+    sortBy,
+    setSortBy,
     viewMode,
     setViewMode,
     setSelectedNoteId,
   } = useUIStore();
+
+  const [sortMenuOpen, setSortMenuOpen] = useState(false);
+  const sortButtonRef = useRef(null);
+  const [menuPos, setMenuPos] = useState({ top: 0, right: 0 });
+
+  const handleOpenSortMenu = () => {
+    if (sortButtonRef.current) {
+      const rect = sortButtonRef.current.getBoundingClientRect();
+      setMenuPos({
+        top: rect.bottom + 6,
+        right: Math.max(16, window.innerWidth - rect.right),
+      });
+    }
+    setSortMenuOpen((prev) => !prev);
+  };
 
   // Fetch names for breadcrumbs
   const activeProject = useLiveQuery(async () => {
@@ -152,32 +170,114 @@ export default function TopBar() {
 
       {/* View Controls */}
       <div className="flex items-center gap-2.5">
-        {/* Sort Dropdown */}
-        <div className="relative group">
+        {/* Sort Controls: Desc/Asc Toggle + Portal Menu */}
+        <div className="flex items-center bg-black/5 dark:bg-white/5 rounded-button p-0.5 border border-black/5 dark:border-white/10" ref={sortButtonRef}>
           <button 
-            aria-label="Sort options"
-            className="h-9 px-3 flex items-center gap-1.5 rounded-button text-xs font-medium text-text-muted hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+            type="button"
+            onClick={() => {
+              if (sortBy === 'title') {
+                setSortBy('date');
+                setSortOrder('desc');
+              } else {
+                setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
+              }
+            }}
+            className="h-8 px-2.5 flex items-center gap-1.5 rounded-button text-xs font-medium text-text-muted hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+            title={
+              sortBy === 'title'
+                ? 'Sorted by Title (click to switch to Date)'
+                : sortOrder === 'desc'
+                ? 'Newest first (click to toggle Oldest first)'
+                : 'Oldest first (click to toggle Newest first)'
+            }
+            aria-label="Toggle sort order"
           >
-            <ArrowDownUp className="w-4 h-4" />
-            <span className="capitalize">{sortOrder}</span>
+            <ArrowDownUp className="w-3.5 h-3.5" />
+            <span className="capitalize">
+              {sortBy === 'title' ? 'Title A–Z' : sortOrder === 'desc' ? 'Desc' : 'Asc'}
+            </span>
           </button>
-          
-          <div className="absolute right-0 mt-1 w-32 bg-bg-sidebar border border-black/10 dark:border-white/10 shadow-lg rounded-xl overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-30">
-            {['date', 'name', 'priority'].map(opt => (
+
+          <button
+            type="button"
+            onClick={handleOpenSortMenu}
+            className={`h-8 w-6 flex items-center justify-center rounded-button text-text-muted hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors ${
+              sortMenuOpen ? 'bg-black/10 dark:bg-white/10 text-text-primary' : ''
+            }`}
+            title="Sort options menu"
+            aria-label="Sort options menu"
+            aria-expanded={sortMenuOpen}
+          >
+            <ChevronDown className="w-3 h-3" />
+          </button>
+        </div>
+
+        {/* Portal-rendered Sort Menu (never clipped by parents) */}
+        {sortMenuOpen && typeof document !== 'undefined' && createPortal(
+          <>
+            <div 
+              className="fixed inset-0 z-40" 
+              onClick={() => setSortMenuOpen(false)} 
+            />
+            <div 
+              className="fixed z-50 w-44 bg-bg-sidebar border border-black/10 dark:border-white/10 shadow-xl rounded-xl overflow-hidden py-1 animate-in fade-in zoom-in-95 duration-100 ring-1 ring-black/5"
+              style={{ top: `${menuPos.top}px`, right: `${menuPos.right}px` }}
+            >
+              <div className="px-3 py-1.5 text-[10px] font-semibold text-text-muted uppercase tracking-wider select-none border-b border-black/5 dark:border-white/10">
+                Sort Timeline
+              </div>
               <button
-                key={opt}
-                onClick={() => setSortOrder(opt)}
-                className={`w-full text-left px-4 py-2 text-xs transition-colors ${
-                  sortOrder === opt 
-                    ? 'bg-[var(--workspace-accent-bg)] text-[var(--workspace-accent)] font-medium' 
+                type="button"
+                onClick={() => {
+                  setSortBy('date');
+                  setSortOrder('desc');
+                  setSortMenuOpen(false);
+                }}
+                className={`w-full text-left px-3.5 py-2 text-xs flex items-center justify-between transition-colors ${
+                  sortBy === 'date' && sortOrder === 'desc'
+                    ? 'bg-[var(--workspace-accent-bg)] text-[var(--workspace-accent)] font-semibold'
                     : 'text-text-muted hover:bg-black/5 dark:hover:bg-white/5 hover:text-text-primary'
                 }`}
               >
-                <span className="capitalize">{opt}</span>
+                <span>Newest first</span>
+                <span className="text-[10px] opacity-60 font-mono">Desc</span>
               </button>
-            ))}
-          </div>
-        </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setSortBy('date');
+                  setSortOrder('asc');
+                  setSortMenuOpen(false);
+                }}
+                className={`w-full text-left px-3.5 py-2 text-xs flex items-center justify-between transition-colors ${
+                  sortBy === 'date' && sortOrder === 'asc'
+                    ? 'bg-[var(--workspace-accent-bg)] text-[var(--workspace-accent)] font-semibold'
+                    : 'text-text-muted hover:bg-black/5 dark:hover:bg-white/5 hover:text-text-primary'
+                }`}
+              >
+                <span>Oldest first</span>
+                <span className="text-[10px] opacity-60 font-mono">Asc</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSortBy('title');
+                  setSortOrder('asc');
+                  setSortMenuOpen(false);
+                }}
+                className={`w-full text-left px-3.5 py-2 text-xs flex items-center justify-between transition-colors ${
+                  sortBy === 'title'
+                    ? 'bg-[var(--workspace-accent-bg)] text-[var(--workspace-accent)] font-semibold'
+                    : 'text-text-muted hover:bg-black/5 dark:hover:bg-white/5 hover:text-text-primary'
+                }`}
+              >
+                <span>Title A–Z</span>
+                <span className="text-[10px] opacity-60 font-mono">A-Z</span>
+              </button>
+            </div>
+          </>,
+          document.body
+        )}
 
         <div className="w-px h-5 bg-black/10 dark:bg-white/10"></div>
 

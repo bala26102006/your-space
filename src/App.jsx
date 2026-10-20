@@ -64,10 +64,28 @@ export default function App() {
     };
   }, [activeWorkspace]);
 
+  // Defensive guard against accidental horizontal shift
+  useEffect(() => {
+    const lockScrollLeft = () => {
+      if (window.scrollX > 0) window.scrollTo(0, window.scrollY);
+      if (document.documentElement.scrollLeft > 0) document.documentElement.scrollLeft = 0;
+      if (document.body.scrollLeft > 0) document.body.scrollLeft = 0;
+      const root = document.getElementById('root');
+      if (root && root.scrollLeft > 0) root.scrollLeft = 0;
+    };
+    window.addEventListener('scroll', lockScrollLeft, { passive: true });
+    return () => window.removeEventListener('scroll', lockScrollLeft);
+  }, []);
+
   return (
     <div
       data-workspace={activeWorkspace}
-      className="flex flex-row h-dvh w-screen max-w-[100vw] overflow-hidden min-w-0 bg-bg-primary text-text-primary selection:bg-active-nav-bg"
+      onScroll={(e) => {
+        if (e.currentTarget.scrollLeft > 0) {
+          e.currentTarget.scrollLeft = 0;
+        }
+      }}
+      className="flex flex-row h-dvh w-screen max-w-[100vw] overflow-x-clip overflow-y-hidden min-w-0 bg-bg-primary text-text-primary selection:bg-active-nav-bg"
     >
       {!focusMode && (
         <>

@@ -250,7 +250,7 @@ export const PROMPT_PACKS = [
 ];
 
 // Flat list of all prompts for deterministic index resolution
-const ALL_PACK_PROMPTS = PROMPT_PACKS.flatMap(p => p.prompts);
+export const ALL_PACK_PROMPTS = PROMPT_PACKS.flatMap(p => p.prompts);
 
 /**
  * Returns a deterministic daily prompt based on the local calendar date.

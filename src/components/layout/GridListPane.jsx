@@ -706,9 +706,16 @@ export default function GridListPane() {
   };
 
   return (
-    <main className="flex-1 min-w-0 h-full min-h-0 flex flex-col bg-bg-primary transition-all duration-200 overflow-hidden">
+    <main className="flex-1 min-w-0 h-full min-h-0 flex flex-col bg-bg-primary transition-all duration-200 overflow-x-clip overflow-y-hidden">
       <TopBar />
-      <div className="pane-scroller @container flex-1 min-h-0 min-w-0 p-4 sm:p-6 relative overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable] [overscroll-behavior:contain]">
+      <div 
+        onScroll={(e) => {
+          if (e.currentTarget.scrollLeft > 0) {
+            e.currentTarget.scrollLeft = 0;
+          }
+        }}
+        className="pane-scroller @container flex-1 min-h-0 min-w-0 p-4 sm:p-6 relative overflow-y-auto overflow-x-clip [scrollbar-gutter:stable] [overscroll-behavior:contain]"
+      >
         {renderContent()}
       </div>
     </main>

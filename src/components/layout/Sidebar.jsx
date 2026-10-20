@@ -118,7 +118,7 @@ export default function Sidebar() {
     <>
       {/* Desktop Sidebar (250px) */}
       <aside
-        className={`flex flex-col h-full min-h-0 w-[250px] min-w-[250px] bg-bg-sidebar border-r border-black/5 dark:border-[var(--border-color)] transition-all duration-200 ${
+        className={`flex flex-col h-full min-h-0 w-[250px] min-w-[250px] overflow-x-clip bg-bg-sidebar border-r border-black/5 dark:border-[var(--border-color)] transition-all duration-200 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full absolute z-30'
         }`}
       >
@@ -195,7 +195,7 @@ export default function Sidebar() {
         </div>
 
         {/* Workspace Navigation Links with clear top padding */}
-        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-2 pt-2.5 pb-12 space-y-0.5 scroll-pt-3">
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-clip px-2 pt-2.5 pb-12 space-y-0.5 scroll-pt-3">
           <div className="px-2 pt-1.5 pb-1.5 text-xs font-semibold text-text-muted uppercase tracking-wider select-none">
             Workspaces
           </div>
