@@ -9,6 +9,9 @@ import '@fontsource/lora/latin-400-italic.css';
 import './styles/journalTheme.css';
 import { initSketchCacheHooks } from './lib/sketch/sketchCache';
 import * as sketchBenchmark from './lib/sketch/sketchBenchmark';
+import { processImageFile } from './lib/sketch/imageUtils';
+import { createSketchNote } from './lib/services/sketchService';
+import { useUIStore } from './store/uiStore';
 
 initSketchCacheHooks();
 if (typeof window !== 'undefined') {
@@ -16,11 +19,14 @@ if (typeof window !== 'undefined') {
   if (window.location.search.includes('clean-synth=true')) {
     sketchBenchmark.cleanSyntheticSketches();
   }
-}
 
-// PERMANENT AUTH REMOVAL: Clear browser cache to force old auth state to be forgotten.
-localStorage.clear();
-sessionStorage.clear();
+  // Remove legacy auth tokens once without clearing user settings/theme/viewMode
+  if (!localStorage.getItem('auth_cleared_v1')) {
+    localStorage.removeItem('sb-auth-token');
+    localStorage.removeItem('supabase.auth.token');
+    localStorage.setItem('auth_cleared_v1', 'true');
+  }
+}
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
@@ -48,10 +54,6 @@ if (typeof window !== 'undefined' && 'caches' in window) {
           const blob = await response.blob();
           await cache.delete('/shared-image-temp');
           window.history.replaceState({}, document.title, window.location.pathname);
-
-          const { processImageFile } = await import('./lib/sketch/imageUtils');
-          const { createSketchNote } = await import('./lib/services/sketchService');
-          const { useUIStore } = await import('./store/uiStore');
 
           const { src, width, height } = await processImageFile(blob);
           const canvasW = 1200;
