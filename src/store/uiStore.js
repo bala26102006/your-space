@@ -54,10 +54,14 @@ export const useUIStore = create(
       setActiveWorkspace: (workspaceId) =>
         set((state) => {
           const modes = state.workspaceViewModes || DEFAULT_WORKSPACE_VIEW_MODES;
+          let mode = modes[workspaceId] || 'grid';
+          if (workspaceId !== 'sketch' && mode === 'wall') {
+            mode = 'grid';
+          }
           return {
             activeWorkspace: workspaceId,
-            viewMode: modes[workspaceId] || 'grid',
-            notesViewMode: modes[workspaceId] || 'grid',
+            viewMode: mode,
+            notesViewMode: mode === 'wall' ? 'grid' : mode,
             selectedNoteId: null,
             selectedProjectId: null,
             selectedSubprojectId: null,
@@ -76,20 +80,30 @@ export const useUIStore = create(
       setSortBy: (sortBy) => set({ sortBy }),
       setSortOrder: (sortOrder) => set({ sortOrder }),
       setViewMode: (mode) =>
-        set((state) => ({
-          viewMode: mode,
-          notesViewMode: mode,
-          workspaceViewModes: {
-            ...(state.workspaceViewModes || DEFAULT_WORKSPACE_VIEW_MODES),
-            [state.activeWorkspace]: mode,
-          },
-        })),
+        set((state) => {
+          const validMode = (state.activeWorkspace === 'sketch' && mode === 'wall')
+            ? 'wall'
+            : (mode === 'list' ? 'list' : 'grid');
+          return {
+            viewMode: validMode,
+            notesViewMode: validMode === 'wall' ? 'grid' : validMode,
+            workspaceViewModes: {
+              ...(state.workspaceViewModes || DEFAULT_WORKSPACE_VIEW_MODES),
+              [state.activeWorkspace]: validMode,
+            },
+          };
+        }),
       toggleViewMode: () =>
         set((state) => {
-          const next = state.viewMode === 'grid' ? 'list' : 'grid';
+          let next;
+          if (state.activeWorkspace === 'sketch') {
+            next = state.viewMode === 'grid' ? 'wall' : state.viewMode === 'wall' ? 'list' : 'grid';
+          } else {
+            next = state.viewMode === 'grid' ? 'list' : 'grid';
+          }
           return {
             viewMode: next,
-            notesViewMode: next,
+            notesViewMode: next === 'wall' ? 'grid' : next,
             workspaceViewModes: {
               ...(state.workspaceViewModes || DEFAULT_WORKSPACE_VIEW_MODES),
               [state.activeWorkspace]: next,

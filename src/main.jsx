@@ -7,6 +7,16 @@ import '@fontsource/lora/latin-500.css';
 import '@fontsource/lora/latin-600.css';
 import '@fontsource/lora/latin-400-italic.css';
 import './styles/journalTheme.css';
+import { initSketchCacheHooks } from './lib/sketch/sketchCache';
+import * as sketchBenchmark from './lib/sketch/sketchBenchmark';
+
+initSketchCacheHooks();
+if (typeof window !== 'undefined') {
+  window.__sketchBench = sketchBenchmark;
+  if (window.location.search.includes('clean-synth=true')) {
+    sketchBenchmark.cleanSyntheticSketches();
+  }
+}
 
 // PERMANENT AUTH REMOVAL: Clear browser cache to force old auth state to be forgotten.
 localStorage.clear();

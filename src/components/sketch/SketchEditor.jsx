@@ -1616,7 +1616,8 @@ export default function SketchEditor({
         ctx.restore();
       });
 
-      const thumbnail = generateThumbnail(exportCanvas, 400, 300);
+      const bgColor = canvasDoc.background?.color || (canvasDoc.background?.id === 'white' ? '#FFFFFF' : '#1A1D23');
+      const thumbnail = generateThumbnail(exportCanvas, 640, null, bgColor);
 
       await saveSketch({
         noteId: note.id,

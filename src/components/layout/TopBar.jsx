@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronRight, Maximize, Minimize, LayoutGrid, List, ArrowDownUp, ChevronDown } from 'lucide-react';
+import { ChevronRight, Maximize, Minimize, LayoutGrid, List, ArrowDownUp, ChevronDown, Columns } from 'lucide-react';
 import { useUIStore } from '../../store/uiStore';
 import { useLiveQuery } from '../../hooks/useLiveQuery';
 import { db } from '../../lib/db';
@@ -175,17 +175,14 @@ export default function TopBar() {
           <button 
             type="button"
             onClick={() => {
-              if (sortBy === 'title') {
-                setSortBy('date');
-                setSortOrder('desc');
-              } else {
-                setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
-              }
+              setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
             }}
             className="h-8 px-2.5 flex items-center gap-1.5 rounded-button text-xs font-medium text-text-muted hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
             title={
-              sortBy === 'title'
-                ? 'Sorted by Title (click to switch to Date)'
+              activeWorkspace === 'sketch'
+                ? `Current sort: ${sortBy === 'title' ? 'Title' : sortBy === 'created' ? 'Created date' : 'Last edited'} (${sortOrder === 'desc' ? 'Descending' : 'Ascending'}). Click to reverse.`
+                : sortBy === 'title'
+                ? 'Sorted by Title (click to toggle order)'
                 : sortOrder === 'desc'
                 ? 'Newest first (click to toggle Oldest first)'
                 : 'Oldest first (click to toggle Newest first)'
@@ -194,7 +191,15 @@ export default function TopBar() {
           >
             <ArrowDownUp className="w-3.5 h-3.5" />
             <span className="capitalize">
-              {sortBy === 'title' ? 'Title A–Z' : sortOrder === 'desc' ? 'Desc' : 'Asc'}
+              {activeWorkspace === 'sketch' ? (
+                sortBy === 'title'
+                  ? `Title ${sortOrder === 'desc' ? 'Z–A' : 'A–Z'}`
+                  : sortBy === 'created'
+                  ? `Created ${sortOrder === 'desc' ? '↓' : '↑'}`
+                  : `Edited ${sortOrder === 'desc' ? '↓' : '↑'}`
+              ) : (
+                sortBy === 'title' ? 'Title A–Z' : sortOrder === 'desc' ? 'Desc' : 'Asc'
+              )}
             </span>
           </button>
 
@@ -224,56 +229,109 @@ export default function TopBar() {
               style={{ top: `${menuPos.top}px`, right: `${menuPos.right}px` }}
             >
               <div className="px-3 py-1.5 text-[10px] font-semibold text-text-muted uppercase tracking-wider select-none border-b border-black/5 dark:border-white/10">
-                Sort Timeline
+                {activeWorkspace === 'sketch' ? 'Sort Sketches' : 'Sort Timeline'}
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setSortBy('date');
-                  setSortOrder('desc');
-                  setSortMenuOpen(false);
-                }}
-                className={`w-full text-left px-3.5 py-2 text-xs flex items-center justify-between transition-colors ${
-                  sortBy === 'date' && sortOrder === 'desc'
-                    ? 'bg-[var(--workspace-accent-bg)] text-[var(--workspace-accent)] font-semibold'
-                    : 'text-text-muted hover:bg-black/5 dark:hover:bg-white/5 hover:text-text-primary'
-                }`}
-              >
-                <span>Newest first</span>
-                <span className="text-[10px] opacity-60 font-mono">Desc</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setSortBy('date');
-                  setSortOrder('asc');
-                  setSortMenuOpen(false);
-                }}
-                className={`w-full text-left px-3.5 py-2 text-xs flex items-center justify-between transition-colors ${
-                  sortBy === 'date' && sortOrder === 'asc'
-                    ? 'bg-[var(--workspace-accent-bg)] text-[var(--workspace-accent)] font-semibold'
-                    : 'text-text-muted hover:bg-black/5 dark:hover:bg-white/5 hover:text-text-primary'
-                }`}
-              >
-                <span>Oldest first</span>
-                <span className="text-[10px] opacity-60 font-mono">Asc</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setSortBy('title');
-                  setSortOrder('asc');
-                  setSortMenuOpen(false);
-                }}
-                className={`w-full text-left px-3.5 py-2 text-xs flex items-center justify-between transition-colors ${
-                  sortBy === 'title'
-                    ? 'bg-[var(--workspace-accent-bg)] text-[var(--workspace-accent)] font-semibold'
-                    : 'text-text-muted hover:bg-black/5 dark:hover:bg-white/5 hover:text-text-primary'
-                }`}
-              >
-                <span>Title A–Z</span>
-                <span className="text-[10px] opacity-60 font-mono">A-Z</span>
-              </button>
+
+              {activeWorkspace === 'sketch' ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSortBy('updated');
+                      setSortMenuOpen(false);
+                    }}
+                    className={`w-full text-left px-3.5 py-2 text-xs flex items-center justify-between transition-colors ${
+                      (sortBy === 'updated' || (!sortBy || sortBy === 'date'))
+                        ? 'bg-[var(--workspace-accent-bg)] text-[var(--workspace-accent)] font-semibold'
+                        : 'text-text-muted hover:bg-black/5 dark:hover:bg-white/5 hover:text-text-primary'
+                    }`}
+                  >
+                    <span>Last edited</span>
+                    <span className="text-[10px] opacity-60 font-mono">Recent</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSortBy('created');
+                      setSortMenuOpen(false);
+                    }}
+                    className={`w-full text-left px-3.5 py-2 text-xs flex items-center justify-between transition-colors ${
+                      sortBy === 'created'
+                        ? 'bg-[var(--workspace-accent-bg)] text-[var(--workspace-accent)] font-semibold'
+                        : 'text-text-muted hover:bg-black/5 dark:hover:bg-white/5 hover:text-text-primary'
+                    }`}
+                  >
+                    <span>Created date</span>
+                    <span className="text-[10px] opacity-60 font-mono">Date</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSortBy('title');
+                      setSortMenuOpen(false);
+                    }}
+                    className={`w-full text-left px-3.5 py-2 text-xs flex items-center justify-between transition-colors ${
+                      sortBy === 'title'
+                        ? 'bg-[var(--workspace-accent-bg)] text-[var(--workspace-accent)] font-semibold'
+                        : 'text-text-muted hover:bg-black/5 dark:hover:bg-white/5 hover:text-text-primary'
+                    }`}
+                  >
+                    <span>Title A–Z</span>
+                    <span className="text-[10px] opacity-60 font-mono">A-Z</span>
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSortBy('date');
+                      setSortOrder('desc');
+                      setSortMenuOpen(false);
+                    }}
+                    className={`w-full text-left px-3.5 py-2 text-xs flex items-center justify-between transition-colors ${
+                      sortBy === 'date' && sortOrder === 'desc'
+                        ? 'bg-[var(--workspace-accent-bg)] text-[var(--workspace-accent)] font-semibold'
+                        : 'text-text-muted hover:bg-black/5 dark:hover:bg-white/5 hover:text-text-primary'
+                    }`}
+                  >
+                    <span>Newest first</span>
+                    <span className="text-[10px] opacity-60 font-mono">Desc</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSortBy('date');
+                      setSortOrder('asc');
+                      setSortMenuOpen(false);
+                    }}
+                    className={`w-full text-left px-3.5 py-2 text-xs flex items-center justify-between transition-colors ${
+                      sortBy === 'date' && sortOrder === 'asc'
+                        ? 'bg-[var(--workspace-accent-bg)] text-[var(--workspace-accent)] font-semibold'
+                        : 'text-text-muted hover:bg-black/5 dark:hover:bg-white/5 hover:text-text-primary'
+                    }`}
+                  >
+                    <span>Oldest first</span>
+                    <span className="text-[10px] opacity-60 font-mono">Asc</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSortBy('title');
+                      setSortOrder('asc');
+                      setSortMenuOpen(false);
+                    }}
+                    className={`w-full text-left px-3.5 py-2 text-xs flex items-center justify-between transition-colors ${
+                      sortBy === 'title'
+                        ? 'bg-[var(--workspace-accent-bg)] text-[var(--workspace-accent)] font-semibold'
+                        : 'text-text-muted hover:bg-black/5 dark:hover:bg-white/5 hover:text-text-primary'
+                    }`}
+                  >
+                    <span>Title A–Z</span>
+                    <span className="text-[10px] opacity-60 font-mono">A-Z</span>
+                  </button>
+                </>
+              )}
             </div>
           </>,
           document.body
@@ -295,6 +353,22 @@ export default function TopBar() {
           >
             <LayoutGrid className="w-4 h-4" />
           </button>
+
+          {activeWorkspace === 'sketch' && (
+            <button
+              onClick={() => setViewMode('wall')}
+              className={`h-7 w-7 flex items-center justify-center rounded-button transition-all ${
+                viewMode === 'wall'
+                  ? 'bg-[var(--workspace-accent-bg)] text-[var(--workspace-accent)] shadow-xs font-semibold'
+                  : 'text-text-muted hover:text-text-primary'
+              }`}
+              title="Wall View (Pin-board)"
+              aria-label="Switch to wall pin-board view"
+            >
+              <Columns className="w-4 h-4" />
+            </button>
+          )}
+
           <button
             onClick={() => setViewMode('list')}
             className={`h-7 w-7 flex items-center justify-center rounded-button transition-all ${

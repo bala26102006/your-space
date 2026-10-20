@@ -153,21 +153,40 @@ export async function flipImageData(src, horizontal = true) {
 }
 
 /**
- * Generates a compact thumbnail from a canvas or data URL
+ * Generates a compact thumbnail from a canvas while preserving the true aspect ratio.
+ * Longest edge is capped at maxEdge (default 640px), flattened onto the canvas background color.
  */
-export function generateThumbnail(sourceCanvas, maxWidth = 320, maxHeight = 240) {
+export function generateThumbnail(sourceCanvas, maxEdge = 640, maxHeight = null, bgColor = '#1A1D23') {
   const canvas = document.createElement('canvas');
-  let width = sourceCanvas.width;
-  let height = sourceCanvas.height;
+  let width = sourceCanvas.width || 1200;
+  let height = sourceCanvas.height || 900;
 
-  const ratio = Math.min(maxWidth / width, maxHeight / height, 1);
-  canvas.width = Math.max(1, Math.round(width * ratio));
-  canvas.height = Math.max(1, Math.round(height * ratio));
+  // If both maxEdge and maxHeight are provided, use max bounding box; otherwise longest edge
+  const effectiveMaxEdge = maxHeight ? Math.max(maxEdge, maxHeight) : maxEdge;
+  const scale = Math.min(effectiveMaxEdge / Math.max(width, height), 1);
+
+  canvas.width = Math.max(1, Math.round(width * scale));
+  canvas.height = Math.max(1, Math.round(height * scale));
 
   const ctx = canvas.getContext('2d');
   ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = 'medium';
+  ctx.imageSmoothingQuality = 'high';
+
+  // Flatten onto background color or neutral paper if transparent
+  if (bgColor && bgColor !== 'transparent') {
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  } else {
+    ctx.fillStyle = '#FDF9EE';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+
   ctx.drawImage(sourceCanvas, 0, 0, canvas.width, canvas.height);
 
-  return canvas.toDataURL('image/webp', 0.85);
+  try {
+    return canvas.toDataURL('image/webp', 0.82);
+  } catch (e) {
+    return canvas.toDataURL('image/jpeg', 0.82);
+  }
 }
+

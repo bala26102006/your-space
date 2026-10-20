@@ -469,3 +469,89 @@ button:active:not(:disabled) {
   border-radius: 4px;
   font-size: 0.875em;
 }
+
+/* --- SKETCH STUDIO WALL & TAPE STYLES --- */
+.sketch-wall-masonry {
+  column-count: 1;
+  column-gap: 1.25rem;
+}
+@media (min-width: 640px) {
+  .sketch-wall-masonry {
+    column-count: 2;
+  }
+}
+@media (min-width: 1024px) {
+  .sketch-wall-masonry {
+    column-count: 3;
+  }
+}
+@media (min-width: 1536px) {
+  .sketch-wall-masonry {
+    column-count: 4;
+  }
+}
+
+.sketch-wall-card {
+  break-inside: avoid;
+  margin-bottom: 1.5rem;
+  display: inline-block;
+  width: 100%;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease-out;
+}
+
+.sketch-wall-card:nth-child(4n + 1) {
+  transform: rotate(-1.2deg);
+}
+.sketch-wall-card:nth-child(4n + 2) {
+  transform: rotate(1.4deg);
+}
+.sketch-wall-card:nth-child(4n + 3) {
+  transform: rotate(-0.8deg);
+}
+.sketch-wall-card:nth-child(4n + 4) {
+  transform: rotate(1.1deg);
+}
+
+.sketch-wall-card:hover,
+.sketch-wall-card:focus-within {
+  transform: rotate(0deg) scale(1.02);
+  z-index: 10;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sketch-wall-card,
+  .sketch-wall-card:nth-child(4n + 1),
+  .sketch-wall-card:nth-child(4n + 2),
+  .sketch-wall-card:nth-child(4n + 3),
+  .sketch-wall-card:nth-child(4n + 4),
+  .sketch-wall-card:hover,
+  .sketch-wall-card:focus-within {
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+/* Semi-translucent tape corner at the top center */
+.sketch-tape-strip {
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-0.5deg);
+  width: 58px;
+  height: 18px;
+  background: rgba(245, 230, 205, 0.72);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(2px);
+  border-left: 2px dashed rgba(0, 0, 0, 0.12);
+  border-right: 2px dashed rgba(0, 0, 0, 0.12);
+  pointer-events: none;
+  z-index: 10;
+}
+
+.dark .sketch-tape-strip {
+  background: rgba(220, 195, 160, 0.35);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  border-left: 2px dashed rgba(255, 255, 255, 0.15);
+  border-right: 2px dashed rgba(255, 255, 255, 0.15);
+}
+
