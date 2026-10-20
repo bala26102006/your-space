@@ -26,7 +26,7 @@ import { useToastStore } from '../../store/toastStore';
 const WORKSPACE_ICONS = {
   quicknotes: { icon: StickyNote, label: 'Quick Notes', color: 'text-amber-500 dark:text-amber-400 bg-amber-500/10 border-amber-500/20' },
   projects: { icon: FolderKanban, label: 'Projects', color: 'text-indigo-500 dark:text-indigo-400 bg-indigo-500/10 border-indigo-500/20' },
-  journal: { icon: BookOpen, label: 'Journal', color: 'text-rose-500 dark:text-rose-400 bg-rose-500/10 border-rose-500/20' },
+  journal: { icon: BookOpen, label: 'Journal', color: 'text-amber-700 dark:text-amber-300 bg-amber-500/15 border-amber-500/30' },
   checklists: { icon: CheckSquare, label: 'Checklists', color: 'text-emerald-500 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
   wishlist: { icon: Sparkles, label: 'Wish List', color: 'text-purple-500 dark:text-purple-400 bg-purple-500/10 border-purple-500/20' },
   routines: { icon: Repeat, label: 'Routines', color: 'text-sky-500 dark:text-sky-400 bg-sky-500/10 border-sky-500/20' },

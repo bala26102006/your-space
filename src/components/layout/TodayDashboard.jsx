@@ -376,20 +376,20 @@ export default function TodayDashboard() {
           <div>
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-indigo-500/15 text-indigo-500 flex items-center justify-center">
+                <div className="w-7 h-7 rounded-lg bg-amber-600/15 text-amber-700 dark:text-amber-300 flex items-center justify-center">
                   <BookOpen className="w-4 h-4" />
                 </div>
                 <h2 className="text-xs font-bold uppercase tracking-wider text-text-primary">
                   Daily Prompt
                 </h2>
               </div>
-              <span className="text-[10px] font-mono text-indigo-500 font-medium">
+              <span className="text-[10px] font-mono text-amber-700 dark:text-amber-300 font-medium">
                 {journalInfo.hasEntry ? 'Entry Saved ✓' : 'Daily reflection'}
               </span>
             </div>
 
             {/* Prompt Quote Box */}
-            <div className="p-3 rounded-xl bg-indigo-500/5 dark:bg-indigo-500/10 border border-indigo-500/10 mb-3">
+            <div className="p-3 rounded-xl bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/20 mb-3">
               <p className="text-xs italic text-text-primary leading-relaxed">
                 "{journalInfo.prompt}"
               </p>
@@ -405,7 +405,7 @@ export default function TodayDashboard() {
           <button
             type="button"
             onClick={handleWriteJournal}
-            className="mt-3 py-2 px-3 rounded-xl bg-indigo-500 text-white font-semibold text-xs hover:bg-indigo-600 active:scale-95 transition-all shadow-sm flex items-center justify-center gap-1.5"
+            className="mt-3 py-2 px-3 rounded-xl bg-amber-700 dark:bg-amber-600 text-white font-semibold text-xs hover:bg-amber-800 dark:hover:bg-amber-500 active:scale-95 transition-all shadow-sm flex items-center justify-center gap-1.5"
           >
             <PenTool className="w-3.5 h-3.5" />
             <span>{journalInfo.hasEntry ? 'Continue Writing' : 'Write Entry'}</span>
@@ -538,14 +538,14 @@ export default function TodayDashboard() {
           <div>
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-rose-500/15 text-rose-500 flex items-center justify-center">
-                  <Flame className="w-4 h-4 fill-rose-500" />
+                <div className="w-7 h-7 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                  <Flame className="w-4 h-4 fill-amber-500" />
                 </div>
                 <h2 className="text-xs font-bold uppercase tracking-wider text-text-primary">
                   Streak Summary
                 </h2>
               </div>
-              <span className="text-[10px] font-mono text-rose-500 font-semibold">
+              <span className="text-[10px] font-mono text-amber-600 dark:text-amber-400 font-semibold">
                 Habit Pulse
               </span>
             </div>
@@ -569,7 +569,7 @@ export default function TodayDashboard() {
               </div>
             </div>
 
-            <div className="p-2.5 rounded-xl bg-rose-500/5 dark:bg-rose-500/10 border border-rose-500/10 text-[11px] text-text-secondary">
+            <div className="p-2.5 rounded-xl bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/20 text-[11px] text-text-secondary">
               Consistency compounds. Complete your daily routines and write one reflection every day.
             </div>
           </div>

@@ -187,7 +187,7 @@ export default function TopBar() {
             onClick={() => setViewMode('grid')}
             className={`h-7 w-7 flex items-center justify-center rounded-button transition-all ${
               viewMode === 'grid'
-                ? 'bg-bg-primary text-[var(--workspace-accent)] shadow-xs font-semibold'
+                ? 'bg-[var(--workspace-accent-bg)] text-[var(--workspace-accent)] shadow-xs font-semibold'
                 : 'text-text-muted hover:text-text-primary'
             }`}
             title="Grid View"
@@ -199,7 +199,7 @@ export default function TopBar() {
             onClick={() => setViewMode('list')}
             className={`h-7 w-7 flex items-center justify-center rounded-button transition-all ${
               viewMode === 'list'
-                ? 'bg-bg-primary text-[var(--workspace-accent)] shadow-xs font-semibold'
+                ? 'bg-[var(--workspace-accent-bg)] text-[var(--workspace-accent)] shadow-xs font-semibold'
                 : 'text-text-muted hover:text-text-primary'
             }`}
             title="List View"

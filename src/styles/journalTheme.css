@@ -61,14 +61,19 @@
 
   /* System token overrides inside warm style */
   --bg-primary: var(--journal-bg);
+  --bg-sidebar: #E5D6B1;
+  --bg-raised: #E0CFA7;
   --card-default: var(--journal-paper-card);
   --text-primary: var(--journal-text);
   --text-secondary: var(--journal-text-2);
   --text-muted: var(--journal-text-muted);
   --border-color: var(--journal-border);
-  --workspace-accent: var(--journal-gold);
-  --workspace-accent-bg: var(--journal-gold-soft);
+  --divider-color: rgba(67, 51, 42, 0.10);
+  --hover-bg: rgba(67, 51, 42, 0.06);
+  --workspace-accent: var(--accent-journal);
+  --workspace-accent-bg: var(--accent-journal-bg);
   --workspace-accent-text: var(--journal-accent-text);
+  --selection-color: rgba(184, 137, 68, 0.25);
 }
 
 /* --- 2. DARK MODE: CANDLELIT --- */
@@ -125,14 +130,19 @@
 
   /* System token overrides inside warm dark */
   --bg-primary: var(--journal-bg);
+  --bg-sidebar: #17110C;
+  --bg-raised: var(--journal-raised);
   --card-default: var(--journal-paper-card);
   --text-primary: var(--journal-text);
   --text-secondary: var(--journal-text-2);
   --text-muted: var(--journal-text-muted);
   --border-color: var(--journal-border);
-  --workspace-accent: var(--journal-gold);
-  --workspace-accent-bg: var(--journal-gold-soft);
+  --divider-color: rgba(224, 185, 126, 0.10);
+  --hover-bg: rgba(222, 175, 104, 0.08);
+  --workspace-accent: var(--accent-journal);
+  --workspace-accent-bg: var(--accent-journal-bg);
   --workspace-accent-text: var(--journal-accent-text);
+  --selection-color: rgba(222, 175, 104, 0.25);
 }
 
 /* --- 3. TYPOGRAPHY & GRAIN OVERLAY --- */
@@ -226,3 +236,29 @@
   background-color: #231B2B !important;
   border-color: rgba(140, 110, 180, 0.22) !important;
 }
+
+/* --- 5. WARM SCROLLBARS --- */
+:root[data-style="warm"]:not(.dark) ::-webkit-scrollbar-thumb {
+  background-color: rgba(67, 51, 42, 0.28);
+}
+:root[data-style="warm"]:not(.dark) ::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(67, 51, 42, 0.45);
+}
+:root[data-style="warm"].dark ::-webkit-scrollbar-thumb {
+  background-color: rgba(222, 175, 104, 0.25);
+}
+:root[data-style="warm"].dark ::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(222, 175, 104, 0.45);
+}
+
+/* --- 6. WARM SELECTION & FOCUS RINGS --- */
+:root[data-style="warm"] ::selection {
+  background-color: var(--selection-color);
+  color: var(--text-primary);
+}
+
+:root[data-style="warm"] :focus-visible {
+  outline-color: var(--journal-gold);
+}
+
+

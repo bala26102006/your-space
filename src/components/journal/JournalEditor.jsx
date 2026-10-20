@@ -269,7 +269,7 @@ export default function JournalEditor({ note, onClose }) {
         {/* Mood Selector Pills */}
         <div className="flex items-center gap-1.5 flex-wrap">
           <span className="text-[11px] font-semibold text-text-muted uppercase tracking-wider mr-1 flex items-center gap-1">
-            <Smile className="w-3.5 h-3.5 text-rose-500" />
+            <Smile className="w-3.5 h-3.5 text-[var(--journal-gold)]" />
             Mood:
           </span>
           {MOODS.map((m) => {

@@ -211,7 +211,7 @@ export default function Sidebar() {
                   isActive
                     ? {
                         backgroundColor: `var(--accent-${item.id}-bg)`,
-                        color: 'var(--text-primary)',
+                        color: item.id === 'journal' ? 'var(--accent-journal)' : 'var(--text-primary)',
                       }
                     : undefined
                 }
