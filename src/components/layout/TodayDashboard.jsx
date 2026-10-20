@@ -154,9 +154,24 @@ export default function TodayDashboard() {
   };
 
   // 4. Open Note
-  const handleOpenNote = (note) => {
-    setActiveWorkspace(note.workspace_id);
-    setSelectedNoteId(note.id);
+  const handleOpenNote = async (note) => {
+    let projectId = null;
+    let subprojectId = null;
+    if (note.workspace_id === 'projects' && note.subproject_id) {
+      const sp = await db.subprojects.get(note.subproject_id);
+      if (sp) {
+        projectId = sp.project_id;
+        subprojectId = note.subproject_id;
+      }
+    }
+    useUIStore.setState({
+      activeWorkspace: note.workspace_id,
+      selectedProjectId: projectId,
+      selectedSubprojectId: subprojectId,
+      selectedNoteId: note.id,
+      searchQuery: '',
+      activeTagId: null,
+    });
   };
 
   const routinePercent = routineStatus.total > 0

@@ -214,9 +214,24 @@ export default function CommandPalette() {
         sublabel: n.workspace_id,
         icon: FileText,
         category: 'Recent Notes',
-        run: () => {
-          setActiveWorkspace(n.workspace_id);
-          setSelectedNoteId(n.id);
+        run: async () => {
+          let projectId = null;
+          let subprojectId = null;
+          if (n.workspace_id === 'projects' && n.subproject_id) {
+            const sp = await db.subprojects.get(n.subproject_id);
+            if (sp) {
+              projectId = sp.project_id;
+              subprojectId = n.subproject_id;
+            }
+          }
+          useUIStore.setState({
+            activeWorkspace: n.workspace_id,
+            selectedProjectId: projectId,
+            selectedSubprojectId: subprojectId,
+            selectedNoteId: n.id,
+            searchQuery: '',
+            activeTagId: null,
+          });
           closeCommandPalette();
         }
       }));
@@ -272,9 +287,24 @@ export default function CommandPalette() {
       sublabel: `${n.workspace_id}${n.category ? ` • ${n.category}` : ''}${n.status ? ` • ${n.status}` : ''}`,
       icon: FileText,
       category: 'Notes',
-      run: () => {
-        setActiveWorkspace(n.workspace_id);
-        setSelectedNoteId(n.id);
+      run: async () => {
+        let projectId = null;
+        let subprojectId = null;
+        if (n.workspace_id === 'projects' && n.subproject_id) {
+          const sp = await db.subprojects.get(n.subproject_id);
+          if (sp) {
+            projectId = sp.project_id;
+            subprojectId = n.subproject_id;
+          }
+        }
+        useUIStore.setState({
+          activeWorkspace: n.workspace_id,
+          selectedProjectId: projectId,
+          selectedSubprojectId: subprojectId,
+          selectedNoteId: n.id,
+          searchQuery: '',
+          activeTagId: null,
+        });
         closeCommandPalette();
       }
     }));

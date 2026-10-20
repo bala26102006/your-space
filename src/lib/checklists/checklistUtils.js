@@ -452,3 +452,210 @@ export const ENHANCED_TEMPLATES = [
     items: ['Gym Shoes & Clean Socks', 'Reusable Water Bottle', 'Lifting Straps / Gloves', 'Post-workout Protein Snack', 'Microfiber Sweat Towel']
   }
 ];
+
+// -----------------------------------------------------------------
+// 9. Smart Date & Time Detection (Local regex parser)
+// -----------------------------------------------------------------
+export function parseSmartDate(text) {
+  if (!text || typeof text !== 'string') return null;
+  const lower = text.toLowerCase();
+
+  const now = new Date();
+  let detectedDate = null;
+  let detectedTime = null;
+  let phrase = '';
+  let label = '';
+
+  // 1. Time detection (e.g. 5pm, 5:30pm, 10am, 17:00)
+  const timeRegex = /\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b|\b([01]?\d|2[0-3]):([0-5]\d)\b/i;
+  const timeMatch = lower.match(timeRegex);
+  if (timeMatch) {
+    if (timeMatch[3]) {
+      let h = parseInt(timeMatch[1], 10);
+      const m = timeMatch[2] ? parseInt(timeMatch[2], 10) : 0;
+      const isPm = timeMatch[3].toLowerCase() === 'pm';
+      if (isPm && h < 12) h += 12;
+      if (!isPm && h === 12) h = 0;
+      detectedTime = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    } else if (timeMatch[4]) {
+      detectedTime = `${String(timeMatch[4]).padStart(2, '0')}:${String(timeMatch[5]).padStart(2, '0')}`;
+    }
+  }
+
+  // 2. Date detection
+  if (/\b(today|tonight)\b/i.test(lower)) {
+    detectedDate = formatLocalDate(now);
+    const m = lower.match(/\b(today|tonight)\b/i);
+    phrase = m ? m[0] : '';
+    label = 'Today';
+  } else if (/\b(tomorrow|tmrw)\b/i.test(lower)) {
+    const d = new Date(now);
+    d.setDate(d.getDate() + 1);
+    detectedDate = formatLocalDate(d);
+    const m = lower.match(/\b(tomorrow|tmrw)\b/i);
+    phrase = m ? m[0] : '';
+    label = 'Tomorrow';
+  } else {
+    const daysMap = {
+      sunday: 0, sun: 0,
+      monday: 1, mon: 1,
+      tuesday: 2, tue: 2, tues: 2,
+      wednesday: 3, wed: 3,
+      thursday: 4, thu: 4, thur: 4, thurs: 4,
+      friday: 5, fri: 5,
+      saturday: 6, sat: 6
+    };
+    const dayRegex = /\b(this\s+|next\s+)?(monday|mon|tuesday|tue|tues|wednesday|wed|thursday|thu|thur|thurs|friday|fri|saturday|sat|sunday|sun)\b/i;
+    const match = lower.match(dayRegex);
+    if (match) {
+      const targetDay = daysMap[match[2].toLowerCase()];
+      const isNext = match[1] && match[1].toLowerCase().includes('next');
+      const curDay = now.getDay();
+      let diff = targetDay - curDay;
+      if (diff <= 0) diff += 7;
+      if (isNext && diff < 7) diff += 7;
+      const d = new Date(now);
+      d.setDate(d.getDate() + diff);
+      detectedDate = formatLocalDate(d);
+      phrase = match[0];
+      label = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    } else {
+      const inDaysMatch = lower.match(/\bin\s+(\d+)\s+days?\b/i);
+      if (inDaysMatch) {
+        const days = parseInt(inDaysMatch[1], 10);
+        const d = new Date(now);
+        d.setDate(d.getDate() + days);
+        detectedDate = formatLocalDate(d);
+        phrase = inDaysMatch[0];
+        label = `In ${days} days`;
+      }
+    }
+  }
+
+  if (!detectedDate && !detectedTime) return null;
+
+  if (!detectedDate && detectedTime) {
+    detectedDate = formatLocalDate(now);
+    label = 'Today';
+  }
+
+  let cleaned = text;
+  if (phrase) {
+    cleaned = cleaned.replace(new RegExp(`\\b${phrase}\\b`, 'i'), '').trim();
+  }
+  if (timeMatch) {
+    cleaned = cleaned.replace(new RegExp(timeMatch[0], 'i'), '').trim();
+  }
+  cleaned = cleaned.replace(/\s{2,}/g, ' ').trim();
+
+  let displayLabel = label;
+  if (detectedTime) {
+    displayLabel += ` at ${detectedTime}`;
+  }
+
+  return {
+    detectedDate,
+    detectedTime,
+    displayLabel,
+    cleanedText: cleaned
+  };
+}
+
+// -----------------------------------------------------------------
+// 10. Brain Dump / Multi-line Paste Parser
+// -----------------------------------------------------------------
+export function parseBrainDump(rawText) {
+  if (!rawText || typeof rawText !== 'string') return [];
+  const lines = rawText.split(/\r?\n/);
+  const items = [];
+
+  for (const line of lines) {
+    if (!line.trim()) continue;
+
+    const isIndented = /^(\t| {2,})/.test(line);
+    let trimmed = line.trim();
+
+    let isHeader = false;
+    if (trimmed.startsWith('# ') || trimmed.startsWith('## ') || trimmed.startsWith('### ')) {
+      isHeader = true;
+      trimmed = trimmed.replace(/^#+\s*/, '');
+    } else if (trimmed.endsWith(':') && trimmed.length < 50) {
+      isHeader = true;
+      trimmed = trimmed.slice(0, -1);
+    }
+
+    let isCompleted = false;
+    if (/^\[x\]\s*/i.test(trimmed) || /^☑\s*/.test(trimmed)) {
+      isCompleted = true;
+      trimmed = trimmed.replace(/^(\[x\]|☑)\s*/i, '');
+    } else if (/^\[\s*\]\s*/.test(trimmed) || /^☐\s*/.test(trimmed)) {
+      isCompleted = false;
+      trimmed = trimmed.replace(/^(\[\s*\]|☐)\s*/, '');
+    }
+
+    trimmed = trimmed.replace(/^[-*•]\s+/, '');
+    trimmed = trimmed.replace(/^\d+[\.\)]\s+/, '');
+    trimmed = trimmed.trim();
+
+    if (!trimmed) continue;
+
+    items.push({
+      text: trimmed,
+      item_type: isHeader ? 'header' : 'task',
+      isIndented: !isHeader && isIndented,
+      isCompleted
+    });
+  }
+
+  return items;
+}
+
+// -----------------------------------------------------------------
+// 11. Sharing & Export Helpers
+// -----------------------------------------------------------------
+export function generateChecklistExportText(checklistTitle, items) {
+  const title = checklistTitle || 'Checklist';
+  const lines = [`# ${title}`, ''];
+
+  let completedCount = 0;
+  let totalTasks = 0;
+
+  items.forEach(item => {
+    if (item.item_type === 'header') {
+      lines.push('');
+      lines.push(`## ${item.text}`);
+    } else if (item.item_type === 'note') {
+      const indent = item.parent_item_id ? '    ' : '  ';
+      lines.push(`${indent}> ${item.text}`);
+    } else {
+      totalTasks++;
+      const done = isItemCompleted(item);
+      if (done) completedCount++;
+      const mark = done ? '[x]' : '[ ]';
+      const indent = item.parent_item_id ? '  ' : '';
+      let line = `${indent}- ${mark} ${item.text}`;
+      if (item.due_date) {
+        line += ` (Due: ${item.due_date}${item.due_time ? ` ${item.due_time}` : ''})`;
+      }
+      lines.push(line);
+    }
+  });
+
+  lines.push('');
+  lines.push(`---`);
+  lines.push(`Progress: ${completedCount} of ${totalTasks} completed (${totalTasks > 0 ? Math.round((completedCount / totalTasks) * 100) : 0}%)`);
+
+  return lines.join('\n');
+}
+
+export function downloadFile(filename, content, mimeType = 'text/plain') {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}

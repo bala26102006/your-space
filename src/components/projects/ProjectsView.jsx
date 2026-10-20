@@ -8,7 +8,7 @@ import {
   useSensors,
 } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, rectSortingStrategy } from '@dnd-kit/sortable';
-import { Plus, Folder, FolderKanban, FileText, MoreVertical, Archive, Trash2, Edit2, Check, Film, Youtube, BookOpen } from 'lucide-react';
+import { Plus, Folder, FolderKanban, FileText, MoreVertical, Archive, Trash2, Edit2, Check, Film, Youtube, BookOpen, ArrowLeft, ChevronRight } from 'lucide-react';
 import { useUIStore } from '../../store/uiStore';
 import { useLiveQuery } from '../../hooks/useLiveQuery';
 import { db } from '../../lib/db';
@@ -303,16 +303,31 @@ export default function ProjectsView() {
 
   // RENDER LEVEL 3: Notes inside Sub-project
   if (selectedProjectId && selectedSubprojectId) {
+    const currentProject = projects.find(p => p.id === selectedProjectId);
+    const currentSubproject = subprojects.find(sp => sp.id === selectedSubprojectId);
+
     return (
       <div className="space-y-4">
 
-        <div className="flex items-center justify-between mb-4 min-w-0">
-          <h2 className="text-lg font-semibold text-text-primary">
-            Notes / Scenes
-          </h2>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 min-w-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <button
+              type="button"
+              onClick={() => setSelectedSubprojectId(null)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 text-text-muted hover:text-text-primary transition-all active:scale-95 text-xs font-semibold shrink-0"
+              title="Back to Sections"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>{currentProject?.title || 'Back'}</span>
+            </button>
+            <ChevronRight className="w-3.5 h-3.5 text-text-muted/40 shrink-0" />
+            <h2 className="text-base sm:text-lg font-bold text-text-primary truncate">
+              {currentSubproject?.title || 'Notes / Scenes'}
+            </h2>
+          </div>
           <button
             onClick={handleCreateSubprojectNote}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-[var(--workspace-accent)] text-white rounded-button text-xs font-medium hover:opacity-90 active:scale-95 transition-all shadow-sm"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-[var(--workspace-accent)] text-white rounded-button text-xs font-medium hover:opacity-90 active:scale-95 transition-all shadow-sm self-end sm:self-auto shrink-0"
           >
             <Plus className="w-4 h-4" />
             <span>New Scene/Note</span>
@@ -367,16 +382,30 @@ export default function ProjectsView() {
 
   // RENDER LEVEL 2: Sub-projects inside selected Project
   if (selectedProjectId) {
+    const currentProject = projects.find(p => p.id === selectedProjectId);
+
     return (
       <div className="space-y-4 min-w-0">
 
-        <div className="flex items-center justify-between mb-4 min-w-0">
-          <h2 className="text-lg font-semibold text-text-primary">
-            Sub-projects / Sections (Acts, Characters, Bibles)
-          </h2>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 min-w-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <button
+              type="button"
+              onClick={() => setSelectedProjectId(null)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 text-text-muted hover:text-text-primary transition-all active:scale-95 text-xs font-semibold shrink-0"
+              title="All Projects"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>All Projects</span>
+            </button>
+            <ChevronRight className="w-3.5 h-3.5 text-text-muted/40 shrink-0" />
+            <h2 className="text-base sm:text-lg font-bold text-text-primary truncate">
+              {currentProject?.title || 'Sections'}
+            </h2>
+          </div>
           <button
             onClick={handleCreateSubproject}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-[var(--workspace-accent)] text-white rounded-button text-xs font-medium hover:opacity-90 active:scale-95 transition-all shadow-sm"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-[var(--workspace-accent)] text-white rounded-button text-xs font-medium hover:opacity-90 active:scale-95 transition-all shadow-sm self-end sm:self-auto shrink-0"
           >
             <Plus className="w-4 h-4" />
             <span>New Section</span>
