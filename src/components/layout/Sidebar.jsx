@@ -172,7 +172,7 @@ export default function Sidebar() {
         </div>
 
         {/* Global Search Bar & Command Palette Trigger */}
-        <div className="p-3 shrink-0">
+        <div className="p-3 shrink-0 border-b border-black/5 dark:border-[var(--divider-color)] bg-bg-sidebar relative z-10">
           <div className="relative flex items-center">
             <Search className="w-4 h-4 absolute left-3 top-2.5 text-text-muted pointer-events-none" />
             <input

@@ -52,8 +52,9 @@ export default function App() {
     }
   }, [theme]);
 
-  // Apply warm theme style attribute to document.documentElement when in Journal workspace
+  // Apply workspace & warm theme style attribute to document.documentElement for universal styling & portals
   useEffect(() => {
+    document.documentElement.setAttribute('data-workspace', activeWorkspace);
     if (activeWorkspace === 'journal') {
       document.documentElement.setAttribute('data-style', 'warm');
     } else {

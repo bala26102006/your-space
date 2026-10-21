@@ -153,7 +153,7 @@ export default function RoutineSheet({
       onClick={onClose}
     >
       <div 
-        className="w-full sm:max-w-xl max-h-[92vh] bg-bg-primary rounded-t-3xl sm:rounded-3xl shadow-2xl border border-black/10 dark:border-white/10 flex flex-col overflow-hidden animate-in slide-in-from-bottom-6 sm:zoom-in-95 duration-200"
+        className="w-full sm:max-w-xl max-h-[92vh] bg-surface-card rounded-t-3xl sm:rounded-3xl shadow-2xl border border-black/10 dark:border-white/10 flex flex-col overflow-hidden animate-in slide-in-from-bottom-6 sm:zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -181,16 +181,20 @@ export default function RoutineSheet({
             </div>
 
             <div 
-              className="p-4 rounded-2xl border shadow-xs transition-colors flex items-center justify-between gap-4"
+              data-palette={currentPalette.id}
+              className="routine-card p-4 rounded-2xl border shadow-xs transition-colors flex items-center justify-between gap-4"
               style={{
-                backgroundColor: currentPalette.bgLight,
-                borderColor: currentPalette.borderLight
+                backgroundColor: currentPalette.cardBg,
+                borderColor: currentPalette.border
               }}
             >
               <div className="flex items-center gap-3 min-w-0">
                 <div 
                   className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0 shadow-2xs"
-                  style={{ backgroundColor: currentPalette.containerLight }}
+                  style={{ 
+                    backgroundColor: currentPalette.container,
+                    color: currentPalette.onContainer
+                  }}
                 >
                   {icon}
                 </div>
@@ -198,7 +202,7 @@ export default function RoutineSheet({
                   <h4 className="text-base font-bold text-text-primary truncate">
                     {title.trim() || 'Routine Name'}
                   </h4>
-                  <div className="flex items-center gap-2 text-xs mt-0.5" style={{ color: currentPalette.textLight }}>
+                  <div className="flex items-center gap-2 text-xs mt-0.5" style={{ color: currentPalette.onContainer }}>
                     <span className="capitalize font-semibold">{scheduleType.replace('_', ' ')}</span>
                     <span>•</span>
                     <span className="capitalize">{timeOfDay}</span>
@@ -213,8 +217,11 @@ export default function RoutineSheet({
               </div>
 
               <div 
-                className="w-10 h-10 rounded-full flex items-center justify-center text-white shrink-0 shadow-xs"
-                style={{ backgroundColor: currentPalette.accentLight }}
+                className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-xs font-bold"
+                style={{ 
+                  backgroundColor: currentPalette.accent,
+                  color: currentPalette.accentText
+                }}
               >
                 <Check className="w-5 h-5 stroke-[2.5]" />
               </div>
@@ -270,12 +277,17 @@ export default function RoutineSheet({
                   <button
                     key={p.id}
                     type="button"
+                    data-palette={p.id}
                     onClick={() => setTonalPalette(p.id)}
                     title={p.name}
                     className={`h-9 rounded-xl flex items-center justify-center transition-all hover:scale-105 border ${
-                      tonalPalette === p.id ? 'ring-2 ring-offset-2 ring-text-primary font-bold' : 'border-black/10 dark:border-white/10'
+                      tonalPalette === p.id ? 'ring-2 ring-offset-2 ring-text-primary font-bold shadow-xs' : 'border-black/10 dark:border-white/10'
                     }`}
-                    style={{ backgroundColor: p.containerLight, color: p.textLight }}
+                    style={{ 
+                      backgroundColor: p.container, 
+                      color: p.onContainer,
+                      borderColor: p.border
+                    }}
                   >
                     {tonalPalette === p.id && <Check className="w-4 h-4 stroke-[3]" />}
                   </button>
@@ -331,8 +343,8 @@ export default function RoutineSheet({
                       onClick={() => toggleDay(d)}
                       className={`flex-1 py-1.5 text-xs font-semibold rounded-lg border transition-all ${
                         isSelected
-                          ? 'bg-sky-500 text-white border-sky-500 shadow-xs'
-                          : 'border-black/10 dark:border-white/10 text-text-muted hover:bg-black/5'
+                          ? 'bg-sky-500 dark:bg-sky-400 text-white dark:text-[#0B1220] font-bold border-sky-500 dark:border-sky-400 shadow-xs'
+                          : 'border-black/10 dark:border-white/10 text-text-muted hover:bg-black/5 dark:hover:bg-white/5'
                       }`}
                     >
                       {label}
@@ -354,8 +366,8 @@ export default function RoutineSheet({
                       onClick={() => setTargetTimesPerWeek(num)}
                       className={`w-8 h-8 rounded-lg text-xs font-bold border transition-all ${
                         targetTimesPerWeek === num
-                          ? 'bg-sky-500 text-white border-sky-500 shadow-xs'
-                          : 'border-black/10 dark:border-white/10 text-text-muted hover:bg-black/5'
+                          ? 'bg-sky-500 dark:bg-sky-400 text-white dark:text-[#0B1220] border-sky-500 dark:border-sky-400 shadow-xs'
+                          : 'border-black/10 dark:border-white/10 text-text-muted hover:bg-black/5 dark:hover:bg-white/5'
                       }`}
                     >
                       {num}x
@@ -488,7 +500,7 @@ export default function RoutineSheet({
             <button
               type="submit"
               disabled={isSubmitting || !title.trim()}
-              className="px-6 py-2.5 text-xs font-bold bg-sky-500 text-white rounded-xl shadow-sm hover:bg-sky-600 active:scale-95 transition-all disabled:opacity-50"
+              className="px-6 py-2.5 text-xs font-bold bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-300 text-white dark:text-[#0B1220] rounded-xl shadow-sm active:scale-95 transition-all disabled:opacity-50"
             >
               {isEditing ? 'Save Changes' : 'Create Routine'}
             </button>

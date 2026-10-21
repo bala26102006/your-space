@@ -7,6 +7,7 @@ import '@fontsource/lora/latin-500.css';
 import '@fontsource/lora/latin-600.css';
 import '@fontsource/lora/latin-400-italic.css';
 import './styles/journalTheme.css';
+import './styles/routinesTheme.css';
 import { initSketchCacheHooks } from './lib/sketch/sketchCache';
 import * as sketchBenchmark from './lib/sketch/sketchBenchmark';
 import { processImageFile } from './lib/sketch/imageUtils';

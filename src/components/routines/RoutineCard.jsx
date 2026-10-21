@@ -153,18 +153,23 @@ export default function RoutineCard({
   if (isListView) {
     return (
       <div
+        data-palette={palette.id}
         onClick={() => onClick?.(routine)}
-        className={`group relative p-3 sm:p-4 rounded-2xl border transition-all duration-200 cursor-pointer flex items-center justify-between gap-3 bg-white dark:bg-bg-primary hover:shadow-md ${
+        className={`routine-card group relative p-3 sm:p-4 rounded-2xl border transition-all duration-200 cursor-pointer flex items-center justify-between gap-3 hover:shadow-md ${
           isDoneToday ? 'opacity-90' : ''
         }`}
         style={{
-          borderColor: isDoneToday ? palette.borderLight : undefined
+          backgroundColor: palette.cardBg,
+          borderColor: isDoneToday ? palette.accent : palette.border
         }}
       >
         <div className="flex items-center gap-3 min-w-0">
           <div
             className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0 shadow-xs"
-            style={{ backgroundColor: palette.containerLight }}
+            style={{ 
+              backgroundColor: palette.container,
+              color: palette.onContainer
+            }}
           >
             {content.icon || '💧'}
           </div>
@@ -176,7 +181,7 @@ export default function RoutineCard({
               <span>{getScheduleLabel()}</span>
               <span>•</span>
               <span className="flex items-center gap-1 font-medium">
-                <Flame className={`w-3 h-3 ${streak > 0 ? 'text-amber-500 fill-amber-500' : 'opacity-40'}`} />
+                <Flame className={`w-3 h-3 ${streak > 0 ? 'text-amber-500 fill-amber-500 dark:text-amber-400 dark:fill-amber-400' : 'opacity-40'}`} />
                 {streak} {streak === 1 ? 'day' : 'days'}
               </span>
             </div>
@@ -197,18 +202,19 @@ export default function RoutineCard({
                 onClick={(e) => handleDayClick(e, day)}
                 title={`${day.fullDayName} (${day.dateStr}): ${isDone ? 'Done' : isFrozen ? 'Frozen' : 'Missed'}`}
                 className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-semibold transition-all ${
-                  day.isToday ? 'ring-2 ring-text-primary ring-offset-1' : ''
+                  day.isToday ? 'ring-2 ring-[var(--palette-accent)] ring-offset-1 ring-offset-bg-primary' : ''
                 } ${
                   isDone 
-                    ? 'text-white shadow-2xs' 
+                    ? 'shadow-2xs font-bold' 
                     : isFrozen 
-                    ? 'bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300' 
+                    ? 'bg-sky-100 text-sky-800 dark:bg-sky-950/80 dark:text-sky-300 border border-sky-300 dark:border-sky-700/60' 
                     : scheduled && day.isPast
                     ? 'bg-black/5 dark:bg-white/5 text-text-muted/60'
                     : 'opacity-30'
                 }`}
                 style={{
-                  backgroundColor: isDone ? palette.accentLight : undefined
+                  backgroundColor: isDone ? palette.accent : undefined,
+                  color: isDone ? palette.accentText : undefined
                 }}
               >
                 {isDone ? '✓' : isFrozen ? '❄' : day.shortLabel}
@@ -224,13 +230,13 @@ export default function RoutineCard({
             onClick={handleCheckIn}
             className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-200 active:scale-90 ${
               isDoneToday 
-                ? 'text-white shadow-sm' 
-                : 'border-2 border-dashed hover:border-solid hover:scale-105'
+                ? 'shadow-sm font-bold' 
+                : 'border-2 border-dashed hover:border-solid hover:scale-105 bg-white/70 dark:bg-white/5'
             }`}
             style={{
-              backgroundColor: isDoneToday ? palette.accentLight : 'transparent',
-              borderColor: palette.accentLight,
-              color: isDoneToday ? '#FFFFFF' : palette.accentLight
+              backgroundColor: isDoneToday ? palette.accent : 'transparent',
+              borderColor: palette.accent,
+              color: isDoneToday ? palette.accentText : palette.accent
             }}
             title={isDoneToday ? 'Completed! Tap to undo' : 'Mark as complete today'}
             aria-label={isDoneToday ? `Completed ${routine.title}` : `Complete ${routine.title}`}
@@ -247,18 +253,19 @@ export default function RoutineCard({
   // -------------------------------------------------------------
   return (
     <div
+      data-palette={palette.id}
       onClick={() => onClick?.(routine)}
-      className={`group relative rounded-3xl p-5 border transition-all duration-200 cursor-pointer flex flex-col justify-between hover:shadow-xl hover:-translate-y-0.5 ${
+      className={`routine-card group relative rounded-3xl p-5 border transition-all duration-200 cursor-pointer flex flex-col justify-between hover:shadow-xl hover:-translate-y-0.5 ${
         isDoneToday ? 'opacity-95' : ''
       }`}
       style={{
-        backgroundColor: palette.bgLight,
-        borderColor: isDoneToday ? palette.borderLight : 'rgba(0, 0, 0, 0.08)'
+        backgroundColor: palette.cardBg,
+        borderColor: isDoneToday ? palette.accent : palette.border
       }}
     >
       {/* Toast Notification for Undo */}
       {toastMessage && (
-        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-30 px-3 py-1 rounded-full bg-stone-900 text-white text-xs font-medium shadow-lg animate-in fade-in slide-in-from-top-2 duration-150 flex items-center gap-1.5">
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-30 px-3 py-1 rounded-full bg-stone-900 dark:bg-stone-800 text-white text-xs font-medium shadow-lg animate-in fade-in slide-in-from-top-2 duration-150 flex items-center gap-1.5 border border-white/10">
           <Undo2 className="w-3 h-3" />
           <span>{toastMessage}</span>
         </div>
@@ -271,7 +278,10 @@ export default function RoutineCard({
             {/* Icon Bubble */}
             <div
               className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl shrink-0 shadow-xs transition-transform group-hover:scale-105"
-              style={{ backgroundColor: palette.containerLight }}
+              style={{ 
+                backgroundColor: palette.container,
+                color: palette.onContainer
+              }}
             >
               {content.icon || '💧'}
             </div>
@@ -282,11 +292,11 @@ export default function RoutineCard({
                 streak > 0 ? 'shadow-2xs animate-pulse' : 'opacity-60'
               }`}
               style={{
-                backgroundColor: streak > 0 ? palette.containerLight : 'rgba(0, 0, 0, 0.05)',
-                color: streak > 0 ? palette.textLight : 'inherit'
+                backgroundColor: streak > 0 ? palette.chipBg : 'rgba(0, 0, 0, 0.05)',
+                color: streak > 0 ? palette.onContainer : 'inherit'
               }}
             >
-              <Flame className={`w-3.5 h-3.5 ${streak > 0 ? 'text-amber-500 fill-amber-500' : 'text-text-muted'}`} />
+              <Flame className={`w-3.5 h-3.5 ${streak > 0 ? 'text-amber-500 fill-amber-500 dark:text-amber-400 dark:fill-amber-400' : 'text-text-muted'}`} />
               <span>{streak} {streak === 1 ? 'day' : 'days'}</span>
             </div>
           </div>
@@ -387,8 +397,8 @@ export default function RoutineCard({
           <span
             className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold"
             style={{
-              backgroundColor: palette.containerLight,
-              color: palette.textLight
+              backgroundColor: palette.chipBg,
+              color: palette.onContainer
             }}
           >
             <Calendar className="w-3 h-3" />
@@ -429,24 +439,30 @@ export default function RoutineCard({
             onMouseDown={() => setIsPressing(true)}
             onMouseUp={() => setIsPressing(false)}
             onMouseLeave={() => setIsPressing(false)}
-            className={`relative w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 shadow-sm focus:outline-none focus:ring-4 focus:ring-sky-500/30 ${
+            className={`routine-check-btn relative w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 shadow-sm focus:outline-none focus:ring-4 focus:ring-sky-500/30 ${
+              isDoneToday ? 'is-done font-bold' : ''
+            } ${
               isPressing ? 'scale-90' : 'hover:scale-105'
             } ${
               isDoneToday 
-                ? 'text-white' 
+                ? 'shadow-sm' 
                 : 'border-2 border-dashed hover:border-solid bg-white/70 dark:bg-white/5'
             }`}
             style={{
-              backgroundColor: isDoneToday ? palette.accentLight : undefined,
-              borderColor: palette.accentLight,
-              color: isDoneToday ? '#FFFFFF' : palette.accentLight
+              backgroundColor: isDoneToday ? palette.accent : undefined,
+              borderColor: palette.accent,
+              color: isDoneToday ? palette.accentText : palette.accent,
+              boxShadow: isDoneToday ? '0 0 14px 2px var(--palette-glow)' : undefined
             }}
             title={isDoneToday ? 'Done! Tap to undo' : 'Mark complete for today'}
             aria-label={isDoneToday ? `Completed ${routine.title}` : `Complete ${routine.title}`}
           >
             {/* Ripple ring */}
             {rippleActive && (
-              <span className="absolute inset-0 rounded-full animate-ping opacity-30 bg-current pointer-events-none" />
+              <span 
+                className="absolute inset-0 rounded-full animate-ping opacity-30 pointer-events-none" 
+                style={{ backgroundColor: palette.accent }}
+              />
             )}
             <Check 
               className={`w-6 h-6 transition-all duration-300 ${
@@ -476,21 +492,22 @@ export default function RoutineCard({
                     disabled={day.isFuture}
                     onClick={(e) => handleDayClick(e, day)}
                     title={`${day.fullDayName} ${day.dayNumber} ${isDone ? '✓ Completed' : isFrozen ? '❄ Frozen' : isScheduled && day.isPast ? 'Missed' : ''}`}
-                    className={`w-full aspect-square max-w-[34px] rounded-xl flex items-center justify-center text-[11px] font-bold transition-all ${
-                      day.isToday ? 'ring-2 ring-text-primary ring-offset-2 ring-offset-bg-primary' : ''
+                    className={`routine-strip-cell w-full aspect-square max-w-[34px] rounded-xl flex items-center justify-center text-[11px] font-bold transition-all ${
+                      day.isToday ? 'ring-2 ring-[var(--palette-accent)] ring-offset-2 ring-offset-bg-primary' : ''
                     } ${
                       isDone
-                        ? 'text-white shadow-2xs'
+                        ? 'is-done shadow-2xs'
                         : isFrozen
-                        ? 'bg-sky-100 dark:bg-sky-950/60 text-sky-800 dark:text-sky-300 border border-sky-300 dark:border-sky-700 border-dashed'
+                        ? 'bg-sky-100 dark:bg-sky-950/70 text-sky-800 dark:text-sky-300 border border-sky-300 dark:border-sky-700/60 border-dashed'
                         : isScheduled && day.isPast
-                        ? 'bg-black/5 dark:bg-white/5 text-text-muted/60 hover:bg-black/10'
+                        ? 'bg-black/5 dark:bg-white/5 border border-dashed border-black/10 dark:border-white/10 text-text-muted/60 hover:bg-black/10 dark:hover:bg-white/10'
                         : day.isFuture
                         ? 'opacity-25 cursor-default'
                         : 'opacity-40 hover:opacity-80'
                     }`}
                     style={{
-                      backgroundColor: isDone ? palette.accentLight : undefined
+                      backgroundColor: isDone ? palette.accent : undefined,
+                      color: isDone ? palette.accentText : undefined
                     }}
                   >
                     {isDone ? '✓' : isFrozen ? '❄' : day.dayNumber}
@@ -508,7 +525,7 @@ export default function RoutineCard({
                 className="h-full rounded-full transition-all duration-300"
                 style={{
                   width: `${weekScheduledCount > 0 ? (weekCompletedCount / weekScheduledCount) * 100 : 0}%`,
-                  backgroundColor: palette.accentLight
+                  backgroundColor: palette.accent
                 }}
               />
             </div>

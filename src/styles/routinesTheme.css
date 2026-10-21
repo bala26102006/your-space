@@ -1,0 +1,376 @@
+/* ===================================================================
+   ROUTINES TONAL PALETTES & DARK SURFACE SYSTEM
+   Material 3 Tonal Surfaces & WCAG AA Contrast Tokens
+   Applied at :root and .dark on document root for universal reach
+   =================================================================== */
+
+/* -------------------------------------------------------------
+   1. GLOBAL TONAL PALETTES (Universal: Light Mode)
+   ------------------------------------------------------------- */
+:root {
+  /* Surface System (Routines Workspace Light) */
+  --routine-page: #F7F6F2;
+  --routine-surface: #FFFFFF;
+  --routine-surface-raised: #F0EDE6;
+  --routine-border: rgba(0, 0, 0, 0.08);
+  --routine-border-subtle: rgba(0, 0, 0, 0.05);
+
+  --routine-text-primary: #2C2A28;
+  --routine-text-secondary: #57534E;
+  --routine-text-muted: #7A7570;
+
+  --routine-hero-start: #F0F9FF;
+  --routine-hero-end: #FFFFFF;
+  --routine-ring-track: rgba(14, 165, 233, 0.15);
+
+  /* --- 8 Tonal Color Palettes (Light) --- */
+  /* Sky */
+  --palette-sky-card-bg: #F0F9FF;
+  --palette-sky-container: #E0F2FE;
+  --palette-sky-on-container: #0369A1;
+  --palette-sky-accent: #0284C7;
+  --palette-sky-accent-text: #FFFFFF;
+  --palette-sky-border: #BAE6FD;
+  --palette-sky-chip-bg: #E0F2FE;
+  --palette-sky-glow: rgba(2, 132, 199, 0.15);
+
+  /* Emerald */
+  --palette-emerald-card-bg: #ECFDF5;
+  --palette-emerald-container: #D1FAE5;
+  --palette-emerald-on-container: #047857;
+  --palette-emerald-accent: #059669;
+  --palette-emerald-accent-text: #FFFFFF;
+  --palette-emerald-border: #A7F3D0;
+  --palette-emerald-chip-bg: #D1FAE5;
+  --palette-emerald-glow: rgba(5, 150, 105, 0.15);
+
+  /* Amber */
+  --palette-amber-card-bg: #FFFBEB;
+  --palette-amber-container: #FEF3C7;
+  --palette-amber-on-container: #92400E;
+  --palette-amber-accent: #D97706;
+  --palette-amber-accent-text: #FFFFFF;
+  --palette-amber-border: #FDE68A;
+  --palette-amber-chip-bg: #FEF3C7;
+  --palette-amber-glow: rgba(217, 119, 6, 0.15);
+
+  /* Coral */
+  --palette-coral-card-bg: #FFF7ED;
+  --palette-coral-container: #FFEDD5;
+  --palette-coral-on-container: #9A3412;
+  --palette-coral-accent: #EA580C;
+  --palette-coral-accent-text: #FFFFFF;
+  --palette-coral-border: #FED7AA;
+  --palette-coral-chip-bg: #FFEDD5;
+  --palette-coral-glow: rgba(234, 88, 12, 0.15);
+
+  /* Indigo */
+  --palette-indigo-card-bg: #EEF2FF;
+  --palette-indigo-container: #E0E7FF;
+  --palette-indigo-on-container: #3730A3;
+  --palette-indigo-accent: #4F46E5;
+  --palette-indigo-accent-text: #FFFFFF;
+  --palette-indigo-border: #C7D2FE;
+  --palette-indigo-chip-bg: #E0E7FF;
+  --palette-indigo-glow: rgba(79, 70, 229, 0.15);
+
+  /* Violet */
+  --palette-violet-card-bg: #F5F3FF;
+  --palette-violet-container: #EDE9FE;
+  --palette-violet-on-container: #5B21B6;
+  --palette-violet-accent: #7C3AED;
+  --palette-violet-accent-text: #FFFFFF;
+  --palette-violet-border: #DDD6FE;
+  --palette-violet-chip-bg: #EDE9FE;
+  --palette-violet-glow: rgba(124, 58, 237, 0.15);
+
+  /* Rose */
+  --palette-rose-card-bg: #FFF1F2;
+  --palette-rose-container: #FFE4E6;
+  --palette-rose-on-container: #9F1239;
+  --palette-rose-accent: #E11D48;
+  --palette-rose-accent-text: #FFFFFF;
+  --palette-rose-border: #FECDD3;
+  --palette-rose-chip-bg: #FFE4E6;
+  --palette-rose-glow: rgba(225, 29, 72, 0.15);
+
+  /* Teal */
+  --palette-teal-card-bg: #F0FDFA;
+  --palette-teal-container: #CCFBF1;
+  --palette-teal-on-container: #115E59;
+  --palette-teal-accent: #0D9488;
+  --palette-teal-accent-text: #FFFFFF;
+  --palette-teal-border: #99F6E4;
+  --palette-teal-chip-bg: #CCFBF1;
+  --palette-teal-glow: rgba(13, 148, 136, 0.15);
+}
+
+/* -------------------------------------------------------------
+   2. GLOBAL TONAL PALETTES (Universal: Dark Mode)
+   Material 3 Tonal Elevation:
+   - Base surface: #151A21
+   - Container: Accent 14% over surface (via color-mix or solid hex)
+   - On-Container: Light tint (> 10:1 contrast AAA)
+   - Accent: 300/400 shade
+   - Text on filled accent: Dark ink #0B1220 (>= 6.2:1 to 11.2:1 AAA)
+   - Border: Accent 25% over surface
+   - Chip: Accent 20% over surface
+   ------------------------------------------------------------- */
+.dark {
+  /* Surface System (Routines Workspace Dark) */
+  --routine-page: #0E1116;
+  --routine-surface: #151A21;
+  --routine-surface-raised: #1C232C;
+  --routine-border: rgba(255, 255, 255, 0.08);
+  --routine-border-subtle: rgba(255, 255, 255, 0.05);
+
+  --routine-text-primary: #E8EDF3;
+  --routine-text-secondary: #AEB8C5;
+  --routine-text-muted: #7F8B9A;
+
+  /* Hero: Soft sky tint (8-14%) from card surface */
+  --routine-hero-start: #192735;
+  --routine-hero-end: #151A21;
+  --routine-ring-track: rgba(255, 255, 255, 0.12);
+
+  /* --- 8 Tonal Color Palettes (Dark) --- */
+  /* Sky */
+  --palette-sky-card-bg: #1A2733;
+  --palette-sky-container: #1A313F;
+  --palette-sky-on-container: #BAE6FD;
+  --palette-sky-accent: #38BDF8;
+  --palette-sky-accent-text: #0B1220;
+  --palette-sky-border: #1E4357;
+  --palette-sky-chip-bg: #1C3B4E;
+  --palette-sky-glow: rgba(56, 189, 248, 0.25);
+
+  /* Emerald */
+  --palette-emerald-card-bg: #182A2B;
+  --palette-emerald-container: #193432;
+  --palette-emerald-on-container: #A7F3D0;
+  --palette-emerald-accent: #34D399;
+  --palette-emerald-accent-text: #0B1220;
+  --palette-emerald-border: #1D483F;
+  --palette-emerald-chip-bg: #1B4037;
+  --palette-emerald-glow: rgba(52, 211, 153, 0.25);
+
+  /* Amber */
+  --palette-amber-card-bg: #29281E;
+  --palette-amber-container: #353121;
+  --palette-amber-on-container: #FDE68A;
+  --palette-amber-accent: #FBBF24;
+  --palette-amber-accent-text: #0B1220;
+  --palette-amber-border: #4F4322;
+  --palette-amber-chip-bg: #433B21;
+  --palette-amber-glow: rgba(251, 191, 36, 0.25);
+
+  /* Coral */
+  --palette-coral-card-bg: #2A2325;
+  --palette-coral-container: #362A2D;
+  --palette-coral-on-container: #FFD5CC;
+  --palette-coral-accent: #FF8A75;
+  --palette-coral-accent-text: #0B1220;
+  --palette-coral-border: #503636;
+  --palette-coral-chip-bg: #442F31;
+  --palette-coral-glow: rgba(255, 138, 117, 0.25);
+
+  /* Indigo */
+  --palette-indigo-card-bg: #1E2333;
+  --palette-indigo-container: #242A3F;
+  --palette-indigo-on-container: #C7D2FE;
+  --palette-indigo-accent: #818CF8;
+  --palette-indigo-accent-text: #0B1220;
+  --palette-indigo-border: #303757;
+  --palette-indigo-chip-bg: #2A314E;
+  --palette-indigo-glow: rgba(129, 140, 248, 0.25);
+
+  /* Violet */
+  --palette-violet-card-bg: #212333;
+  --palette-violet-container: #292A3F;
+  --palette-violet-on-container: #DDD6FE;
+  --palette-violet-accent: #A78BFA;
+  --palette-violet-accent-text: #0B1220;
+  --palette-violet-border: #3A3657;
+  --palette-violet-chip-bg: #322F4E;
+  --palette-violet-glow: rgba(167, 139, 250, 0.25);
+
+  /* Rose */
+  --palette-rose-card-bg: #292127;
+  --palette-rose-container: #35262F;
+  --palette-rose-on-container: #FECDD3;
+  --palette-rose-accent: #FB7185;
+  --palette-rose-accent-text: #0B1220;
+  --palette-rose-border: #4F303A;
+  --palette-rose-chip-bg: #432935;
+  --palette-rose-glow: rgba(251, 113, 133, 0.25);
+
+  /* Teal */
+  --palette-teal-card-bg: #172A2E;
+  --palette-teal-container: #183437;
+  --palette-teal-on-container: #99F6E4;
+  --palette-teal-accent: #2DD4BF;
+  --palette-teal-accent-text: #0B1220;
+  --palette-teal-border: #1B4949;
+  --palette-teal-chip-bg: #194042;
+  --palette-teal-glow: rgba(45, 212, 191, 0.25);
+}
+
+/* -------------------------------------------------------------
+   3. ACTIVE DATA-PALETTE CONTEXT SELECTORS
+   ------------------------------------------------------------- */
+[data-palette="sky"] {
+  --palette-card-bg: var(--palette-sky-card-bg);
+  --palette-container: var(--palette-sky-container);
+  --palette-on-container: var(--palette-sky-on-container);
+  --palette-accent: var(--palette-sky-accent);
+  --palette-accent-text: var(--palette-sky-accent-text);
+  --palette-border: var(--palette-sky-border);
+  --palette-chip-bg: var(--palette-sky-chip-bg);
+  --palette-glow: var(--palette-sky-glow);
+}
+
+[data-palette="emerald"] {
+  --palette-card-bg: var(--palette-emerald-card-bg);
+  --palette-container: var(--palette-emerald-container);
+  --palette-on-container: var(--palette-emerald-on-container);
+  --palette-accent: var(--palette-emerald-accent);
+  --palette-accent-text: var(--palette-emerald-accent-text);
+  --palette-border: var(--palette-emerald-border);
+  --palette-chip-bg: var(--palette-emerald-chip-bg);
+  --palette-glow: var(--palette-emerald-glow);
+}
+
+[data-palette="amber"] {
+  --palette-card-bg: var(--palette-amber-card-bg);
+  --palette-container: var(--palette-amber-container);
+  --palette-on-container: var(--palette-amber-on-container);
+  --palette-accent: var(--palette-amber-accent);
+  --palette-accent-text: var(--palette-amber-accent-text);
+  --palette-border: var(--palette-amber-border);
+  --palette-chip-bg: var(--palette-amber-chip-bg);
+  --palette-glow: var(--palette-amber-glow);
+}
+
+[data-palette="coral"] {
+  --palette-card-bg: var(--palette-coral-card-bg);
+  --palette-container: var(--palette-coral-container);
+  --palette-on-container: var(--palette-coral-on-container);
+  --palette-accent: var(--palette-coral-accent);
+  --palette-accent-text: var(--palette-coral-accent-text);
+  --palette-border: var(--palette-coral-border);
+  --palette-chip-bg: var(--palette-coral-chip-bg);
+  --palette-glow: var(--palette-coral-glow);
+}
+
+[data-palette="indigo"] {
+  --palette-card-bg: var(--palette-indigo-card-bg);
+  --palette-container: var(--palette-indigo-container);
+  --palette-on-container: var(--palette-indigo-on-container);
+  --palette-accent: var(--palette-indigo-accent);
+  --palette-accent-text: var(--palette-indigo-accent-text);
+  --palette-border: var(--palette-indigo-border);
+  --palette-chip-bg: var(--palette-indigo-chip-bg);
+  --palette-glow: var(--palette-indigo-glow);
+}
+
+[data-palette="violet"] {
+  --palette-card-bg: var(--palette-violet-card-bg);
+  --palette-container: var(--palette-violet-container);
+  --palette-on-container: var(--palette-violet-on-container);
+  --palette-accent: var(--palette-violet-accent);
+  --palette-accent-text: var(--palette-violet-accent-text);
+  --palette-border: var(--palette-violet-border);
+  --palette-chip-bg: var(--palette-violet-chip-bg);
+  --palette-glow: var(--palette-violet-glow);
+}
+
+[data-palette="rose"] {
+  --palette-card-bg: var(--palette-rose-card-bg);
+  --palette-container: var(--palette-rose-container);
+  --palette-on-container: var(--palette-rose-on-container);
+  --palette-accent: var(--palette-rose-accent);
+  --palette-accent-text: var(--palette-rose-accent-text);
+  --palette-border: var(--palette-rose-border);
+  --palette-chip-bg: var(--palette-rose-chip-bg);
+  --palette-glow: var(--palette-rose-glow);
+}
+
+[data-palette="teal"] {
+  --palette-card-bg: var(--palette-teal-card-bg);
+  --palette-container: var(--palette-teal-container);
+  --palette-on-container: var(--palette-teal-on-container);
+  --palette-accent: var(--palette-teal-accent);
+  --palette-accent-text: var(--palette-teal-accent-text);
+  --palette-border: var(--palette-teal-border);
+  --palette-chip-bg: var(--palette-teal-chip-bg);
+  --palette-glow: var(--palette-teal-glow);
+}
+
+/* -------------------------------------------------------------
+   4. ROUTINE WORKSPACE THEME OVERRIDES (Applied on documentElement)
+   ------------------------------------------------------------- */
+[data-workspace="routines"] {
+  --bg-primary: var(--routine-page);
+  --surface-card: var(--routine-surface);
+  --card-default: var(--routine-surface);
+  --bg-raised: var(--routine-surface-raised);
+}
+
+.dark[data-workspace="routines"],
+:root[data-workspace="routines"].dark {
+  --bg-primary: #0E1116;
+  --bg-sidebar: #12161D;
+  --surface-card: #151A21;
+  --card-default: #151A21;
+  --bg-raised: #1C232C;
+  --hover-bg: #1C232C;
+  --border-color: rgba(255, 255, 255, 0.08);
+  --divider-color: rgba(255, 255, 255, 0.06);
+
+  --text-primary: #E8EDF3;
+  --text-secondary: #AEB8C5;
+  --text-muted: #7F8B9A;
+}
+
+/* -------------------------------------------------------------
+   5. ROUTINE CARD DEPTH & INNER HIGHLIGHT (No flat dead black)
+   ------------------------------------------------------------- */
+.routine-card {
+  background-color: var(--palette-card-bg);
+  border-color: var(--palette-border);
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, background-color 180ms ease;
+}
+
+.dark .routine-card {
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
+}
+
+.dark .routine-card:hover {
+  background-color: color-mix(in oklab, var(--palette-accent) 6%, #1C232C);
+  border-color: var(--palette-accent);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.12), 0 8px 24px -4px var(--palette-glow);
+}
+
+/* Big Check-in Button Hover & Focus */
+.routine-check-btn {
+  transition: transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1), background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.dark .routine-check-btn:not(.is-done) {
+  border-color: var(--palette-accent);
+  color: var(--palette-accent);
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+.dark .routine-check-btn.is-done {
+  background-color: var(--palette-accent);
+  border-color: var(--palette-accent);
+  color: var(--palette-accent-text);
+  box-shadow: 0 0 14px 2px var(--palette-glow);
+}
+
+/* Weekly Strip Cells */
+.dark .routine-strip-cell.is-done {
+  background-color: var(--palette-accent);
+  color: var(--palette-accent-text);
+}

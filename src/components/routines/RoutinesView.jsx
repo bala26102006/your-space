@@ -400,13 +400,15 @@ export default function RoutinesView() {
               onClick={() => setActiveFilter(f.id)}
               className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-150 flex items-center gap-1.5 ${
                 activeFilter === f.id
-                  ? 'bg-sky-500 text-white shadow-xs'
-                  : 'bg-black/5 dark:bg-white/5 text-text-muted hover:text-text-primary hover:bg-black/10 dark:hover:bg-white/10'
+                  ? 'bg-sky-500/15 dark:bg-sky-400/15 text-sky-800 dark:text-sky-300 border border-sky-500/30 dark:border-sky-400/30 shadow-2xs'
+                  : 'bg-black/5 dark:bg-surface-card border border-transparent dark:border-white/5 text-text-muted hover:text-text-primary hover:bg-black/10 dark:hover:bg-white/5'
               }`}
             >
               <span>{f.label}</span>
               <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                activeFilter === f.id ? 'bg-white/20 text-white' : 'bg-black/10 dark:bg-white/10 text-text-secondary'
+                activeFilter === f.id 
+                  ? 'bg-sky-500/20 dark:bg-sky-400/25 text-sky-900 dark:text-sky-200' 
+                  : 'bg-black/10 dark:bg-white/10 text-text-secondary'
               }`}>
                 {f.count}
               </span>
@@ -457,7 +459,7 @@ export default function RoutinesView() {
                     key={tpl.title}
                     type="button"
                     onClick={() => openNewRoutineWithTemplate(tpl)}
-                    className="p-3 rounded-2xl border border-black/10 dark:border-white/10 bg-white dark:bg-bg-primary hover:border-sky-500 hover:shadow-md transition-all text-left flex flex-col justify-between group active:scale-95"
+                    className="p-3 rounded-2xl border border-black/10 dark:border-white/10 bg-white dark:bg-surface-card hover:border-sky-500 dark:hover:border-sky-400 hover:shadow-md transition-all text-left flex flex-col justify-between group active:scale-95"
                   >
                     <span className="text-2xl mb-1 group-hover:scale-110 transition-transform inline-block">
                       {tpl.icon}
@@ -503,10 +505,10 @@ export default function RoutinesView() {
               const SectionIcon = section.icon;
               return (
                 <div key={section.id} className="space-y-3">
-                  {/* Sticky Section Heading */}
-                  <div className="sticky top-0 z-20 py-1.5 bg-bg-primary/95 backdrop-blur-xs flex items-center justify-between border-b border-black/5 dark:border-white/5">
+                  {/* Sticky Section Heading (Opaque background matching page) */}
+                  <div className="sticky top-0 z-20 py-2 bg-bg-primary flex items-center justify-between border-b border-black/5 dark:border-white/5">
                     <div className="flex items-center gap-2">
-                      <SectionIcon className="w-4 h-4 text-sky-500" />
+                      <SectionIcon className="w-4 h-4 text-sky-500 dark:text-sky-400" />
                       <h2 className="text-xs font-bold uppercase tracking-wider text-text-primary">
                         {section.label}
                       </h2>

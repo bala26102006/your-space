@@ -14,7 +14,7 @@ function fireConfetti(canvas) {
   canvas.height = h * dpr;
   ctx.scale(dpr, dpr);
 
-  const colors = ['#0EA5E9', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#38BDF8'];
+  const colors = ['#38BDF8', '#34D399', '#FBBF24', '#818CF8', '#FB7185', '#2DD4BF'];
   const particles = [];
   const particleCount = 45;
 
@@ -146,7 +146,7 @@ export default function TodayHero({
   const strokeDashoffset = circumference - (percentage / 100) * circumference;
 
   return (
-    <div className="relative overflow-hidden rounded-3xl p-6 sm:p-7 border border-sky-500/20 bg-gradient-to-br from-sky-50 via-white to-sky-100/40 dark:from-sky-950/40 dark:via-bg-primary dark:to-sky-900/20 shadow-sm transition-all">
+    <div className="relative overflow-hidden rounded-3xl p-6 sm:p-7 border border-sky-500/20 dark:border-white/10 bg-gradient-to-br from-sky-50 via-white to-sky-100/40 dark:from-[var(--routine-hero-start)] dark:to-[var(--routine-hero-end)] shadow-sm dark:shadow-none transition-all">
       {/* Canvas for lightweight confetti */}
       <canvas
         ref={canvasRef}
@@ -179,20 +179,20 @@ export default function TodayHero({
 
           {/* Mini Stats Row */}
           <div className="pt-3 flex flex-wrap items-center gap-4 text-xs font-medium text-text-secondary">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/70 dark:bg-white/5 border border-black/5 dark:border-white/5 backdrop-blur-xs shadow-2xs">
-              <Flame className={`w-3.5 h-3.5 ${bestStreak > 0 ? 'text-amber-500' : 'text-text-muted opacity-40'}`} />
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/70 dark:bg-[#1C232C] border border-black/5 dark:border-white/10 backdrop-blur-xs shadow-2xs">
+              <Flame className={`w-3.5 h-3.5 ${bestStreak > 0 ? 'text-amber-500 dark:text-amber-400' : 'text-text-muted opacity-40'}`} />
               <span className="text-text-muted">Best Streak:</span>
               <span className="font-bold text-text-primary">{bestStreak} {bestStreak === 1 ? 'day' : 'days'}</span>
             </div>
 
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/70 dark:bg-white/5 border border-black/5 dark:border-white/5 backdrop-blur-xs shadow-2xs">
-              <TrendingUp className="w-3.5 h-3.5 text-sky-500" />
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/70 dark:bg-[#1C232C] border border-black/5 dark:border-white/10 backdrop-blur-xs shadow-2xs">
+              <TrendingUp className="w-3.5 h-3.5 text-sky-500 dark:text-sky-400" />
               <span className="text-text-muted">This Week:</span>
               <span className="font-bold text-text-primary">{weekCompletionRate}%</span>
             </div>
 
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/70 dark:bg-white/5 border border-black/5 dark:border-white/5 backdrop-blur-xs shadow-2xs">
-              <CheckCircle className="w-3.5 h-3.5 text-emerald-500" />
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/70 dark:bg-[#1C232C] border border-black/5 dark:border-white/10 backdrop-blur-xs shadow-2xs">
+              <CheckCircle className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />
               <span className="text-text-muted">Active:</span>
               <span className="font-bold text-text-primary">{activeRoutinesCount}</span>
             </div>
@@ -200,7 +200,7 @@ export default function TodayHero({
         </div>
 
         {/* Right: Animated Circular Progress Ring */}
-        <div className="shrink-0 flex items-center gap-5 self-center md:self-auto bg-white/80 dark:bg-white/5 p-4 rounded-2xl border border-black/5 dark:border-white/5 backdrop-blur-sm shadow-sm">
+        <div className="shrink-0 flex items-center gap-5 self-center md:self-auto bg-white/80 dark:bg-[#1C232C] p-4 rounded-2xl border border-black/5 dark:border-white/10 backdrop-blur-sm shadow-sm">
           <div className="relative flex items-center justify-center">
             <svg
               width={size}
@@ -208,27 +208,28 @@ export default function TodayHero({
               className="transform -rotate-90 transition-all duration-300"
               aria-label={`${completedCount} of ${totalCount} completed`}
             >
-              {/* Background circle */}
+              {/* Background circle track (12% white in dark mode) */}
               <circle
                 cx={size / 2}
                 cy={size / 2}
                 r={radius}
-                className="stroke-sky-200/50 dark:stroke-sky-900/40"
+                stroke="var(--routine-ring-track)"
                 strokeWidth={strokeWidth}
                 fill="transparent"
               />
-              {/* Progress arc */}
+              {/* Progress arc with soft luminous glow */}
               <circle
                 cx={size / 2}
                 cy={size / 2}
                 r={radius}
-                stroke={isAllDone ? '#10B981' : '#0EA5E9'}
+                stroke={isAllDone ? 'var(--palette-emerald-accent)' : 'var(--palette-sky-accent)'}
                 strokeWidth={strokeWidth}
                 strokeLinecap="round"
                 fill="transparent"
                 style={{
                   strokeDasharray: circumference,
                   strokeDashoffset,
+                  filter: isAllDone ? 'drop-shadow(0 0 6px rgba(52, 211, 153, 0.45))' : 'drop-shadow(0 0 6px rgba(56, 189, 248, 0.45))',
                   transition: 'stroke-dashoffset 400ms cubic-bezier(0.4, 0, 0.2, 1), stroke 300ms ease'
                 }}
               />
