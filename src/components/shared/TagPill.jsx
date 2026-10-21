@@ -8,7 +8,7 @@ export default function TagPill({ label, active = false, onClick, onRemove }) {
       className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full cursor-pointer transition-colors duration-150 ${
         active
           ? 'bg-[var(--workspace-accent-bg)] text-[var(--workspace-accent)] border border-[var(--workspace-accent)]/30'
-          : 'bg-black/5 dark:bg-white/10 text-text-muted hover:text-text-primary'
+          : 'bg-black/5 dark:bg-white/10 text-text-secondary dark:text-[#C5CAD4] hover:text-text-primary dark:hover:text-white border border-transparent dark:border-white/5'
       }`}
     >
       <TagIcon className="w-3 h-3 opacity-60" />

@@ -86,7 +86,7 @@ export default function App() {
           e.currentTarget.scrollLeft = 0;
         }
       }}
-      className="flex flex-row h-dvh w-screen max-w-[100vw] overflow-x-clip overflow-y-hidden min-w-0 bg-bg-primary text-text-primary selection:bg-active-nav-bg"
+      className="flex flex-row h-dvh w-screen max-w-[100vw] overflow-x-clip overflow-y-hidden min-w-0 bg-bg-primary text-text-primary"
     >
       {!focusMode && (
         <>

@@ -229,7 +229,7 @@ export default function TopBar() {
               style={{ top: `${menuPos.top}px`, right: `${menuPos.right}px` }}
             >
               <div className="px-3 py-1.5 text-[10px] font-semibold text-text-muted uppercase tracking-wider select-none border-b border-black/5 dark:border-white/10">
-                {activeWorkspace === 'sketch' ? 'Sort Sketches' : 'Sort Timeline'}
+                {activeWorkspace === 'sketch' ? 'Sort Sketches' : activeWorkspace === 'quicknotes' ? 'Sort Notes' : 'Sort Timeline'}
               </div>
 
               {activeWorkspace === 'sketch' ? (

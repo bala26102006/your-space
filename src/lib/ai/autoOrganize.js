@@ -4,8 +4,18 @@ import { callGeminiAPI, hashString } from './api';
 export async function autoOrganize(notes) {
   if (!notes || notes.length === 0) return [];
 
+  const getNoteSnippet = (n, len = 100) => {
+    let text = '';
+    if (typeof n.content === 'string') text = n.content;
+    else if (n.content?.text) text = n.content.text;
+    else if (typeof n.content === 'object') {
+      try { text = JSON.stringify(n.content); } catch (e) { text = ''; }
+    }
+    return text.substring(0, len).trim();
+  };
+
   // Create a minimal string representation of notes to hash
-  const notesString = JSON.stringify(notes.map(n => ({ id: n.id, t: n.title, c: typeof n.content === 'string' ? n.content.substring(0, 50) : JSON.stringify(n.content).substring(0, 50) })));
+  const notesString = JSON.stringify(notes.map(n => ({ id: n.id, t: n.title, c: getNoteSnippet(n, 50) })));
   const inputHash = await hashString(notesString);
   
   // Check cache for global auto-organize
@@ -25,7 +35,7 @@ export async function autoOrganize(notes) {
 Return ONLY a valid JSON array of objects, where each object has "category" (string) and "noteIds" (array of strings, containing the note IDs belonging to that category). Do not return markdown, just raw JSON.
 
 Notes:
-${JSON.stringify(notes.map(n => ({ id: n.id, title: n.title, content: typeof n.content === 'string' ? n.content.substring(0, 100) : JSON.stringify(n.content).substring(0, 100) })))}
+${JSON.stringify(notes.map(n => ({ id: n.id, title: n.title, content: getNoteSnippet(n, 120) })))}
 `;
   
   const resultText = await callGeminiAPI(prompt, undefined, 1000);

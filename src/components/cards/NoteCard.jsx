@@ -203,17 +203,17 @@ export default function NoteCard({
   const getColorClasses = (color) => {
     switch (color) {
       case 'yellow':
-        return 'bg-card-yellow border-yellow-200/50 dark:border-yellow-900/30';
+        return 'bg-card-yellow border-amber-200/60 dark:border-amber-500/25 dark:shadow-[inset_0_1px_0_0_rgba(251,191,36,0.12)]';
       case 'red':
-        return 'bg-card-red border-red-200/50 dark:border-red-900/30';
+        return 'bg-card-red border-red-200/60 dark:border-red-500/25 dark:shadow-[inset_0_1px_0_0_rgba(248,113,113,0.12)]';
       case 'blue':
-        return 'bg-card-blue border-blue-200/50 dark:border-blue-900/30';
+        return 'bg-card-blue border-blue-200/60 dark:border-blue-500/25 dark:shadow-[inset_0_1px_0_0_rgba(96,165,250,0.12)]';
       case 'green':
-        return 'bg-card-green border-green-200/50 dark:border-green-900/30';
+        return 'bg-card-green border-green-200/60 dark:border-emerald-500/25 dark:shadow-[inset_0_1px_0_0_rgba(52,211,153,0.12)]';
       case 'purple':
-        return 'bg-card-purple border-purple-200/50 dark:border-purple-900/30';
+        return 'bg-card-purple border-purple-200/60 dark:border-purple-500/25 dark:shadow-[inset_0_1px_0_0_rgba(167,139,250,0.12)]';
       default:
-        return 'bg-card-default border-black/5 dark:border-white/10';
+        return 'bg-card-default border-black/5 dark:border-white/10 dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]';
     }
   };
 
@@ -283,7 +283,7 @@ export default function NoteCard({
             {showColorMenu && (
               <div
                 onClick={(e) => e.stopPropagation()}
-                className="absolute right-0 top-9 z-30 p-2 bg-bg-primary rounded-xl shadow-xl border border-black/10 dark:border-white/10 flex items-center gap-1.5"
+                className="absolute right-0 top-9 z-30 p-2 bg-surface-card dark:bg-[#1C2028] rounded-xl shadow-2xl border border-black/10 dark:border-white/10 flex items-center gap-1.5 ring-1 ring-black/5"
               >
                 {COLOR_OPTIONS.map((c) => (
                   <button
@@ -332,7 +332,7 @@ export default function NoteCard({
             {showMenu && (
               <div
                 onClick={(e) => e.stopPropagation()}
-                className="absolute right-0 top-9 z-30 w-40 py-1 bg-bg-primary rounded-button shadow-xl border border-black/10 dark:border-white/10 text-xs"
+                className="absolute right-0 top-9 z-30 w-40 py-1 bg-surface-card dark:bg-[#1C2028] rounded-button shadow-2xl border border-black/10 dark:border-white/10 text-xs ring-1 ring-black/5"
               >
                 {note.workspace_id === 'checklists' && (
                   <button
@@ -401,8 +401,12 @@ export default function NoteCard({
         )}
       </div>
 
-      {/* Card Content Preview (up to 3 lines) */}
-      <p className="text-sm text-text-muted line-clamp-3 leading-relaxed min-h-[3rem] break-words overflow-hidden">
+      {/* Card Content Preview (up to 3 lines) - High Contrast Letters */}
+      <p className={`text-sm leading-relaxed min-h-[3rem] line-clamp-3 break-words overflow-hidden ${
+        previewText
+          ? 'text-text-secondary dark:text-[#D1D5DB]'
+          : 'text-text-muted/60 italic'
+      }`}>
         {previewText || 'Empty note...'}
       </p>
 

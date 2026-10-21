@@ -165,12 +165,24 @@ export default function EditorPane() {
     setSelectedNoteId(newId);
   };
 
-  // Close handler: resets active selection and closes modal
-  const handleClose = useCallback(() => {
+  // Close handler: resets active selection and closes modal, cleaning up blank quick notes
+  const handleClose = useCallback(async () => {
+    if (note && (!note.title || !note.title.trim())) {
+      const isContentEmpty = !content || 
+        (typeof content === 'string' && content.trim() === '') ||
+        (content?.text !== undefined && content.text.trim() === '') ||
+        (content?.items !== undefined && content.items.length === 0) ||
+        (typeof content === 'object' && !content.text && !content.items && !content.json);
+
+      if (isContentEmpty && note.workspace_id === 'quicknotes') {
+        await db.notes.delete(note.id);
+      }
+    }
+
     if (isProject) setSelectedProjectId(null);
     else if (isSubproject) setSelectedSubprojectId(null);
     else setSelectedNoteId(null);
-  }, [isProject, isSubproject, setSelectedProjectId, setSelectedSubprojectId, setSelectedNoteId]);
+  }, [isProject, isSubproject, setSelectedProjectId, setSelectedSubprojectId, setSelectedNoteId, note, content]);
 
   // If no note or project item is selected, render nothing!
   // Split-view logic is completely removed: GridListPane maintains full width.
@@ -518,7 +530,7 @@ export default function EditorPane() {
             <span className="hidden sm:inline">Move</span>
           </button>
           {showSendMenu && (
-            <div className="absolute right-0 top-full mt-2 w-64 max-h-64 overflow-y-auto bg-bg-primary border border-black/10 dark:border-white/10 rounded-lg shadow-lg z-30 py-2">
+            <div className="absolute right-0 top-full mt-2 w-64 max-h-64 overflow-y-auto bg-surface-card dark:bg-[#1C2028] border border-black/10 dark:border-white/10 rounded-xl shadow-2xl z-30 py-2 ring-1 ring-black/5">
               <div className="px-3 pb-2 text-xs font-semibold text-text-muted border-b border-black/5 dark:border-white/5 mb-1">
                 Select Destination
               </div>
@@ -529,7 +541,7 @@ export default function EditorPane() {
                     <button
                       key={sp.id}
                       onClick={() => handleSendToProject(sp.id)}
-                      className="w-full text-left pl-6 pr-3 py-1.5 text-xs hover:bg-hover-bg text-text-muted hover:text-text-primary truncate"
+                      className="w-full text-left pl-6 pr-3 py-1.5 text-xs hover:bg-hover-bg text-text-secondary hover:text-text-primary truncate"
                     >
                       ↳ {sp.title || 'Untitled Section'}
                     </button>
@@ -669,7 +681,7 @@ export default function EditorPane() {
         placeholder={isProject ? "Project Title..." : isSubproject ? "Section Title..." : "Title..."}
         value={title}
         onChange={handleTitleChange}
-        className="w-full text-2xl font-bold bg-transparent border-none outline-none text-text-primary placeholder:text-text-muted mb-4 shrink-0"
+        className="w-full text-2xl font-bold bg-transparent border-none outline-none text-text-primary placeholder:text-text-muted dark:placeholder:text-[#8E96A4] mb-4 shrink-0 caret-[var(--workspace-accent,#FBBF24)]"
       />
 
       {!isProject && !isSubproject && (
@@ -694,7 +706,7 @@ export default function EditorPane() {
             </button>
 
             {showTagMenu && (
-              <div className="absolute left-0 top-7 z-20 w-48 p-2 bg-bg-primary border border-black/10 dark:border-white/10 rounded-button shadow-lg text-xs">
+              <div className="absolute left-0 top-7 z-20 w-48 p-2 bg-surface-card dark:bg-[#1C2028] border border-black/10 dark:border-white/10 rounded-xl shadow-2xl text-xs ring-1 ring-black/5">
                 <form onSubmit={handleCreateAndAttachTag} className="mb-2">
                   <input
                     type="text"
@@ -702,7 +714,7 @@ export default function EditorPane() {
                     placeholder="New tag..."
                     value={newTagInput}
                     onChange={(e) => setNewTagInput(e.target.value)}
-                    className="w-full px-2 py-1 bg-bg-sidebar border border-black/10 dark:border-white/10 rounded text-text-primary"
+                    className="w-full px-2 py-1 bg-bg-primary dark:bg-[#15181E] border border-black/10 dark:border-white/10 rounded text-text-primary placeholder:text-text-muted dark:placeholder:text-[#8E96A4]"
                   />
                 </form>
                 <div className="max-h-32 overflow-y-auto space-y-1">

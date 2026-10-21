@@ -140,13 +140,13 @@ export default function NoteModal({
         {customHeader ? (
           customHeader
         ) : (
-          <div className="h-14 px-4 sm:px-5 flex items-center justify-between border-b border-black/5 dark:border-white/10 shrink-0 min-w-0 bg-bg-primary/95 dark:bg-bg-primary/95 backdrop-blur-sm z-10 select-none">
+          <div className="h-14 px-4 sm:px-5 flex items-center justify-between border-b border-black/5 dark:border-white/10 shrink-0 min-w-0 bg-inherit/90 backdrop-blur-md z-10 select-none">
             {/* Left: X button + Saved status */}
             <div className="flex items-center gap-2.5 sm:gap-3 shrink-0 min-w-0">
               <button
                 type="button"
                 onClick={onClose}
-                className="p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-text-muted hover:text-text-primary transition-colors flex items-center justify-center"
+                className="p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-text-secondary hover:text-text-primary transition-colors flex items-center justify-center"
                 title="Close (Esc)"
                 aria-label="Close note editor"
               >
@@ -157,7 +157,7 @@ export default function NoteModal({
             </div>
 
             {/* Right: Extra actions, colour dots, pin, archive, delete, expand */}
-            <div className="flex items-center gap-1 sm:gap-1.5 text-text-muted shrink-0 min-w-0">
+            <div className="flex items-center gap-1 sm:gap-1.5 text-text-secondary shrink-0 min-w-0">
               {headerRight}
 
               {/* Colour Dots (popover on small screens, inline on desktop) */}

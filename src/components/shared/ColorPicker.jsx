@@ -2,12 +2,12 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Check, Palette } from 'lucide-react';
 
 export const COLOR_OPTIONS = [
-  { id: 'default', label: 'Default', bgLight: '#FFFFFF', bgDark: '#1A1D23', border: '#E5E7EB' },
-  { id: 'yellow', label: 'Warm Mustard', bgLight: '#E6DAB9', bgDark: '#2A2619', border: '#E6DAB9' },
-  { id: 'red', label: 'Terracotta', bgLight: '#E8C9C1', bgDark: '#2B1D1D', border: '#E8C9C1' },
-  { id: 'blue', label: 'Dusty Blue', bgLight: '#B9C8D6', bgDark: '#18252E', border: '#B9C8D6' },
-  { id: 'green', label: 'Sage', bgLight: '#C5D1C0', bgDark: '#192A1D', border: '#C5D1C0' },
-  { id: 'purple', label: 'Lavender', bgLight: '#D6CCE0', bgDark: '#241C2B', border: '#D6CCE0' },
+  { id: 'default', label: 'Default', bgLight: '#FFFFFF', bgDark: '#1A1D23', border: '#E5E7EB', borderDark: 'rgba(255,255,255,0.2)' },
+  { id: 'yellow', label: 'Warm Mustard', bgLight: '#E6DAB9', bgDark: '#2E2718', border: '#E6DAB9', borderDark: '#FBBF24' },
+  { id: 'red', label: 'Terracotta', bgLight: '#E8C9C1', bgDark: '#2E1B1B', border: '#E8C9C1', borderDark: '#F87171' },
+  { id: 'blue', label: 'Dusty Blue', bgLight: '#B9C8D6', bgDark: '#162636', border: '#B9C8D6', borderDark: '#60A5FA' },
+  { id: 'green', label: 'Sage', bgLight: '#C5D1C0', bgDark: '#182A1E', border: '#C5D1C0', borderDark: '#34D399' },
+  { id: 'purple', label: 'Lavender', bgLight: '#D6CCE0', bgDark: '#271B33', border: '#D6CCE0', borderDark: '#A78BFA' },
 ];
 
 export function getCardColorStyle(colorId) {
@@ -48,12 +48,15 @@ export default function ColorPicker({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
-  const activeColor = COLOR_OPTIONS.find(c => c.id === currentColor) || COLOR_OPTIONS[0];
+  const isDark = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
 
   const renderColorDots = (compact = false) => (
     <div className={`flex items-center ${compact ? 'gap-2 p-2' : 'gap-1.5 py-1'}`}>
       {COLOR_OPTIONS.map((opt) => {
         const isSelected = (currentColor || 'default') === opt.id;
+        const dotBg = isDark ? opt.bgDark : opt.bgLight;
+        const dotBorder = isDark ? (opt.borderDark || opt.border) : opt.border;
+
         return (
           <button
             key={opt.id}
@@ -64,14 +67,16 @@ export default function ColorPicker({
             }}
             title={opt.label}
             className={`w-6 h-6 rounded-full flex items-center justify-center transition-transform hover:scale-110 relative border ${
-              isSelected ? 'ring-2 ring-offset-1 ring-text-primary scale-105' : ''
+              isSelected ? 'ring-2 ring-offset-1 ring-[var(--workspace-accent)] scale-105' : ''
             }`}
             style={{
-              backgroundColor: opt.bgLight,
-              borderColor: opt.border,
+              backgroundColor: dotBg,
+              borderColor: dotBorder,
             }}
           >
-            {isSelected && <Check className="w-3.5 h-3.5 text-gray-800" />}
+            {isSelected && (
+              <Check className="w-3.5 h-3.5 text-gray-800 dark:text-gray-100" />
+            )}
           </button>
         );
       })}
@@ -92,7 +97,7 @@ export default function ColorPicker({
           <Palette className="w-4 h-4" />
         </button>
         {isOpen && (
-          <div className="absolute right-0 top-full mt-1.5 z-30 bg-bg-primary dark:bg-[#1A1D23] border border-black/10 dark:border-white/10 rounded-xl shadow-lg p-2 animate-in fade-in zoom-in-95 duration-150">
+          <div className="absolute right-0 top-full mt-1.5 z-30 bg-surface-card dark:bg-[#1C2028] border border-black/10 dark:border-white/10 rounded-xl shadow-2xl p-2 animate-in fade-in zoom-in-95 duration-150 ring-1 ring-black/5">
             {renderColorDots(true)}
           </div>
         )}
@@ -116,7 +121,7 @@ export default function ColorPicker({
             <Palette className="w-4 h-4" />
           </button>
           {isOpen && (
-            <div className="absolute right-0 top-full mt-1.5 z-30 bg-bg-primary dark:bg-[#1A1D23] border border-black/10 dark:border-white/10 rounded-xl shadow-lg p-2 animate-in fade-in zoom-in-95 duration-150">
+            <div className="absolute right-0 top-full mt-1.5 z-30 bg-surface-card dark:bg-[#1C2028] border border-black/10 dark:border-white/10 rounded-xl shadow-2xl p-2 animate-in fade-in zoom-in-95 duration-150 ring-1 ring-black/5">
               {renderColorDots(true)}
             </div>
           )}

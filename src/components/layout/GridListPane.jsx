@@ -36,6 +36,7 @@ export default function GridListPane() {
     activeTagId,
     setActiveTagId,
     sortOrder,
+    sortBy,
     viewMode,
   } = useUIStore();
 
@@ -127,26 +128,27 @@ export default function GridListPane() {
         const textContent =
           typeof note.content === 'string'
             ? note.content
-            : JSON.stringify(note.content || '');
+            : (note.content?.text || JSON.stringify(note.content || ''));
         const contentMatch = textContent.toLowerCase().includes(q);
         return titleMatch || contentMatch;
       }
 
       return true;
     }).sort((a, b) => {
-      if (sortOrder === 'name') {
-        return (a.title || '').localeCompare(b.title || '');
+      if (sortBy === 'title' || sortOrder === 'name') {
+        const titleDiff = (a.title || '').localeCompare(b.title || '');
+        return sortOrder === 'desc' ? -titleDiff : titleDiff;
       } else if (sortOrder === 'priority') {
-        // Quicknotes don't have priority directly on root object unless added, fallback to date
-        // Wait, for quicknotes we just sort by date if priority is missing
         const pA = a.content?.priority === 'High' ? 3 : a.content?.priority === 'Medium' ? 2 : a.content?.priority === 'Low' ? 1 : 0;
         const pB = b.content?.priority === 'High' ? 3 : b.content?.priority === 'Medium' ? 2 : b.content?.priority === 'Low' ? 1 : 0;
         if (pA !== pB) return pB - pA;
       }
-      // default: date
-      return new Date(b.created_at) - new Date(a.created_at);
+      
+      const dateA = new Date(sortBy === 'updated' ? (a.updated_at || a.created_at) : a.created_at).getTime();
+      const dateB = new Date(sortBy === 'updated' ? (b.updated_at || b.created_at) : b.created_at).getTime();
+      return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
     });
-  }, [notes, activeTagId, searchQuery, noteTagsMap, sortOrder]);
+  }, [notes, activeTagId, searchQuery, noteTagsMap, sortOrder, sortBy]);
 
   // Split into pinned and unpinned
   const pinnedNotes = filteredNotes.filter((n) => n.is_pinned);
@@ -436,7 +438,7 @@ export default function GridListPane() {
               <button
                 onClick={handleCreateNote}
                 aria-label="Create New Note"
-                className="flex items-center gap-1.5 px-3.5 py-2 bg-[var(--workspace-accent)] text-white rounded-button text-xs font-medium hover:opacity-90 active:scale-95 transition-all shadow-sm"
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-[var(--workspace-accent)] text-[var(--workspace-accent-text)] rounded-button text-xs font-semibold hover:opacity-90 active:scale-95 transition-all shadow-sm"
               >
                 <Plus className="w-4 h-4" />
                 <span>New Note</span>
@@ -510,7 +512,7 @@ export default function GridListPane() {
             {activeWorkspace === 'quicknotes' && (
               <button
                 onClick={handleCreateNote}
-                className="mt-4 flex items-center gap-1.5 px-4 py-2 bg-[var(--workspace-accent)] text-white rounded-button text-xs font-medium hover:opacity-90 active:scale-95 transition-all shadow-sm"
+                className="mt-4 flex items-center gap-1.5 px-4 py-2 bg-[var(--workspace-accent)] text-[var(--workspace-accent-text)] rounded-button text-xs font-semibold hover:opacity-90 active:scale-95 transition-all shadow-sm"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>+ New Note</span>
@@ -635,7 +637,7 @@ export default function GridListPane() {
                   <Pin className="w-3.5 h-3.5" />
                   <span>Pinned</span>
                 </div>
-                <div className={viewMode === 'list' ? 'flex flex-col gap-3' : 'grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-4'}>
+                <div className={viewMode === 'list' ? 'flex flex-col gap-3' : 'grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4'}>
                   {pinnedNotes.map((note) => (
                     <NoteCard
                       key={note.id}
@@ -660,7 +662,7 @@ export default function GridListPane() {
                     Others
                   </div>
                 )}
-                <div className={viewMode === 'list' ? 'flex flex-col gap-3' : 'grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-4'}>
+                <div className={viewMode === 'list' ? 'flex flex-col gap-3' : 'grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4'}>
                   {unpinnedNotes.map((note) => (
                     <div key={note.id} className="relative">
                       <NoteCard

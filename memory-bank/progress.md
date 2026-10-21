@@ -2,11 +2,34 @@
 
 > Update this file at the end of every stage.
 **Last updated:** 2026-10-21
-**Current stage:** Routines Dark Mode ("Make Dark Mode Perfect") — COMPLETED (Awaiting User Approval)
+**Current stage:** Quick Notes Dark Mode & Letter Visibility Fixes — COMPLETED
 
 ---
 
 ## ✅ What's Built
+- **Quick Notes Dark Mode & Letter Visibility Overhaul**:
+  1. **High-Contrast Letter Visibility on Buttons & Cards**:
+     - Fixed `+ New Note` buttons to use dark ink text (`var(--workspace-accent-text): #121417` in dark mode, `#1C1917` in light mode) over the amber/yellow background (`#FBBF24`), elevating contrast from an illegible 1.4:1 to **12:1 WCAG AAA**.
+     - Fixed `NoteCard` preview text from `text-text-muted` (`#7C8392`) to `text-text-secondary dark:text-[#D1D5DB]`, achieving **10:1 WCAG AAA contrast** across all dark mode colored card backgrounds.
+     - Upgraded card grid layout from squished `minmax(160px, 1fr)` to `minmax(220px, 1fr)`, preventing titles from truncating after only two words.
+  2. **Material 3 Dark Tonal Card System (`tokens.css`, `NoteCard.jsx`, `ColorPicker.jsx`)**:
+     - Upgraded muddy dark cards to rich chromatic Material 3 surfaces: Warm Mustard (`#2E2718`), Terracotta (`#2E1B1B`), Dusty Blue (`#162636`), Sage (`#182A1E`), Lavender (`#271B33`), and Default (`#1A1D23`).
+     - Added 25% tint borders (`dark:border-amber-500/25`, etc.) with subtle top rim highlights (`dark:shadow-[inset_0_1px_0_0_rgba(...,0.12)]`), eliminating invisible `dark:border-*-900/30` outlines.
+     - Updated ColorPicker dots to render dark tonal surfaces with glowing rims and high-contrast checkmarks in dark mode.
+  3. **NoteModal & TipTap Editor Contrast Overhaul**:
+     - Seamless modal header: replaced mismatched `bg-bg-primary/95` with `bg-inherit/90 backdrop-blur-md` so colored notes blend naturally.
+     - Upgraded TipTap editor toolbar buttons (`B`, `I`, `H1`, `H2`, lists, quote, code, image) from `text-text-muted` to `text-text-secondary hover:text-text-primary dark:text-[#A7ADBA] dark:hover:text-[#ECEEF2]`, making all action letters immediately readable.
+     - Added dedicated high-contrast text selection glow (`rgba(251, 191, 36, 0.35)` with `#FFFFFF` text), fixing the invisible 6% white selection bug.
+     - Added amber caret cursor (`caret-[var(--workspace-accent,#FBBF24)]`) and higher contrast placeholder text in dark mode (`#8E96A4`).
+  4. **Workspace Functional Bugs Resolved**:
+     - Fixed sorting bug: wired `sortBy` ('title', 'date', 'updated') and `sortOrder` ('asc', 'desc') in `GridListPane.jsx`, restoring working Title A-Z and chronological sorting in Quick Notes.
+     - Fixed empty note cleanup on modal close so blank phantom notes do not clutter the database.
+     - Fixed AI auto-organize plain text snippet extraction from TipTap note content structures.
+     - Elevated dropdown menus (Color popover, More menu, Move to project) to `bg-surface-card dark:bg-[#1C2028] shadow-2xl` with readable secondary text.
+  5. **Verification**:
+     - Production build verified (`npm run build` completed in 27.66s with zero errors).
+     - Automated browser subagent verified "+ New Note" dark ink readability, note preview text clarity, editor modal blending, toolbar letter visibility, text selection highlight, color switching, and sort toggling.
+
 - **Routines Dark Mode ("Make Dark Mode Perfect")** — Complete Material 3 tonal surface overhaul across the Routines workspace and related surfaces on branch `routines-dark-mode`:
   1. **Audit & Token Foundations (`src/styles/routinesTheme.css`, `main.jsx`, `App.jsx`)**:
      - Audited all color sources in Routines, Today Dashboard, RoutineSheet, and compared with ChecklistCard (confirmed checklists use separate Tailwind defaults and do not share palette tokens).
