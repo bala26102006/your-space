@@ -503,7 +503,7 @@ export const calendarCache = new CalendarCache();
  * Strictly updates only date fields and updated_at, and shows an Undo toast.
  * Routine entries and journal entries are NOT reschedulable.
  */
-export async function rescheduleCalendarItem(item, newDateStr) {
+export async function rescheduleCalendarItem(item, newDateStr, showToastNotification = true) {
   if (!item || !newDateStr) return false;
   if (item.source === 'routines' || item.source === 'journal' || item.source === 'sketch' || item.source === 'quicknotes') {
     return false; // Not draggable or reschedulable per requirements
@@ -551,17 +551,19 @@ export async function rescheduleCalendarItem(item, newDateStr) {
     // Trigger reactive clear of calendar cache
     calendarCache.clear();
 
-    // Undo Toast
-    useToastStore.getState().showToast({
-      message: `Rescheduled "${item.title}" to ${newDateStr}`,
-      action: {
-        label: 'Undo',
-        onClick: async () => {
-          await rescheduleCalendarItem(item, oldDate);
-        }
-      },
-      duration: 6000,
-    });
+    // Undo Toast if requested
+    if (showToastNotification) {
+      useToastStore.getState().showToast({
+        message: `Rescheduled "${item.title}" to ${newDateStr}`,
+        action: {
+          label: 'Undo',
+          onClick: async () => {
+            await rescheduleCalendarItem(item, oldDate);
+          }
+        },
+        duration: 6000,
+      });
+    }
 
     return true;
   } catch (err) {
@@ -766,8 +768,12 @@ export async function smartBatchRescheduleOverdue(overdueItems = [], mode = 'tod
         label: 'Undo',
         onClick: async () => {
           for (const s of previousStates) {
-            await rescheduleCalendarItem(s.item, s.oldDate);
+            await rescheduleCalendarItem(s.item, s.oldDate, false);
           }
+          useToastStore.getState().showToast({
+            message: `Undid batch reschedule of ${previousStates.length} tasks`,
+            duration: 4000,
+          });
         }
       },
       duration: 6000,

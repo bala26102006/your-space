@@ -95,7 +95,7 @@ export default function DayDetailPanel({
 
   const handleItemClick = (item) => {
     if (item.source === 'events' && onEditEvent) {
-      onEditEvent(item.payload?.raw || item);
+      onEditEvent(item.payload?.raw || item, item.date);
       return;
     }
     handleOpenItem(item);

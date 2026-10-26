@@ -46,6 +46,7 @@ export default function AgendaView({
   onSelectDate,
   onOpenDayDetail,
   onMoveItem,
+  onEditEvent,
   layerFilter = {},
 }) {
   const todayStr = getTodayStr();
@@ -81,6 +82,10 @@ export default function AgendaView({
   const upcomingDates = Object.keys(upcomingByDate).sort();
 
   const handleItemClick = (item) => {
+    if (item.source === 'events' && onEditEvent) {
+      onEditEvent(item.payload?.raw || item, item.date);
+      return;
+    }
     const payload = item.payload || {};
     useUIStore.setState({
       activeWorkspace: payload.workspace || item.source,

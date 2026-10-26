@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Calendar as CalendarIcon, Clock, Trash2, Tag, AlertCircle } from 'lucide-react';
-import { createCalendarEvent, updateCalendarEvent } from '../../lib/calendar/calendarService';
+import { createCalendarEvent, updateCalendarEvent, calendarCache } from '../../lib/calendar/calendarService';
 import { softDeleteItem } from '../../lib/services/trashService';
 import { useConfirmStore } from '../../store/confirmStore';
 import { getTodayStr } from '../../lib/calendar/calendarUtils';
@@ -112,6 +112,7 @@ export default function EventModal({
           title: existingEvent.title || 'Untitled Event',
           workspace: 'calendar',
         });
+        calendarCache.clear();
         onClose();
       },
     });

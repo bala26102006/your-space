@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Calendar as CalendarIcon, ArrowRight } from 'lucide-react';
 import { rescheduleCalendarItem } from '../../lib/calendar/calendarService';
 import { getTodayStr, parseLocalDate, formatLocalDate } from '../../lib/calendar/calendarUtils';
@@ -15,6 +15,12 @@ export default function MoveDateModal({
   const todayStr = getTodayStr();
   const [selectedDate, setSelectedDate] = useState(item?.date || todayStr);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && item) {
+      setSelectedDate(item.date || todayStr);
+    }
+  }, [isOpen, item, todayStr]);
 
   if (!isOpen || !item) return null;
 

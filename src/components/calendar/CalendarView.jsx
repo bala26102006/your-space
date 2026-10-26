@@ -635,6 +635,7 @@ export default function CalendarView() {
             }}
             onQuickAdd={(d) => handleOpenQuickAdd(d)}
             onMoveItem={(item) => handleOpenMoveModal(item)}
+            onEditEvent={handleOpenEventModal}
             weekStart={weekStart}
             layerFilter={layerFilter}
           />
@@ -652,6 +653,7 @@ export default function CalendarView() {
               setIsDayDetailOpen(true);
             }}
             onMoveItem={(item) => handleOpenMoveModal(item)}
+            onEditEvent={handleOpenEventModal}
             layerFilter={layerFilter}
           />
         )}

@@ -57,7 +57,7 @@ export default function QuickAddModal({
         showToast({ message: `Created event "${title}" on ${targetDate}` });
       } else if (type === 'task') {
         if (!selectedChecklistId) {
-          alert('Please select a checklist to add this task to.');
+          showToast({ message: 'Please select a checklist to add this task to.' });
           setIsSubmitting(false);
           return;
         }

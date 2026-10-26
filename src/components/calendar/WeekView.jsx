@@ -33,6 +33,7 @@ export default function WeekView({
   onOpenDayDetail,
   onQuickAdd,
   onMoveItem,
+  onEditEvent,
   weekStart = 'monday',
   layerFilter = {},
 }) {
@@ -86,6 +87,10 @@ export default function WeekView({
 
   const handleItemClick = (e, item) => {
     e.stopPropagation();
+    if (item.source === 'events' && onEditEvent) {
+      onEditEvent(item.payload?.raw || item, item.date);
+      return;
+    }
     const payload = item.payload || {};
     useUIStore.setState({
       activeWorkspace: payload.workspace || item.source,
