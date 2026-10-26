@@ -24,6 +24,7 @@ import {
 import { CALENDAR_LAYERS } from '../../lib/calendar/calendarService';
 import { useUIStore } from '../../store/uiStore';
 import CalendarEmptyState from './CalendarEmptyState';
+import SmartRescheduleCard from './SmartRescheduleCard';
 
 const SOURCE_ICONS = {
   checklists: CheckSquare,
@@ -165,6 +166,10 @@ export default function AgendaView({
               <span>Overdue Items ({overdueItems.length})</span>
             </div>
           </div>
+
+          {/* Smart batch reschedule helper card */}
+          <SmartRescheduleCard overdueItems={overdueItems} />
+
           <div className="space-y-1.5">
             {overdueItems.map(renderItemRow)}
           </div>

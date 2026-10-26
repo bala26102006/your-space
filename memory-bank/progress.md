@@ -2,11 +2,33 @@
 
 > Update this file at the end of every stage.
 **Last updated:** 2026-10-26
-**Current stage:** Calendar ("Life Lens") — Milestone 2 (More Views + Events CRUD + Countdowns + Quick Add + Rescheduling) — COMPLETED
+**Current stage:** Calendar ("Life Lens") — Milestones 1, 2, 3 (Full Feature) — COMPLETED
 
 ---
 
 ## ✅ What's Built
+- **Calendar ("Life Lens"): Milestone 3 (Calendar Intelligence + Smart Reschedule + .ics Export)**:
+  1. **Load Awareness Capacity Hints**:
+     - Evaluated via `getCapacityLevel(itemCount)`: 0–2 Calm pace (clean display), 3–5 Balanced flow (subtle badge), 6+ Active day (gentle capacity pip). Never loud or scolding.
+     - In `MonthGrid`: subtle capacity pip beside the day number when items >= 6.
+     - In `DayDetailPanel`: dynamic header capacity badge (`Calm pace`, `Balanced flow`, `Active day`).
+  2. **Smart Reschedule for Overdue Items (`src/components/calendar/SmartRescheduleCard.jsx`)**:
+     - Calm, non-judgmental prompt displayed when overdue tasks exist in Month view and Agenda view.
+     - Actions:
+       - **Move all to Today**: Sets due date of all overdue tasks to today.
+       - **Spread across week**: Evenly distributes overdue tasks across the next 4 days.
+       - Integrated with `rescheduleCalendarItem` firing an Undo toast with a 6-second timer.
+  3. **Fresh-Start Cards (`src/components/calendar/FreshStartCard.jsx`)**:
+     - Quiet banner on Mondays ("New week, clear horizon. Design your week with calm focus") and start of month ("Welcome to [Month]. A clean slate for your month").
+     - Dismissible with state saved in `localStorage` per cycle.
+  4. **"On This Day" Historical Traces (`src/components/calendar/OnThisDaySection.jsx`)**:
+     - `getHistoricalOnThisDay(selectedDate)`: finds past journal entries or sketches from previous years on the same month/day (`MM-DD`).
+     - Renders quiet nostalgic card in `DayDetailPanel` with year, years ago badge, title, excerpt, and one-click jump to view.
+  5. **Offline .ics (iCalendar) Export (`src/lib/calendar/calendarUtils.js`)**:
+     - Pure JavaScript RFC 5545 `.ics` format builder (`generateICalendarData`).
+     - Exports visible calendar items (events, checklist tasks with due dates, wishes with target dates) respecting all-day vs timed start hours.
+     - Download triggered completely offline via Blob (`downloadICalendarFile`).
+     - Added to Calendar header More menu (`Export to .ics (iCal)`).
 - **Calendar ("Life Lens"): Milestone 2 (More Views + Events CRUD + Countdowns + Quick Add + Rescheduling)**:
   1. **Segmented View Switcher (`src/components/calendar/CalendarView.jsx`)**:
      - View tabs: `[ Month | Week | Agenda | Year ]` persisted in `localStorage.getItem('calendar_active_view') || 'month'`.

@@ -13,7 +13,8 @@ import {
   StickyNote,
   MoreVertical,
   Check,
-  Plus
+  Plus,
+  Download
 } from 'lucide-react';
 import { 
   getMonthGrid, 
@@ -24,7 +25,9 @@ import {
   formatLocalDate,
   getWeekStartSetting, 
   setWeekStartSetting,
-  subscribeToMidnightRollover 
+  subscribeToMidnightRollover,
+  generateICalendarData,
+  downloadICalendarFile
 } from '../../lib/calendar/calendarUtils';
 import { 
   CALENDAR_LAYERS, 
@@ -43,7 +46,10 @@ import CountdownsStrip from './CountdownsStrip';
 import QuickAddModal from './QuickAddModal';
 import EventModal from './EventModal';
 import MoveDateModal from './MoveDateModal';
+import FreshStartCard from './FreshStartCard';
+import SmartRescheduleCard from './SmartRescheduleCard';
 import { useLiveQuery } from '../../hooks/useLiveQuery';
+import { useToastStore } from '../../store/toastStore';
 
 const SOURCE_ICON_COMPONENTS = {
   checklists: CheckSquare,
@@ -296,6 +302,24 @@ export default function CalendarView() {
     setIsMoveModalOpen(true);
   };
 
+  // Overdue items across visible range
+  const overdueItems = useMemo(() => {
+    return visibleItems.filter(i => i.status === 'overdue' || (i.date < todayStr && i.status !== 'done' && i.status !== 'info'));
+  }, [visibleItems, todayStr]);
+
+  // Export to .ics format
+  const handleExportICalendar = () => {
+    setShowMoreMenu(false);
+    const icsContent = generateICalendarData(visibleItems, 'Your Space — Life Lens');
+    const filename = `YourSpace-Calendar-${currentYear}.ics`;
+    const success = downloadICalendarFile(filename, icsContent);
+    if (success) {
+      useToastStore.getState().showToast({
+        message: `Exported ${visibleItems.length} calendar items to ${filename}`,
+      });
+    }
+  };
+
   // Header Title based on view
   const title = useMemo(() => {
     if (activeView === 'year') {
@@ -505,6 +529,18 @@ export default function CalendarView() {
                     <span>Sunday</span>
                     {weekStart === 'sunday' && <Check className="w-3.5 h-3.5 text-[var(--accent)]" />}
                   </button>
+
+                  {/* Offline .ics Calendar Export */}
+                  <div className="my-1 border-t border-[var(--border)]" />
+                  <button
+                    type="button"
+                    onClick={handleExportICalendar}
+                    className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-xl hover:bg-black/5 dark:hover:bg-white/5 text-text-primary transition-colors text-left font-medium"
+                    title="Export events and tasks to .ics file"
+                  >
+                    <Download className="w-3.5 h-3.5 text-[var(--accent)]" />
+                    <span>Export to .ics (iCal)</span>
+                  </button>
                 </div>
               )}
             </div>
@@ -546,7 +582,10 @@ export default function CalendarView() {
         </div>
       </div>
 
-      {/* 2. Countdowns Strip (Exams, Birthdays, Trips) */}
+      {/* 2. Fresh Start Card (Mondays or start of month) */}
+      <FreshStartCard />
+
+      {/* 3. Countdowns Strip (Exams, Birthdays, Trips) */}
       <CountdownsStrip
         events={upcomingCountdowns}
         onSelectEvent={(evt) => {
@@ -554,26 +593,31 @@ export default function CalendarView() {
         }}
       />
 
-      {/* 3. Main Content Area based on activeView */}
+      {/* 4. Main Content Area based on activeView */}
       <div className="flex-1 flex flex-col lg:flex-row gap-4 items-stretch">
         {activeView === 'month' && (
-          <MonthGrid
-            gridData={gridData}
-            itemsByDate={itemsByDate}
-            selectedDate={selectedDate}
-            onSelectDate={(d) => {
-              setSelectedDate(d);
-              setIsDayDetailOpen(true);
-            }}
-            onOpenDayDetail={(d) => {
-              setSelectedDate(d);
-              setIsDayDetailOpen(true);
-            }}
-            onPrevMonth={handlePrev}
-            onNextMonth={handleNext}
-            weekStart={weekStart}
-            layerFilter={layerFilter}
-          />
+          <div className="flex-1 min-w-0 flex flex-col gap-3">
+            {overdueItems.length > 0 && (
+              <SmartRescheduleCard overdueItems={overdueItems} />
+            )}
+            <MonthGrid
+              gridData={gridData}
+              itemsByDate={itemsByDate}
+              selectedDate={selectedDate}
+              onSelectDate={(d) => {
+                setSelectedDate(d);
+                setIsDayDetailOpen(true);
+              }}
+              onOpenDayDetail={(d) => {
+                setSelectedDate(d);
+                setIsDayDetailOpen(true);
+              }}
+              onPrevMonth={handlePrev}
+              onNextMonth={handleNext}
+              weekStart={weekStart}
+              layerFilter={layerFilter}
+            />
+          </div>
         )}
 
         {activeView === 'week' && (

@@ -180,13 +180,23 @@ export default function MonthGrid({
                   {cell.dayNumber}
                 </span>
 
-                {/* Overdue Pip */}
-                {hasOverdue && (
-                  <span 
-                    title="Contains overdue items"
-                    className="flex items-center justify-center w-2 h-2 rounded-full bg-red-500 ring-2 ring-[var(--paper)] shrink-0"
-                  />
-                )}
+                <div className="flex items-center gap-1">
+                  {/* Load awareness capacity indicator: 6+ items */}
+                  {visibleItems.length >= 6 && (
+                    <span 
+                      title={`${visibleItems.length} items (active day)`}
+                      className="w-1.5 h-1.5 rounded-full bg-amber-500/80 shrink-0"
+                    />
+                  )}
+
+                  {/* Overdue Pip */}
+                  {hasOverdue && (
+                    <span 
+                      title="Contains overdue items"
+                      className="flex items-center justify-center w-2 h-2 rounded-full bg-red-500 ring-2 ring-[var(--paper)] shrink-0"
+                    />
+                  )}
+                </div>
               </div>
 
               {/* Day Content: Compact Chips on wide panes / Dots on narrow panes */}
