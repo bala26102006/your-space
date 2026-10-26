@@ -10,6 +10,7 @@ import {
   Sparkles,
   Repeat,
   Palette,
+  Calendar,
   ArrowUpRight,
 } from 'lucide-react';
 import { useLiveQuery } from '../../hooks/useLiveQuery';
@@ -26,6 +27,7 @@ const WORKSPACE_DEFINITIONS = [
   { id: 'wishlist', label: 'Wish List', icon: Sparkles, color: 'text-purple-500 dark:text-purple-400 bg-purple-500/10 border-purple-500/20' },
   { id: 'routines', label: 'Routines', icon: Repeat, color: 'text-sky-500 dark:text-sky-400 bg-sky-500/10 border-sky-500/20' },
   { id: 'sketch', label: 'Sketch', icon: Palette, color: 'text-orange-500 dark:text-orange-400 bg-orange-500/10 border-orange-500/20' },
+  { id: 'calendar', label: 'Calendar', icon: Calendar, color: 'text-teal-600 dark:text-teal-400 bg-teal-500/10 border-teal-500/20' },
 ];
 
 export default function ArchiveView() {

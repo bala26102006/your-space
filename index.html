@@ -37,6 +37,9 @@
             today: 'today'
           };
           var panel = panelMap[lastWs];
+          if (lastWs === 'today' && localStorage.getItem('today_active_tab') === 'calendar') {
+            panel = 'calendar';
+          }
           if (panel) {
             document.documentElement.setAttribute('data-panel', panel);
           }

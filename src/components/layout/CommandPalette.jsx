@@ -16,6 +16,7 @@ import {
   FileText,
   Archive,
   Trash2,
+  Calendar,
   Settings
 } from 'lucide-react';
 import { useUIStore } from '../../store/uiStore';
@@ -38,10 +39,10 @@ export default function CommandPalette() {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef(null);
 
-  // Fetch all active notes for search
+  // Fetch all active notes for search (excluding internal calendar events from generic recent notes)
   const allNotes = useLiveQuery(() => 
     db.notes
-      .filter(n => !n.is_deleted && !n.is_archived)
+      .filter(n => !n.is_deleted && !n.is_archived && n.workspace_id !== 'calendar')
       .reverse()
       .sortBy('updated_at')
   , []) || [];
@@ -88,6 +89,20 @@ export default function CommandPalette() {
 
   // Quick action items
   const QUICK_ACTIONS = useMemo(() => [
+    {
+      id: 'action-open-calendar',
+      label: 'Open Calendar',
+      sublabel: 'Life Lens calendar view',
+      icon: Calendar,
+      category: 'Actions',
+      run: () => {
+        try {
+          localStorage.setItem('today_active_tab', 'calendar');
+        } catch (e) {}
+        setActiveWorkspace('today');
+        closeCommandPalette();
+      }
+    },
     {
       id: 'action-new-note',
       label: 'Create Quick Note',

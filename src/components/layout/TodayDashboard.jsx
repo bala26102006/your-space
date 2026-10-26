@@ -32,9 +32,37 @@ import { getTodayStr } from '../../lib/routines/routineUtils';
 import { toggleChecklistItemCompletion } from '../../lib/checklists/checklistUtils';
 import { generateUUID } from '../../lib/uuid';
 import { WidgetSkeleton } from '../shared/SkeletonLoader';
+import CalendarView from '../calendar/CalendarView';
 
 export default function TodayDashboard() {
   const { setSelectedNoteId, setActiveWorkspace } = useUIStore();
+
+  const [activeTab, setActiveTab] = React.useState(() => {
+    try {
+      return localStorage.getItem('today_active_tab') || 'today';
+    } catch (e) {
+      return 'today';
+    }
+  });
+
+  const handleTabChange = (newTab) => {
+    setActiveTab(newTab);
+    try {
+      localStorage.setItem('today_active_tab', newTab);
+    } catch (e) {}
+  };
+
+  React.useEffect(() => {
+    if (activeTab === 'calendar') {
+      document.documentElement.setAttribute('data-panel', 'calendar');
+    } else {
+      document.documentElement.setAttribute('data-panel', 'today');
+    }
+
+    return () => {
+      document.documentElement.removeAttribute('data-panel');
+    };
+  }, [activeTab]);
 
   const today = new Date();
   const todayStr = getTodayStr();
@@ -51,6 +79,27 @@ export default function TodayDashboard() {
     month: 'long',
     day: 'numeric'
   });
+
+  // Next 7 Days Strip calculation
+  const next7Days = React.useMemo(() => {
+    const list = [];
+    const now = new Date();
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(now);
+      d.setDate(now.getDate() + i);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const dateStr = `${y}-${m}-${day}`;
+      list.push({
+        dateStr,
+        dayNumber: d.getDate(),
+        shortLabel: i === 0 ? 'Today' : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()],
+        isToday: i === 0,
+      });
+    }
+    return list;
+  }, []);
 
   // Queries
   const dueTasks = useLiveQuery(() => getTasksDueToday(), []) || [];
@@ -180,7 +229,42 @@ export default function TodayDashboard() {
 
   return (
     <div className="flex-1 min-w-0 h-full overflow-y-auto p-4 sm:p-6 lg:p-8 bg-bg-primary text-text-primary no-scrollbar">
-      {/* Top Welcome Header */}
+      {/* Top Tab Bar: Today | Calendar */}
+      <div className="flex items-center gap-1.5 p-1 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 w-fit mb-6 shadow-xs select-none">
+        <button
+          type="button"
+          onClick={() => handleTabChange('today')}
+          aria-selected={activeTab === 'today'}
+          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all min-h-[36px] ${
+            activeTab === 'today'
+              ? 'bg-card-default text-text-primary shadow-xs'
+              : 'text-text-muted hover:text-text-primary'
+          }`}
+        >
+          <Sun className="w-3.5 h-3.5 text-amber-500" />
+          <span>Today</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handleTabChange('calendar')}
+          aria-selected={activeTab === 'calendar'}
+          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all min-h-[36px] ${
+            activeTab === 'calendar'
+              ? 'bg-[var(--panel-calendar-btn-bg)] text-[var(--panel-calendar-btn-fg)] shadow-xs'
+              : 'text-text-muted hover:text-text-primary'
+          }`}
+        >
+          <Calendar className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+          <span>Calendar</span>
+        </button>
+      </div>
+
+      {activeTab === 'calendar' ? (
+        <CalendarView />
+      ) : (
+        <>
+          {/* Top Welcome Header */}
       <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
         <div>
           <div className="flex items-center gap-2 mb-1">
@@ -206,6 +290,44 @@ export default function TodayDashboard() {
               {streakInfo.wroteToday ? 'Daily record active ✓' : 'Keep momentum going!'}
             </span>
           </div>
+        </div>
+      </div>
+
+      {/* Next 7 Days Strip */}
+      <div className="mb-6 p-3 sm:p-4 rounded-2xl bg-card-default border border-black/5 dark:border-white/10 shadow-xs">
+        <div className="flex items-center justify-between mb-2.5">
+          <div className="flex items-center gap-1.5 text-xs font-bold text-text-primary">
+            <Calendar className="w-3.5 h-3.5 text-[var(--panel-calendar-accent)]" />
+            <span>Next 7 Days</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => handleTabChange('calendar')}
+            className="text-xs text-[var(--panel-calendar-accent)] hover:underline font-semibold flex items-center gap-1 transition-colors"
+          >
+            <span>Open Calendar</span>
+            <ArrowRight className="w-3 h-3" />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
+          {next7Days.map((day) => (
+            <button
+              key={day.dateStr}
+              type="button"
+              onClick={() => {
+                handleTabChange('calendar');
+              }}
+              className={`flex flex-col items-center py-2 px-1 rounded-xl border transition-all text-center group cursor-pointer active:scale-95 min-h-[50px] ${
+                day.isToday
+                  ? 'bg-[var(--panel-calendar-btn-bg)] text-[var(--panel-calendar-btn-fg)] border-transparent font-bold shadow-xs'
+                  : 'border-black/5 dark:border-white/10 hover:border-[var(--panel-calendar-accent)] bg-black/[0.02] dark:bg-white/[0.02]'
+              }`}
+            >
+              <span className="text-[10px] uppercase font-semibold opacity-75">{day.shortLabel}</span>
+              <span className="text-sm font-bold mt-0.5">{day.dayNumber}</span>
+            </button>
+          ))}
         </div>
       </div>
 
@@ -580,6 +702,8 @@ export default function TodayDashboard() {
           </div>
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 }

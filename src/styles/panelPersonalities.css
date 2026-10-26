@@ -47,6 +47,11 @@
   --panel-journal-btn-bg: #43332A;
   --panel-journal-btn-fg: #FDF9EE;
 
+  --panel-calendar-accent: #0F766E;
+  --panel-calendar-accent-soft: rgba(15, 118, 110, 0.12);
+  --panel-calendar-btn-bg: #0F766E;
+  --panel-calendar-btn-fg: #FFFFFF;
+
   /* Default theme transition */
   --panel-transition-duration: 180ms;
 }
@@ -86,6 +91,11 @@
   --panel-journal-accent-soft: rgba(222, 175, 104, 0.18);
   --panel-journal-btn-bg: #DEAF68;
   --panel-journal-btn-fg: #19110B;
+
+  --panel-calendar-accent: #2DD4BF;
+  --panel-calendar-accent-soft: rgba(45, 212, 191, 0.15);
+  --panel-calendar-btn-bg: #2DD4BF;
+  --panel-calendar-btn-fg: #0B1716;
 }
 
 /* -------------------------------------------------------------
@@ -947,5 +957,143 @@ header,
   background-image: var(--texture);
   background-size: 24px 24px;
   background-attachment: local;
+}
+
+/* ===================================================================
+   9. WALL CALENDAR ("LIFE LENS") PERSONALITY
+   Warm off-white paper, charcoal ink, deep teal accent (#0F766E).
+   Dark: Deep slate with soft luminous teal (#2DD4BF).
+   CSS-only tear-off page header with binder holes.
+   =================================================================== */
+
+:root[data-panel="calendar"] {
+  /* 17 Standard Personality Tokens */
+  --bg: #FAF8F5;                /* Warm off-white paper desk */
+  --paper: #FFFFFF;             /* Crisp calendar sheet */
+  --raised: #F3EFE8;            /* Tear-off header band & raised elements */
+  --border: #E3DDD2;            /* Border UI >= 1.3:1 */
+  --border-soft: rgba(15, 118, 110, 0.12);
+  --text: #1E2328;              /* Charcoal ink: 14.88:1 AAA vs paper */
+  --text-2: #3E4750;            /* Secondary ink: 8.58:1 AAA vs paper */
+  --text-muted: #64707D;        /* Muted ink: 4.79:1 AA vs paper */
+  --header-band: #F3EFE8;
+  --header-text: #1E2328;        /* 14.24:1 AAA */
+  --header-muted: #535F6C;
+  --accent: #0F766E;            /* Deep teal accent */
+  --accent-soft: rgba(15, 118, 110, 0.10);
+  --accent-text: #0D655E;       /* Contrast vs paper: 6.22:1 AA / AAA */
+  --btn-bg: #0F766E;
+  --btn-fg: #FFFFFF;            /* Contrast vs btn-bg: 5.56:1 AA */
+  --btn-hover: #115E59;
+  --radius-card: 16px;
+  --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+  --shadow-card-hover: 0 4px 12px -2px rgba(15, 118, 110, 0.12), 0 2px 6px -2px rgba(0, 0, 0, 0.05);
+  --texture: radial-gradient(rgba(15, 118, 110, 0.035) 1px, transparent 1px);
+  --font-heading: 'Outfit', 'Chivo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* Legacy Token Mapping */
+  --bg-primary: var(--bg);
+  --bg-sidebar: #F5F1E9;
+  --bg-raised: var(--raised);
+  --card-default: var(--paper);
+  --surface-card: var(--paper);
+  --hover-bg: #F4EFE6;
+  --text-primary: var(--text);
+  --text-secondary: var(--text-2);
+  --border-color: var(--border);
+  --divider-color: var(--border-soft);
+  --workspace-accent: var(--accent);
+  --workspace-accent-bg: var(--accent-soft);
+  --workspace-accent-text: var(--btn-fg);
+  --selection-color: rgba(15, 118, 110, 0.25);
+}
+
+:root[data-panel="calendar"].dark {
+  /* 17 Standard Personality Tokens */
+  --bg: #0F1318;                /* Deep slate */
+  --paper: #161C23;             /* Elevated slate sheet */
+  --raised: #1D242E;
+  --border: #2A3442;
+  --border-soft: rgba(45, 212, 191, 0.12);
+  --text: #F1F5F9;              /* Crisp chalk ink: 14.86:1 AAA */
+  --text-2: #CBD5E1;            /* Secondary ink: 11.08:1 AAA */
+  --text-muted: #94A3B8;        /* Muted ink: 6.27:1 AAA */
+  --header-band: #161C23;
+  --header-text: #F1F5F9;        /* 14.86:1 AAA */
+  --header-muted: #94A3B8;
+  --accent: #2DD4BF;            /* Soft luminous teal */
+  --accent-soft: rgba(45, 212, 191, 0.14);
+  --accent-text: #2DD4BF;       /* 9.87:1 AAA */
+  --btn-bg: #2DD4BF;            /* 9.87:1 AAA */
+  --btn-fg: #0B1716;            /* 10.63:1 AAA */
+  --btn-hover: #5EEAD4;
+  --radius-card: 16px;
+  --shadow-card: 0 4px 14px -2px rgba(0, 0, 0, 0.5), inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+  --shadow-card-hover: 0 8px 24px -2px rgba(0, 0, 0, 0.7), inset 0 1px 0 0 rgba(45, 212, 191, 0.2);
+  --texture: radial-gradient(rgba(45, 212, 191, 0.035) 1px, transparent 1px);
+  --font-heading: 'Outfit', 'Chivo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* Legacy Token Mapping */
+  --bg-primary: var(--bg);
+  --bg-sidebar: #13171D;
+  --bg-raised: var(--raised);
+  --card-default: var(--paper);
+  --surface-card: var(--paper);
+  --hover-bg: #1F2631;
+  --text-primary: var(--text);
+  --text-secondary: var(--text-2);
+  --border-color: var(--border);
+  --divider-color: var(--border-soft);
+  --workspace-accent: var(--accent);
+  --workspace-accent-bg: var(--accent-soft);
+  --workspace-accent-text: var(--btn-fg);
+  --selection-color: rgba(45, 212, 191, 0.30);
+}
+
+/* Wall Calendar Texture */
+[data-panel="calendar"] .pane-scroller,
+[data-panel="calendar"] .calendar-container {
+  background-image: var(--texture);
+  background-size: 20px 20px;
+  background-attachment: local;
+}
+
+/* Wall Calendar Tear-Off Binder Holes (CSS-Only) */
+.calendar-binder-track {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 6px 16px 2px 16px;
+  background: var(--raised);
+  border-bottom: 1px dashed var(--border);
+  position: relative;
+  overflow: hidden;
+}
+
+.calendar-binder-ring {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.25), 0 1px 0 rgba(255, 255, 255, 0.2);
+  position: relative;
+  flex-shrink: 0;
+}
+
+.calendar-binder-ring::after {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 3.5px;
+  width: 3.5px;
+  height: 7px;
+  background: linear-gradient(180deg, #94A3B8, #475569);
+  border-radius: 2px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.dark .calendar-binder-ring::after {
+  background: linear-gradient(180deg, #475569, #1E293B);
 }
 

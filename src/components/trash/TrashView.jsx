@@ -14,6 +14,7 @@ import {
   Sparkles,
   Repeat,
   Palette,
+  Calendar,
   CheckCircle2,
   XCircle,
 } from 'lucide-react';
@@ -31,6 +32,7 @@ const WORKSPACE_ICONS = {
   wishlist: { icon: Sparkles, label: 'Wish List', color: 'text-purple-500 dark:text-purple-400 bg-purple-500/10 border-purple-500/20' },
   routines: { icon: Repeat, label: 'Routines', color: 'text-sky-500 dark:text-sky-400 bg-sky-500/10 border-sky-500/20' },
   sketch: { icon: Palette, label: 'Sketch', color: 'text-orange-500 dark:text-orange-400 bg-orange-500/10 border-orange-500/20' },
+  calendar: { icon: Calendar, label: 'Calendar', color: 'text-teal-600 dark:text-teal-400 bg-teal-500/10 border-teal-500/20' },
 };
 
 export default function TrashView() {

@@ -2,11 +2,47 @@
 
 > Update this file at the end of every stage.
 **Last updated:** 2026-10-26
-**Current stage:** Panel Personalities — Milestone 3 (Routines "Calm Horizon" + Sketch "Art Studio" + Today Hub) & Full QA Pass — COMPLETED
+**Current stage:** Calendar ("Life Lens") — Milestone 1 (Foundation + Month View) — COMPLETED
 
 ---
 
 ## ✅ What's Built
+- **Calendar ("Life Lens"): Milestone 1 (Foundation + Month View — Read-Only)**:
+  1. **Strict Local Date Engine (`src/lib/calendar/calendarUtils.js`)**:
+     - Strict local-date arithmetic (no UTC offsets, zero `toISOString` day key shifts, DST-safe).
+     - 6x7 Month Grid matrix generator (42 cells with leading/trailing days and ISO weekday indices).
+     - Week start preferences (Monday default, Sunday alternative) persisted in `localStorage.getItem('calendar_week_start')`.
+     - `isSameDay`, relative date labels ("Today", "Tomorrow", "in 12 days", "3 days ago"), and automatic midnight rollover listener.
+  2. **Multi-Source Read-Only Normalized Service (`src/lib/calendar/calendarService.js`)**:
+     - Unified normalized adapter across all app sources: `{ key, id, source, type, date, title, subtitle, status, colorToken, bgToken, dotClass, payload }`.
+     - Source 1 (Checklists): Direct indexed date range query on `checklist_items.due_date` + list-level `content.dueDate`. Excludes archived/deleted notes and non-task headers/notes. Detects overdue vs done vs open.
+     - Source 2 (Routines): Direct indexed query on `routine_entries.entry_date` + active habit definitions. Distinguishes past evaluated completions (done, missed, frozen) from upcoming scheduled habits.
+     - Source 3 (Journal): Date-mapped mood dots via safe `getMoodConfig` fallbacks.
+     - Source 4 (Wish List): Target dates mapped to open/overdue wishes, excluding already-purchased (`got_it`) items.
+     - Source 5 (Sketches): Creation date quiet info dots, avoiding heavy image attachments.
+     - Source 6 (Quick Notes): Creation date quiet info dots.
+     - Source 7 (Events): Isolated calendar events in `db.notes`.
+     - In-memory LRU prefetch cache for instant navigation without secondary Dexie schemas.
+  3. **Today Tab Integration (`src/components/layout/TodayDashboard.jsx`)**:
+     - Top tab switcher: `[ Today | Calendar ]` with state persisted in `localStorage.getItem('today_active_tab')`.
+     - `data-panel="calendar"` applied to `document.documentElement` when Calendar tab is active, restored cleanly to `data-panel="today"` when returning or switching away.
+     - Interactive "Next 7 Days" strip on Today tab: displays upcoming 7-day pill overview with direct jump to Calendar.
+     - Zero changes to `Sidebar.jsx`; sidebar component remains 100% untouched.
+  4. **Wall Calendar Visual Personality & Design Tokens (`src/styles/panelPersonalities.css`)**:
+     - Light mode: Warm off-white paper (`#FAF8F5`), crisp calendar sheet (`#FFFFFF`), charcoal ink (`#1E2328`, 15.83:1 AAA), deep teal accent (`#0F766E`, 5.47:1 AA button, `#0D655E` 6.91:1 AA text).
+     - Dark mode: Deep slate (`#0F1318`), elevated sheet (`#161C23`), chalk ink (`#F1F5F9`, 15.65:1 AAA), soft luminous teal (`#2DD4BF`, 9.82:1 AAA button, 9.21:1 AAA text).
+     - CSS-only binder holes bar (`.calendar-binder-track` and `.calendar-binder-ring`) on tear-off header band.
+     - Static `--panel-calendar-accent` (`#0F766E` / `#2DD4BF`) in `:root` and `.dark`.
+     - 100% PASS on WCAG 2.1 AA/AAA contrast checks across all 14 dual-mode tokens.
+  5. **Components (`MonthGrid.jsx`, `DayDetailPanel.jsx`, `CalendarEmptyState.jsx`, `CalendarView.jsx`)**:
+     - `MonthGrid`: 6x7 accessible grid, weekday headers, today highlight, faded non-month days, density tints, overdue warning pips, container query dot/chip switching (`@[480px]`).
+     - Accessible keyboard grid navigation (Arrow keys, PageUp/PageDown, Home/End, T for today, Enter/Space for details, Esc to close).
+     - `DayDetailPanel`: Side panel on wide viewports, bottom sheet on narrow viewports; groups selected day items by layer with open-in-panel navigation.
+     - `CalendarEmptyState`: Original SVG tear-off wall calendar illustration.
+  6. **Defensive Leak Prevention**:
+     - `todayDashboard.js` `getRecentNotes` guarded against calendar events.
+     - `CommandPalette.jsx` `allNotes` guarded against calendar events in generic recent notes.
+     - `ArchiveView.jsx` and `TrashView.jsx` updated with `calendar` workspace definition so events never mislabel as Quick Notes.
 - **Panel Personalities: Milestone 3 (Routines "Calm Horizon" + Sketch "Art Studio" + Today Hub) & Full QA Pass**:
   1. **Routines "Calm Horizon"**:
      - Serene sky blue & ocean dawn horizon aesthetic in Light mode (`#F0F8FF` page, `#FFFFFF` paper, `#0369A1` button/accent with white text at 5.93:1 AA); clean merge with approved Material 3 dark surface tokens in Dark mode (`#0E1116` page, `#151A21` paper, `#1C232C` raised, `#38BDF8` button with `#0B1220` dark ink text at 8.74:1 AAA contrast).

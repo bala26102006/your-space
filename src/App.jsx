@@ -70,7 +70,14 @@ export default function App() {
       sketch: 'sketch',
       today: 'today',
     };
-    const panelValue = panelMap[activeWorkspace];
+    let panelValue = panelMap[activeWorkspace];
+    if (activeWorkspace === 'today') {
+      try {
+        if (localStorage.getItem('today_active_tab') === 'calendar') {
+          panelValue = 'calendar';
+        }
+      } catch (e) {}
+    }
     if (panelValue) {
       document.documentElement.setAttribute('data-panel', panelValue);
     } else {

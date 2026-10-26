@@ -78,7 +78,7 @@ export async function getRecentNotes(limit = 3) {
   try {
     const allNotes = await db.notes.toArray().catch(() => []);
     return allNotes
-      .filter(n => !n.is_archived && !n.is_deleted && !n.content?.isStarterKit)
+      .filter(n => !n.is_archived && !n.is_deleted && !n.content?.isStarterKit && n.workspace_id !== 'calendar')
       .sort((a, b) => new Date(b.updated_at || b.created_at || 0) - new Date(a.updated_at || a.created_at || 0))
       .slice(0, limit);
   } catch (err) {
