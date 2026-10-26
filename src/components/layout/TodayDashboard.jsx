@@ -216,7 +216,7 @@ export default function TodayDashboard() {
           <div>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-blue-500/15 text-blue-500 flex items-center justify-center">
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-[var(--panel-routines-accent-soft)] text-[var(--panel-routines-accent)]">
                   <Repeat className="w-4 h-4" />
                 </div>
                 <h2 className="text-xs font-bold uppercase tracking-wider text-text-primary">
@@ -231,7 +231,7 @@ export default function TodayDashboard() {
             {/* Progress Bar */}
             <div className="w-full h-1.5 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden mb-3">
               <div 
-                className="h-full bg-blue-500 rounded-full transition-all duration-300"
+                className="h-full rounded-full transition-all duration-300 bg-[var(--panel-routines-accent)]"
                 style={{ width: `${routinePercent}%` }}
               />
             </div>
@@ -239,7 +239,7 @@ export default function TodayDashboard() {
             {/* Routines List */}
             {routineStatus.total === 0 ? (
               <div className="py-6 text-center text-text-muted">
-                <Smile className="w-8 h-8 mx-auto mb-1.5 opacity-40 text-blue-500" />
+                <Smile className="w-8 h-8 mx-auto mb-1.5 opacity-40 text-[var(--panel-routines-accent)]" />
                 <p className="text-xs font-medium">No habits scheduled yet</p>
                 <p className="text-[10px] mt-0.5">Build daily momentum in Routines</p>
               </div>
@@ -261,7 +261,7 @@ export default function TodayDashboard() {
                     <button
                       type="button"
                       onClick={(e) => handleToggleRoutine(e, routine, false)}
-                      className="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500 hover:text-white transition-all shrink-0"
+                      className="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-[var(--panel-routines-accent-soft)] text-[var(--panel-routines-accent)] hover:opacity-80 transition-all shrink-0"
                     >
                       Done
                     </button>
@@ -298,7 +298,7 @@ export default function TodayDashboard() {
           <button
             type="button"
             onClick={() => setActiveWorkspace('routines')}
-            className="mt-3 pt-2 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-[11px] font-medium text-text-muted hover:text-blue-500 transition-colors"
+            className="mt-3 pt-2 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-[11px] font-medium text-text-muted hover:text-[var(--panel-routines-accent)] transition-colors"
           >
             <span>Open Routines</span>
             <ArrowRight className="w-3 h-3" />
@@ -310,21 +310,21 @@ export default function TodayDashboard() {
           <div>
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-emerald-500/15 text-emerald-500 flex items-center justify-center">
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-[var(--panel-checklists-accent-soft)] text-[var(--panel-checklists-accent)]">
                   <CheckCircle className="w-4 h-4" />
                 </div>
                 <h2 className="text-xs font-bold uppercase tracking-wider text-text-primary">
                   Tasks Due Today
                 </h2>
               </div>
-              <span className="text-[10px] font-mono bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full font-semibold">
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full font-semibold bg-[var(--panel-checklists-accent-soft)] text-[var(--panel-checklists-accent)]">
                 {dueTasks.length} pending
               </span>
             </div>
 
             {dueTasks.length === 0 ? (
               <div className="py-6 text-center text-text-muted">
-                <CheckCircle2 className="w-8 h-8 mx-auto mb-1.5 opacity-40 text-emerald-500" />
+                <CheckCircle2 className="w-8 h-8 mx-auto mb-1.5 opacity-40 text-[var(--panel-checklists-accent)]" />
                 <p className="text-xs font-medium">All tasks cleared</p>
                 <p className="text-[10px] mt-0.5">Nothing due today. Enjoy the calm!</p>
               </div>
@@ -343,7 +343,7 @@ export default function TodayDashboard() {
                       <button
                         type="button"
                         onClick={(e) => handleToggleTask(e, task)}
-                        className="text-text-muted hover:text-emerald-500 transition-colors shrink-0"
+                        className="text-text-muted hover:text-[var(--panel-checklists-accent)] transition-colors shrink-0"
                         title="Mark complete"
                       >
                         <Circle className="w-4 h-4 opacity-50 hover:opacity-100" />
@@ -364,7 +364,7 @@ export default function TodayDashboard() {
           <button
             type="button"
             onClick={() => setActiveWorkspace('checklists')}
-            className="mt-3 pt-2 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-[11px] font-medium text-text-muted hover:text-emerald-500 transition-colors"
+            className="mt-3 pt-2 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-[11px] font-medium text-text-muted hover:text-[var(--panel-checklists-accent)] transition-colors"
           >
             <span>Open Checklists</span>
             <ArrowRight className="w-3 h-3" />
@@ -376,20 +376,20 @@ export default function TodayDashboard() {
           <div>
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-amber-600/15 text-amber-700 dark:text-amber-300 flex items-center justify-center">
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-[var(--panel-journal-accent-soft)] text-[var(--panel-journal-accent)]">
                   <BookOpen className="w-4 h-4" />
                 </div>
                 <h2 className="text-xs font-bold uppercase tracking-wider text-text-primary">
                   Daily Prompt
                 </h2>
               </div>
-              <span className="text-[10px] font-mono text-amber-700 dark:text-amber-300 font-medium">
+              <span className="text-[10px] font-mono font-medium text-[var(--panel-journal-accent)]">
                 {journalInfo.hasEntry ? 'Entry Saved ✓' : 'Daily reflection'}
               </span>
             </div>
 
             {/* Prompt Quote Box */}
-            <div className="p-3 rounded-xl bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/20 mb-3">
+            <div className="p-3 rounded-xl border mb-3 bg-[var(--panel-journal-accent-soft)] border-[var(--panel-journal-accent-soft)]">
               <p className="text-xs italic text-text-primary leading-relaxed">
                 "{journalInfo.prompt}"
               </p>
@@ -405,7 +405,7 @@ export default function TodayDashboard() {
           <button
             type="button"
             onClick={handleWriteJournal}
-            className="mt-3 py-2 px-3 rounded-xl bg-amber-700 dark:bg-amber-600 text-white font-semibold text-xs hover:bg-amber-800 dark:hover:bg-amber-500 active:scale-95 transition-all shadow-sm flex items-center justify-center gap-1.5"
+            className="mt-3 py-2 px-3 rounded-xl font-semibold text-xs active:scale-95 transition-all shadow-sm flex items-center justify-center gap-1.5 bg-[var(--panel-journal-btn-bg)] text-[var(--panel-journal-btn-fg)] hover:opacity-90"
           >
             <PenTool className="w-3.5 h-3.5" />
             <span>{journalInfo.hasEntry ? 'Continue Writing' : 'Write Entry'}</span>
@@ -417,7 +417,7 @@ export default function TodayDashboard() {
           <div>
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-amber-500/15 text-amber-500 flex items-center justify-center">
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-[var(--panel-notes-accent-soft)] text-[var(--panel-notes-accent)]">
                   <FileText className="w-4 h-4" />
                 </div>
                 <h2 className="text-xs font-bold uppercase tracking-wider text-text-primary">
@@ -429,7 +429,7 @@ export default function TodayDashboard() {
 
             {recentNotes.length === 0 ? (
               <div className="py-6 text-center text-text-muted">
-                <FileText className="w-8 h-8 mx-auto mb-1.5 opacity-40 text-amber-500" />
+                <FileText className="w-8 h-8 mx-auto mb-1.5 opacity-40 text-[var(--panel-notes-accent)]" />
                 <p className="text-xs font-medium">No notes created yet</p>
                 <p className="text-[10px] mt-0.5">Quick Notes and Projects appear here</p>
               </div>
@@ -439,9 +439,9 @@ export default function TodayDashboard() {
                   <div
                     key={note.id}
                     onClick={() => handleOpenNote(note)}
-                    className="p-2.5 rounded-xl border border-black/5 dark:border-white/5 hover:border-amber-500/30 hover:bg-black/5 dark:hover:bg-white/5 transition-all cursor-pointer group"
+                    className="p-2.5 rounded-xl border border-black/5 dark:border-white/5 hover:border-[var(--panel-notes-accent)]/30 hover:bg-black/5 dark:hover:bg-white/5 transition-all cursor-pointer group"
                   >
-                    <div className="font-semibold text-xs text-text-primary truncate group-hover:text-amber-500 transition-colors">
+                    <div className="font-semibold text-xs text-text-primary truncate group-hover:text-[var(--panel-notes-accent)] transition-colors">
                       {note.title || 'Untitled Note'}
                     </div>
                     <div className="flex items-center justify-between mt-1 text-[10px] text-text-muted">
@@ -461,7 +461,7 @@ export default function TodayDashboard() {
           <button
             type="button"
             onClick={() => setActiveWorkspace('quicknotes')}
-            className="mt-3 pt-2 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-[11px] font-medium text-text-muted hover:text-amber-500 transition-colors"
+            className="mt-3 pt-2 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-[11px] font-medium text-text-muted hover:text-[var(--panel-notes-accent)] transition-colors"
           >
             <span>View All Notes</span>
             <ArrowRight className="w-3 h-3" />
@@ -473,21 +473,21 @@ export default function TodayDashboard() {
           <div>
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-violet-500/15 text-violet-500 flex items-center justify-center">
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-[var(--panel-wishlist-accent-soft)] text-[var(--panel-wishlist-accent)]">
                   <Gift className="w-4 h-4" />
                 </div>
                 <h2 className="text-xs font-bold uppercase tracking-wider text-text-primary">
                   Target This Month
                 </h2>
               </div>
-              <span className="text-[10px] font-mono text-violet-500 font-semibold">
+              <span className="text-[10px] font-mono font-semibold text-[var(--panel-wishlist-accent)]">
                 {monthlyWishes.length} wishes
               </span>
             </div>
 
             {monthlyWishes.length === 0 ? (
               <div className="py-6 text-center text-text-muted">
-                <Gift className="w-8 h-8 mx-auto mb-1.5 opacity-40 text-violet-500" />
+                <Gift className="w-8 h-8 mx-auto mb-1.5 opacity-40 text-[var(--panel-wishlist-accent)]" />
                 <p className="text-xs font-medium">No target wishes this month</p>
                 <p className="text-[10px] mt-0.5">Plan target dates in your Wish List</p>
               </div>
@@ -500,20 +500,20 @@ export default function TodayDashboard() {
                       setActiveWorkspace('wishlist');
                       setSelectedNoteId(wish.id);
                     }}
-                    className="p-2.5 rounded-xl border border-black/5 dark:border-white/5 hover:border-violet-500/30 hover:bg-black/5 dark:hover:bg-white/5 transition-all cursor-pointer flex items-center justify-between gap-2"
+                    className="p-2.5 rounded-xl border border-black/5 dark:border-white/5 hover:border-[var(--panel-wishlist-accent)]/30 hover:bg-black/5 dark:hover:bg-white/5 transition-all cursor-pointer flex items-center justify-between gap-2"
                   >
                     <div className="min-w-0">
                       <div className="font-semibold text-xs text-text-primary truncate">
                         {wish.title || 'Untitled Wish'}
                       </div>
                       <div className="text-[10px] text-text-muted flex items-center gap-1.5 mt-0.5">
-                        {wish.category && <span className="text-violet-500">{wish.category}</span>}
+                        {wish.category && <span className="text-[var(--panel-wishlist-accent)]">{wish.category}</span>}
                         <span>•</span>
                         <span>Due {new Date(wish.target_date).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
                       </div>
                     </div>
                     {wish.estimated_price && (
-                      <span className="text-xs font-bold text-violet-600 dark:text-violet-400 shrink-0">
+                      <span className="text-xs font-bold shrink-0 text-[var(--panel-wishlist-accent)]">
                         ₹{wish.estimated_price}
                       </span>
                     )}
@@ -526,7 +526,7 @@ export default function TodayDashboard() {
           <button
             type="button"
             onClick={() => setActiveWorkspace('wishlist')}
-            className="mt-3 pt-2 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-[11px] font-medium text-text-muted hover:text-violet-500 transition-colors"
+            className="mt-3 pt-2 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-[11px] font-medium text-text-muted hover:text-[var(--panel-wishlist-accent)] transition-colors"
           >
             <span>Open Wish List</span>
             <ArrowRight className="w-3 h-3" />

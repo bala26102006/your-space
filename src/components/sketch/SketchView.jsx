@@ -570,8 +570,8 @@ export default function SketchView() {
       <div className="flex flex-wrap items-start justify-between gap-4 pt-2 flex-shrink-0 min-w-0">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 mb-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#FB923C] inline-block shadow-xs"></span>
-            <span className="text-[11px] font-bold tracking-wider uppercase text-orange-600 dark:text-orange-400">
+            <span className="w-2.5 h-2.5 rounded-full bg-[var(--accent)] inline-block shadow-xs animate-pulse"></span>
+            <span className="text-[11px] font-bold tracking-wider uppercase text-[var(--accent-text)]">
               Creative Studio
             </span>
           </div>
@@ -582,7 +582,7 @@ export default function SketchView() {
             </h1>
             {/* Hand-drawn style SVG underline */}
             <svg 
-              className="w-40 sm:w-48 h-2.5 text-orange-500 fill-none stroke-current mt-1" 
+              className="w-40 sm:w-48 h-2.5 text-[var(--accent)] fill-none stroke-current mt-1" 
               viewBox="0 0 160 10" 
               preserveAspectRatio="none"
               aria-hidden="true"
@@ -595,7 +595,7 @@ export default function SketchView() {
             </svg>
           </div>
 
-          <p className="text-xs text-text-muted mt-1.5 max-w-prose">
+          <p className="sketch-tagline text-text-muted mt-1 max-w-prose">
             A creative canvas for playful doodles, visual notes, and detailed artwork.
           </p>
         </div>

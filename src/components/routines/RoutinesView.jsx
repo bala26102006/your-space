@@ -366,7 +366,7 @@ export default function RoutinesView() {
           <button
             type="button"
             onClick={openNewRoutineEmpty}
-            className="flex items-center gap-1.5 px-4 py-2.5 bg-sky-500 hover:bg-sky-600 text-white rounded-xl text-xs font-bold shadow-sm hover:shadow active:scale-95 transition-all"
+            className="flex items-center gap-1.5 px-4 py-2.5 bg-[var(--btn-bg)] text-[var(--btn-fg)] hover:opacity-90 rounded-xl text-xs font-bold shadow-sm hover:shadow active:scale-95 transition-all"
             aria-label="Create new routine"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />

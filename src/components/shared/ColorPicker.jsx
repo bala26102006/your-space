@@ -97,7 +97,7 @@ export default function ColorPicker({
           <Palette className="w-4 h-4" />
         </button>
         {isOpen && (
-          <div className="absolute right-0 top-full mt-1.5 z-30 bg-surface-card dark:bg-[#1C2028] border border-black/10 dark:border-white/10 rounded-xl shadow-2xl p-2 animate-in fade-in zoom-in-95 duration-150 ring-1 ring-black/5">
+          <div className="absolute right-0 top-full mt-1.5 z-30 bg-surface-card border border-[var(--border-color)] rounded-xl shadow-2xl p-2 animate-in fade-in zoom-in-95 duration-150 ring-1 ring-black/5">
             {renderColorDots(true)}
           </div>
         )}
@@ -121,7 +121,7 @@ export default function ColorPicker({
             <Palette className="w-4 h-4" />
           </button>
           {isOpen && (
-            <div className="absolute right-0 top-full mt-1.5 z-30 bg-surface-card dark:bg-[#1C2028] border border-black/10 dark:border-white/10 rounded-xl shadow-2xl p-2 animate-in fade-in zoom-in-95 duration-150 ring-1 ring-black/5">
+            <div className="absolute right-0 top-full mt-1.5 z-30 bg-surface-card border border-[var(--border-color)] rounded-xl shadow-2xl p-2 animate-in fade-in zoom-in-95 duration-150 ring-1 ring-black/5">
               {renderColorDots(true)}
             </div>
           )}

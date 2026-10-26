@@ -224,6 +224,9 @@ export default function NoteCard({
         colorToken
       )} ${isSelected ? 'ring-2 ring-[var(--workspace-accent)] shadow-card-hover' : ''}`}
     >
+      {/* Quick Notes Desk Pin (styled & displayed via [data-panel="notes"]) */}
+      <div className="note-card-desk-pin" aria-hidden="true" />
+
       {/* Card Header: Color Indicator dot + Pin + Project complete + Actions */}
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
@@ -258,7 +261,7 @@ export default function NoteCard({
             </button>
           )}
           {note.is_pinned && (
-            <Pin className="w-3.5 h-3.5 text-amber-500 fill-amber-500 transform rotate-45" />
+            <Pin className="w-3.5 h-3.5 text-[var(--accent)] fill-[var(--accent)] transform rotate-45" />
           )}
         </div>
 
@@ -283,7 +286,7 @@ export default function NoteCard({
             {showColorMenu && (
               <div
                 onClick={(e) => e.stopPropagation()}
-                className="absolute right-0 top-9 z-30 p-2 bg-surface-card dark:bg-[#1C2028] rounded-xl shadow-2xl border border-black/10 dark:border-white/10 flex items-center gap-1.5 ring-1 ring-black/5"
+                className="absolute right-0 top-9 z-30 p-2 bg-surface-card rounded-xl shadow-2xl border border-[var(--border-color)] flex items-center gap-1.5 ring-1 ring-black/5"
               >
                 {COLOR_OPTIONS.map((c) => (
                   <button
@@ -310,7 +313,7 @@ export default function NoteCard({
             aria-label={note.is_pinned ? 'Unpin note' : 'Pin note'}
             className="w-8 h-8 min-w-[32px] min-h-[32px] flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-text-muted hover:text-text-primary transition-colors"
           >
-            <Pin className={`w-3.5 h-3.5 ${note.is_pinned ? 'fill-current text-amber-500' : ''}`} />
+            <Pin className={`w-3.5 h-3.5 ${note.is_pinned ? 'fill-current text-[var(--accent)]' : ''}`} />
           </button>
 
           {/* More Actions Menu */}
@@ -332,7 +335,7 @@ export default function NoteCard({
             {showMenu && (
               <div
                 onClick={(e) => e.stopPropagation()}
-                className="absolute right-0 top-9 z-30 w-40 py-1 bg-surface-card dark:bg-[#1C2028] rounded-button shadow-2xl border border-black/10 dark:border-white/10 text-xs ring-1 ring-black/5"
+                className="absolute right-0 top-9 z-30 w-40 py-1 bg-surface-card rounded-button shadow-2xl border border-[var(--border-color)] text-xs ring-1 ring-black/5"
               >
                 {note.workspace_id === 'checklists' && (
                   <button
@@ -404,7 +407,7 @@ export default function NoteCard({
       {/* Card Content Preview (up to 3 lines) - High Contrast Letters */}
       <p className={`text-sm leading-relaxed min-h-[3rem] line-clamp-3 break-words overflow-hidden ${
         previewText
-          ? 'text-text-secondary dark:text-[#D1D5DB]'
+          ? 'text-text-secondary'
           : 'text-text-muted/60 italic'
       }`}>
         {previewText || 'Empty note...'}

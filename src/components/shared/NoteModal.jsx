@@ -175,7 +175,7 @@ export default function NoteModal({
                   type="button"
                   onClick={onPinToggle}
                   className={`p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors ${
-                    isPinned ? 'text-amber-500 fill-amber-500' : 'text-text-muted hover:text-text-primary'
+                    isPinned ? 'text-[var(--accent)] fill-[var(--accent)]' : 'text-text-muted hover:text-text-primary'
                   }`}
                   title={isPinned ? 'Unpin note' : 'Pin note to top'}
                   aria-label={isPinned ? 'Unpin note' : 'Pin note'}

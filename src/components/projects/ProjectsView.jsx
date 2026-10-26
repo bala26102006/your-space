@@ -327,7 +327,7 @@ export default function ProjectsView() {
           </div>
           <button
             onClick={handleCreateSubprojectNote}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-[var(--workspace-accent)] text-white rounded-button text-xs font-medium hover:opacity-90 active:scale-95 transition-all shadow-sm self-end sm:self-auto shrink-0"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-[var(--workspace-accent)] text-[var(--workspace-accent-text)] rounded-button text-xs font-medium hover:opacity-90 active:scale-95 transition-all shadow-sm self-end sm:self-auto shrink-0"
           >
             <Plus className="w-4 h-4" />
             <span>New Scene/Note</span>
@@ -405,7 +405,7 @@ export default function ProjectsView() {
           </div>
           <button
             onClick={handleCreateSubproject}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-[var(--workspace-accent)] text-white rounded-button text-xs font-medium hover:opacity-90 active:scale-95 transition-all shadow-sm self-end sm:self-auto shrink-0"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-[var(--workspace-accent)] text-[var(--workspace-accent-text)] rounded-button text-xs font-medium hover:opacity-90 active:scale-95 transition-all shadow-sm self-end sm:self-auto shrink-0"
           >
             <Plus className="w-4 h-4" />
             <span>New Section</span>
@@ -464,7 +464,7 @@ export default function ProjectsView() {
         <div className="relative">
           <button
             onClick={() => setShowTemplates(!showTemplates)}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-[var(--workspace-accent)] text-white rounded-button text-xs font-medium hover:opacity-90 active:scale-95 transition-all shadow-sm"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-[var(--workspace-accent)] text-[var(--workspace-accent-text)] rounded-button text-xs font-medium hover:opacity-90 active:scale-95 transition-all shadow-sm"
           >
             <Plus className="w-4 h-4" />
             <span>New Project</span>
@@ -476,13 +476,13 @@ export default function ProjectsView() {
                 <FolderKanban className="w-4 h-4 text-text-muted" /> Blank Project
               </button>
               <button onClick={() => handleCreateProject('Movie Script')} className="text-left px-4 py-2 text-xs hover:bg-hover-bg flex items-center gap-2">
-                <Film className="w-4 h-4 text-purple-500" /> Movie Script
+                <Film className="w-4 h-4 text-[var(--accent)]" /> Movie Script
               </button>
               <button onClick={() => handleCreateProject('YouTube Video')} className="text-left px-4 py-2 text-xs hover:bg-hover-bg flex items-center gap-2">
-                <Youtube className="w-4 h-4 text-red-500" /> YouTube Video
+                <Youtube className="w-4 h-4 text-[var(--accent)]" /> YouTube Video
               </button>
               <button onClick={() => handleCreateProject('Novel')} className="text-left px-4 py-2 text-xs hover:bg-hover-bg flex items-center gap-2">
-                <BookOpen className="w-4 h-4 text-blue-500" /> Novel
+                <BookOpen className="w-4 h-4 text-[var(--accent)]" /> Novel
               </button>
             </div>
           )}
@@ -493,10 +493,19 @@ export default function ProjectsView() {
         <GridSkeleton count={4} />
       ) : projects.length === 0 ? (
         <div className="h-64 flex flex-col items-center justify-center text-text-muted border border-dashed border-black/10 dark:border-white/10 rounded-card p-8 text-center min-w-0">
-          <div className="w-12 h-12 rounded-2xl bg-[var(--workspace-accent-bg)] text-[var(--workspace-accent)] flex items-center justify-center mb-3">
-            <FolderKanban className="w-6 h-6" />
+          <div className="mb-3 relative w-16 h-16 flex items-center justify-center">
+            <svg className="w-14 h-14 drop-shadow-sm" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="10" y="10" width="44" height="44" rx="4" fill="var(--paper-2)" stroke="var(--border)" strokeWidth="1.5" />
+              <line x1="10" y1="24" x2="54" y2="24" stroke="var(--accent)" strokeWidth="1" strokeOpacity="0.25" strokeDasharray="2 2" />
+              <line x1="10" y1="38" x2="54" y2="38" stroke="var(--accent)" strokeWidth="1" strokeOpacity="0.25" strokeDasharray="2 2" />
+              <line x1="24" y1="10" x2="24" y2="54" stroke="var(--accent)" strokeWidth="1" strokeOpacity="0.25" strokeDasharray="2 2" />
+              <line x1="38" y1="10" x2="38" y2="54" stroke="var(--accent)" strokeWidth="1" strokeOpacity="0.25" strokeDasharray="2 2" />
+              <path d="M32 16L22 46M32 16L42 46" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" />
+              <circle cx="32" cy="16" r="3" fill="var(--accent)" />
+              <line x1="25" y1="36" x2="39" y2="36" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
           </div>
-          <p className="text-sm font-medium text-text-primary">No projects created yet</p>
+          <p className="text-sm font-medium text-text-primary font-mono tracking-tight">No blueprints drafted yet</p>
           <p className="text-xs opacity-70 mt-1 max-w-xs">
             Build structured scripts, YouTube content calendars, or novels with nested Acts and Scenes.
           </p>
@@ -521,7 +530,7 @@ export default function ProjectsView() {
                 setSelectedSubprojectId(null);
                 setSelectedNoteId(null);
               }}
-              className={`group relative rounded-card p-4 border transition-all duration-200 ease-out cursor-pointer hover:scale-[1.02] hover:shadow-lg dark:hover:shadow-black/40 flex flex-col justify-between h-full ${colorClasses}`}
+              className={`group relative project-card-tab rounded-card p-4 border transition-all duration-200 ease-out cursor-pointer hover:scale-[1.02] hover:shadow-lg dark:hover:shadow-black/40 flex flex-col justify-between h-full ${colorClasses}`}
             >
               <div>
                 <div className="flex items-start justify-between mb-2 gap-2">
@@ -573,8 +582,8 @@ export default function ProjectsView() {
 
               {/* Progress bar at the bottom */}
               <div className="flex items-center gap-2 w-full mt-auto pt-3 border-t border-black/5 dark:border-white/5">
-                <div className="flex-1 h-1.5 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
-                  <div className="h-full bg-emerald-500 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
+                <div className="flex-1 h-2 bg-black/5 dark:bg-white/10 rounded overflow-hidden blueprint-progress-segmented">
+                  <div className="h-full bg-[var(--accent)] transition-all duration-500" style={{ width: `${progress}%` }} />
                 </div>
                 <span className="text-[10px] font-mono text-text-muted whitespace-nowrap">
                   {total > 0 ? `${progress}% (${completed}/${total})` : '0%'}

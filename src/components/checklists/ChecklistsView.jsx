@@ -287,7 +287,7 @@ export default function ChecklistsView() {
           <button
             type="button"
             onClick={() => handleCreateChecklist(selectedChecklistCategory)}
-            className="flex items-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold shadow-xs active:scale-95 transition-all self-end sm:self-auto"
+            className="flex items-center gap-1.5 px-4 py-2 bg-[var(--btn-bg)] text-[var(--btn-fg)] hover:opacity-90 rounded-xl text-xs font-bold shadow-xs active:scale-95 transition-all self-end sm:self-auto"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
             <span>New Checklist</span>
@@ -348,20 +348,20 @@ export default function ChecklistsView() {
   return (
     <div className="flex flex-col min-h-full relative min-w-0 overflow-x-hidden space-y-7 pb-20">
       
-      {/* 1. Page Header (Emerald Title + Underline + Actions) */}
+      {/* 1. Page Header (Field Clipboard Heading + Underline + Actions) */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-1">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block animate-pulse" />
-            <span className="text-xs font-bold tracking-wider uppercase text-emerald-600 dark:text-emerald-400">
+            <span className="w-2.5 h-2.5 rounded-full bg-[var(--accent)] inline-block animate-pulse" />
+            <span className="text-xs font-bold tracking-wider uppercase text-[var(--accent-text)]">
               Smart Checklists
             </span>
           </div>
 
-          <h1 className="text-[28px] sm:text-[32px] font-extrabold text-text-primary tracking-tight leading-tight">
+          <h1 className="text-[28px] sm:text-[32px] font-heading font-extrabold text-text-primary tracking-tight leading-tight">
             Checklists
           </h1>
-          <div className="h-0.5 w-10 rounded-full bg-emerald-500 mt-1 mb-1.5" />
+          <div className="h-0.5 w-10 rounded-full bg-[var(--accent)] mt-1 mb-1.5" />
           <p className="text-xs text-text-muted">
             Instant capture, smart priorities, and templates for effortless execution.
           </p>
@@ -410,7 +410,7 @@ export default function ChecklistsView() {
           <button
             type="button"
             onClick={() => handleCreateChecklist('Uncategorized')}
-            className="flex items-center gap-1.5 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold shadow-xs hover:shadow active:scale-95 transition-all"
+            className="flex items-center gap-1.5 px-4 py-2.5 bg-[var(--btn-bg)] hover:opacity-90 text-[var(--btn-fg)] rounded-xl text-xs font-bold shadow-xs hover:shadow active:scale-95 transition-all"
             aria-label="Create new checklist"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
@@ -436,7 +436,7 @@ export default function ChecklistsView() {
               onClick={() => setActiveFilter(f.id)}
               className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-150 ${
                 activeFilter === f.id
-                  ? 'bg-emerald-500 text-white shadow-xs'
+                  ? 'bg-[var(--accent)] text-[var(--btn-fg)] shadow-xs'
                   : 'bg-black/5 dark:bg-white/5 text-text-muted hover:text-text-primary hover:bg-black/10'
               }`}
             >
@@ -519,8 +519,21 @@ export default function ChecklistsView() {
         {isLoading ? (
           <GridSkeleton count={4} />
         ) : recentChecklists.length === 0 && pinnedChecklists.length === 0 ? (
-          <div className="py-12 text-center text-text-muted">
-            <Filter className="w-8 h-8 mx-auto opacity-30 mb-2" />
+          <div className="py-12 text-center text-text-muted flex flex-col items-center justify-center">
+            <div className="mb-3 relative w-16 h-16 flex items-center justify-center">
+              <svg className="w-14 h-14 drop-shadow-sm" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="12" y="8" width="40" height="48" rx="5" fill="var(--raised)" stroke="var(--border)" strokeWidth="1.5" />
+                <rect x="16" y="14" width="32" height="38" rx="2" fill="var(--paper)" stroke="var(--border-soft)" strokeWidth="1" />
+                <rect x="22" y="5" width="20" height="7" rx="2" fill="var(--accent)" fillOpacity="0.85" stroke="var(--text)" strokeWidth="1" />
+                <circle cx="32" cy="8.5" r="1.5" fill="var(--paper)" />
+                <rect x="20" y="20" width="5" height="5" rx="1" fill="var(--accent)" fillOpacity="0.2" stroke="var(--accent)" strokeWidth="1" />
+                <line x1="28" y1="22.5" x2="42" y2="22.5" stroke="var(--text)" strokeWidth="1.5" strokeLinecap="round" />
+                <rect x="20" y="29" width="5" height="5" rx="1" fill="var(--accent)" fillOpacity="0.2" stroke="var(--accent)" strokeWidth="1" />
+                <line x1="28" y1="31.5" x2="38" y2="31.5" stroke="var(--text-muted)" strokeWidth="1.5" strokeLinecap="round" />
+                <rect x="20" y="38" width="5" height="5" rx="1" stroke="var(--border)" strokeWidth="1" />
+                <line x1="28" y1="40.5" x2="35" y2="40.5" stroke="var(--text-muted)" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.6" />
+              </svg>
+            </div>
             <p className="text-sm font-semibold text-text-primary">No checklists found</p>
             <p className="text-xs mt-1">Try resetting the filter or create a new checklist.</p>
           </div>

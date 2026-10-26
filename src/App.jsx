@@ -52,7 +52,7 @@ export default function App() {
     }
   }, [theme]);
 
-  // Apply workspace & warm theme style attribute to document.documentElement for universal styling & portals
+  // Apply workspace, data-panel, & warm theme style attribute to document.documentElement for universal styling & portals
   useEffect(() => {
     document.documentElement.setAttribute('data-workspace', activeWorkspace);
     if (activeWorkspace === 'journal') {
@@ -60,8 +60,30 @@ export default function App() {
     } else {
       document.documentElement.removeAttribute('data-style');
     }
+
+    const panelMap = {
+      quicknotes: 'notes',
+      projects: 'projects',
+      checklists: 'checklists',
+      wishlist: 'wishlist',
+      routines: 'routines',
+      sketch: 'sketch',
+      today: 'today',
+    };
+    const panelValue = panelMap[activeWorkspace];
+    if (panelValue) {
+      document.documentElement.setAttribute('data-panel', panelValue);
+    } else {
+      document.documentElement.removeAttribute('data-panel');
+    }
+
+    try {
+      localStorage.setItem('activeWorkspace', activeWorkspace);
+    } catch (e) {}
+
     return () => {
       document.documentElement.removeAttribute('data-style');
+      document.documentElement.removeAttribute('data-panel');
     };
   }, [activeWorkspace]);
 

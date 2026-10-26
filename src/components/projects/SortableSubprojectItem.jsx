@@ -67,7 +67,7 @@ export default function SortableSubprojectItem({
           <GripVertical className="w-4 h-4" />
         </button>
 
-        <Folder className="w-4 h-4 text-amber-500 fill-amber-500/20 shrink-0" />
+        <Folder className="w-4 h-4 text-[var(--accent)] fill-[var(--accent)]/20 shrink-0" />
 
         {isEditing ? (
           <form onSubmit={handleSaveRename} onClick={(e) => e.stopPropagation()} className="flex items-center gap-1 flex-1">
@@ -78,7 +78,7 @@ export default function SortableSubprojectItem({
               onChange={(e) => setTitleInput(e.target.value)}
               className="px-2 py-0.5 text-xs bg-bg-primary border border-black/10 dark:border-white/10 rounded text-text-primary w-full"
             />
-            <button type="submit" className="p-1 text-emerald-600 hover:text-emerald-700">
+            <button type="submit" className="p-1 text-[var(--accent)] hover:opacity-80">
               <Check className="w-3.5 h-3.5" />
             </button>
           </form>

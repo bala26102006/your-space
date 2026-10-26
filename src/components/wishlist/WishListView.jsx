@@ -413,15 +413,15 @@ export default function WishListView() {
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 min-w-0 w-full">
         <div className="min-w-0 shrink-0">
           <div className="flex items-center gap-2.5 shrink-0 whitespace-nowrap">
-            <h1 className="text-[28px] sm:text-[32px] font-bold tracking-tight text-text-primary capitalize leading-tight">
+            <h1 className="text-[28px] sm:text-[32px] font-heading font-bold tracking-tight text-text-primary capitalize leading-tight">
               Wish List
             </h1>
-            <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20 uppercase tracking-wider shrink-0 whitespace-nowrap">
+            <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-[var(--accent-soft)] text-[var(--accent-text)] border border-[var(--border)] uppercase tracking-wider shrink-0 whitespace-nowrap">
               {wishes.length} {wishes.length === 1 ? 'wish' : 'wishes'}
             </span>
           </div>
-          {/* Violet underline */}
-          <div className="h-0.5 w-10 rounded-full bg-[#8B5CF6] mt-1.5" />
+          {/* Accent underline */}
+          <div className="h-0.5 w-10 rounded-full bg-[var(--accent)] mt-1.5" />
           <p className="text-xs text-text-muted mt-1">
             Dreams, goals, and items to acquire or experience
           </p>
@@ -437,7 +437,7 @@ export default function WishListView() {
               aria-label="Grid view"
               className={`p-1.5 rounded-button transition-colors ${
                 viewMode === 'grid'
-                  ? 'bg-bg-primary text-[#8B5CF6] shadow-xs'
+                  ? 'bg-bg-primary text-[var(--accent)] shadow-xs'
                   : 'text-text-muted hover:text-text-primary'
               }`}
             >
@@ -449,7 +449,7 @@ export default function WishListView() {
               aria-label="List view"
               className={`p-1.5 rounded-button transition-colors ${
                 viewMode === 'list'
-                  ? 'bg-bg-primary text-[#8B5CF6] shadow-xs'
+                  ? 'bg-bg-primary text-[var(--accent)] shadow-xs'
                   : 'text-text-muted hover:text-text-primary'
               }`}
             >
@@ -461,7 +461,7 @@ export default function WishListView() {
           <button
             onClick={handleCreateNewWish}
             aria-label="Create New Wish"
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-[#8B5CF6] text-white rounded-button text-xs font-medium hover:bg-[#7C3AED] active:scale-95 transition-all shadow-sm"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-[var(--btn-bg)] text-[var(--btn-fg)] rounded-button text-xs font-medium hover:opacity-90 active:scale-95 transition-all shadow-sm"
           >
             <Plus className="w-4 h-4" />
             <span>New Wish</span>
@@ -472,13 +472,13 @@ export default function WishListView() {
       {/* 2. Quick Add Bar */}
       <form onSubmit={handleQuickAdd} className="mb-4 shrink-0">
         <div className="relative flex items-center">
-          <Sparkles className="w-4 h-4 absolute left-3.5 text-violet-500 pointer-events-none" />
+          <Sparkles className="w-4 h-4 absolute left-3.5 text-[var(--accent)] pointer-events-none" />
           <input
             type="text"
             value={quickAddInput}
             onChange={(e) => setQuickAddInput(e.target.value)}
             placeholder="Add a wish and press Enter..."
-            className="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm bg-card-default border border-black/10 dark:border-white/10 rounded-xl text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-violet-500/50 shadow-xs transition-all"
+            className="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm bg-card-default border border-black/10 dark:border-white/10 rounded-xl text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50 shadow-xs transition-all"
           />
         </div>
       </form>
@@ -487,7 +487,7 @@ export default function WishListView() {
       <div className="grid grid-cols-1 @min-[600px]:grid-cols-3 gap-3 mb-4 shrink-0">
         {/* Total Wishes */}
         <div className="p-3 bg-card-default border border-black/5 dark:border-white/10 rounded-xl flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-violet-500/10 text-violet-600 dark:text-violet-400 flex items-center justify-center shrink-0">
+          <div className="w-9 h-9 rounded-lg bg-[var(--accent-soft)] text-[var(--accent-text)] flex items-center justify-center shrink-0">
             <Sparkles className="w-4 h-4" />
           </div>
           <div>
@@ -544,7 +544,7 @@ export default function WishListView() {
                 onClick={() => setSelectedCategory(cat.id)}
                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 ${
                   isSelected
-                    ? 'bg-violet-600 text-white shadow-xs'
+                    ? 'bg-[var(--btn-bg)] text-[var(--btn-fg)] shadow-xs'
                     : 'bg-black/5 dark:bg-white/5 text-text-muted hover:text-text-primary'
                 }`}
               >
@@ -599,12 +599,20 @@ export default function WishListView() {
       {/* 5. Content View: Wishes Grid or List */}
       <div className="space-y-6 min-w-0">
         {wishes.length === 0 ? (
-          /* Feature 10: Empty State */
+          /* Dreamy Boutique Empty State */
           <div className="flex flex-col items-center justify-center h-72 text-center p-6 bg-card-default rounded-2xl border border-black/5 dark:border-white/10">
-            <div className="w-16 h-16 rounded-full bg-violet-500/10 text-violet-500 flex items-center justify-center mb-3.5 shadow-sm">
-              <Sparkles className="w-8 h-8" />
+            <div className="mb-3.5 relative w-16 h-16 flex items-center justify-center">
+              <svg className="w-14 h-14 drop-shadow-sm" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M32 6C32 12 30 16 28 20" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" strokeDasharray="2 2" />
+                <circle cx="32" cy="6" r="2" fill="var(--accent)" />
+                <path d="M22 20L34 20L44 30L32 46L20 46L12 36L22 20Z" fill="var(--paper)" stroke="var(--border)" strokeWidth="1.5" />
+                <circle cx="28" cy="24" r="2.5" fill="var(--bg)" stroke="var(--accent)" strokeWidth="1.2" />
+                <path d="M28 31L29.5 35L33.5 36.5L29.5 38L28 42L26.5 38L22.5 36.5L26.5 35Z" fill="var(--accent)" />
+                <circle cx="36" cy="27" r="1" fill="var(--accent)" />
+                <circle cx="20" cy="40" r="0.8" fill="var(--accent)" />
+              </svg>
             </div>
-            <h3 className="text-base sm:text-lg font-bold text-text-primary">
+            <h3 className="text-base sm:text-lg font-heading font-bold text-text-primary">
               Nothing here yet. What do you wish for?
             </h3>
             <p className="text-xs text-text-muted max-w-sm mt-1.5 leading-relaxed">
@@ -612,7 +620,7 @@ export default function WishListView() {
             </p>
             <button
               onClick={handleCreateNewWish}
-              className="mt-4 px-4 py-2 bg-[#8B5CF6] text-white rounded-button text-xs font-semibold hover:bg-[#7C3AED] transition-all shadow-xs"
+              className="mt-4 px-4 py-2 bg-[var(--btn-bg)] text-[var(--btn-fg)] rounded-button text-xs font-semibold hover:opacity-90 transition-all shadow-xs"
             >
               Create a Wish
             </button>

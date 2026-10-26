@@ -95,7 +95,7 @@ export default function ChecklistCard({
     return (
       <div
         onClick={onSelect}
-        className={`group relative p-3 sm:p-4 rounded-2xl border transition-all duration-200 cursor-pointer flex items-center justify-between gap-4 bg-white dark:bg-bg-primary hover:border-emerald-500/40 hover:shadow-md ${
+        className={`group relative p-3 sm:p-4 rounded-2xl border transition-all duration-200 cursor-pointer flex items-center justify-between gap-4 bg-surface-card border-[var(--border-color)] hover:border-[var(--accent)]/40 hover:shadow-md ${
           isAllDone ? 'opacity-85' : ''
         }`}
       >
@@ -103,7 +103,7 @@ export default function ChecklistCard({
           {/* Progress Ring / Checkbox */}
           <div className="relative shrink-0 flex items-center justify-center">
             {isAllDone ? (
-              <div className="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-xs">
+              <div className="w-8 h-8 rounded-full bg-[var(--accent)] text-[var(--btn-fg)] flex items-center justify-center shadow-xs">
                 <Check className="w-4 h-4 stroke-[3]" />
               </div>
             ) : (
@@ -120,7 +120,7 @@ export default function ChecklistCard({
                   cx={16}
                   cy={16}
                   r={12}
-                  className="stroke-emerald-500 transition-all duration-300"
+                  className="stroke-[var(--accent)] transition-all duration-300"
                   strokeWidth={3}
                   strokeLinecap="round"
                   fill="transparent"
@@ -150,7 +150,7 @@ export default function ChecklistCard({
               {note.category && note.category !== 'Uncategorized' && (
                 <>
                   <span>•</span>
-                  <span className="font-medium text-emerald-600 dark:text-emerald-400">{note.category}</span>
+                  <span className="font-medium text-[var(--accent-text)]">{note.category}</span>
                 </>
               )}
             </div>
@@ -178,16 +178,19 @@ export default function ChecklistCard({
   return (
     <div
       onClick={onSelect}
-      className={`group relative rounded-3xl p-5 border border-black/8 dark:border-white/10 bg-white dark:bg-bg-primary transition-all duration-200 cursor-pointer flex flex-col justify-between hover:shadow-xl hover:-translate-y-0.5 hover:border-emerald-500/40 ${
+      className={`group relative rounded-3xl p-5 border border-[var(--border-color)] bg-surface-card transition-all duration-200 cursor-pointer flex flex-col justify-between hover:shadow-xl hover:-translate-y-0.5 hover:border-[var(--accent)]/40 ${
         isAllDone ? 'opacity-90' : ''
       }`}
     >
+      {/* Field Clipboard Clamp (scoped via [data-panel="checklists"]) */}
+      <div className="checklist-card-clip" aria-hidden="true" />
+
       <div>
         {/* Top Header: Icon Bubble + Progress Ring + Menu */}
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex items-center gap-2.5 min-w-0">
             {/* Icon Bubble */}
-            <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-lg font-bold shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
+            <div className="w-10 h-10 rounded-2xl bg-[var(--accent-soft)] text-[var(--accent-text)] flex items-center justify-center text-lg font-bold shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
               {note.content?.icon && note.content.icon.length <= 4 ? (
                 note.content.icon
               ) : (
@@ -207,7 +210,7 @@ export default function ChecklistCard({
             {/* Circular Progress Ring */}
             <div className="relative flex items-center justify-center">
               {isAllDone ? (
-                <div className="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-xs" title="100% Completed">
+                <div className="w-8 h-8 rounded-full bg-[var(--accent)] text-[var(--btn-fg)] flex items-center justify-center shadow-xs" title="100% Completed">
                   <Check className="w-4 h-4 stroke-[3]" />
                 </div>
               ) : (
@@ -225,7 +228,7 @@ export default function ChecklistCard({
                       cx={ringSize / 2}
                       cy={ringSize / 2}
                       r={radius}
-                      className="stroke-emerald-500 transition-all duration-300"
+                      className="stroke-[var(--accent)] transition-all duration-300"
                       strokeWidth={strokeWidth}
                       strokeLinecap="round"
                       fill="transparent"

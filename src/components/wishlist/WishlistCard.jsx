@@ -106,10 +106,11 @@ export default function WishlistCard({
         wish.color
       )} ${
         isSelected
-          ? 'ring-2 ring-[#8B5CF6] shadow-card-hover border-violet-500/50'
+          ? 'ring-2 ring-[var(--accent)] shadow-card-hover border-[var(--accent)]/50'
           : 'border-black/5 dark:border-white/10 hover:border-black/15 dark:hover:border-white/20'
       } ${isCompleted ? 'bg-black/[0.01] dark:bg-white/[0.01]' : ''}`}
     >
+      <div className="wishlist-card-tag" aria-hidden="true" />
       {/* 1. Optional Left Thumbnail (64x64 rounded, only when image exists) */}
       {hasImage && (
         <div className="w-16 h-16 min-w-[64px] min-h-[64px] rounded-xl overflow-hidden shrink-0 bg-black/5 dark:bg-white/5 relative border border-black/5 dark:border-white/10">
@@ -142,7 +143,7 @@ export default function WishlistCard({
               {wish.title || 'Untitled Wish'}
             </h3>
             {wish.is_pinned && (
-              <Pin className="w-3 h-3 text-amber-500 fill-amber-500 shrink-0 opacity-100 sm:group-hover:opacity-0 transition-opacity" />
+              <Pin className="w-3 h-3 text-[var(--accent)] fill-[var(--accent)] shrink-0 opacity-100 sm:group-hover:opacity-0 transition-opacity" />
             )}
           </div>
 
@@ -197,7 +198,7 @@ export default function WishlistCard({
               aria-label={wish.is_pinned ? 'Unpin wish' : 'Pin wish'}
               className="w-7 h-7 sm:w-8 sm:h-8 min-w-[28px] min-h-[28px] sm:min-w-[32px] sm:min-h-[32px] flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
             >
-              <Pin className={`w-3.5 h-3.5 ${wish.is_pinned ? 'fill-current text-amber-500' : ''}`} />
+              <Pin className={`w-3.5 h-3.5 ${wish.is_pinned ? 'fill-current text-[var(--accent)]' : ''}`} />
             </button>
 
             {/* Archive */}
@@ -243,7 +244,7 @@ export default function WishlistCard({
             />
 
             {/* Inline Price */}
-            <span className="text-xs font-bold text-violet-600 dark:text-violet-400 shrink-0">
+            <span className="text-xs font-bold text-[var(--accent-text)] shrink-0">
               {formatPrice(wish.price)}
             </span>
           </div>

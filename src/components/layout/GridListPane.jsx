@@ -403,10 +403,18 @@ export default function GridListPane() {
     return (
       <>
         {/* Pane Header */}
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-6 min-w-0">
+        <div className={`flex flex-wrap items-center justify-between gap-3 mb-6 min-w-0 transition-all ${
+          activeWorkspace === 'quicknotes' && !isGlobalView
+            ? 'p-5 sm:p-6 rounded-2xl bg-[var(--header-band)] text-[var(--header-text)] shadow-xs border border-[var(--border)]'
+            : ''
+        }`}>
           <div className="min-w-0">
             <div className="flex items-center gap-2.5 flex-wrap min-w-0">
-              <h1 className="text-[28px] sm:text-[32px] font-bold tracking-tight text-text-primary capitalize leading-tight shrink-0 whitespace-nowrap">
+              <h1 className={`text-[28px] sm:text-[32px] font-bold tracking-tight capitalize leading-tight shrink-0 whitespace-nowrap ${
+                activeWorkspace === 'quicknotes' && !isGlobalView
+                  ? 'font-heading text-[var(--header-text)]'
+                  : 'text-text-primary'
+              }`}>
                 {isGlobalView
                   ? (searchQuery ? `Search: "${searchQuery}"` : 'Tag Filter')
                   : (activeWorkspace === 'quicknotes'
@@ -416,13 +424,25 @@ export default function GridListPane() {
                       : activeWorkspace)}
               </h1>
               {!isGlobalView && (
-                <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-[var(--workspace-accent-bg)] text-[var(--workspace-accent)] border border-[var(--workspace-accent)]/20 uppercase tracking-wider shrink-0 whitespace-nowrap">
+                <span className={`px-2 py-0.5 text-xs font-semibold rounded-full uppercase tracking-wider shrink-0 whitespace-nowrap ${
+                  activeWorkspace === 'quicknotes'
+                    ? 'bg-black/10 dark:bg-white/15 text-[var(--header-text)] border border-black/10 dark:border-white/10'
+                    : 'bg-[var(--workspace-accent-bg)] text-[var(--workspace-accent)] border border-[var(--workspace-accent)]/20'
+                }`}>
                   Workspace
                 </span>
               )}
             </div>
-            <div className="h-0.5 w-8 rounded-full bg-[var(--workspace-accent)] mt-1.5" />
-            <p className="text-xs text-text-muted mt-1">
+            <div className={`h-0.5 w-8 rounded-full mt-1.5 ${
+              activeWorkspace === 'quicknotes' && !isGlobalView
+                ? 'bg-[var(--accent)]'
+                : 'bg-[var(--workspace-accent)]'
+            }`} />
+            <p className={`text-xs mt-1 ${
+              activeWorkspace === 'quicknotes' && !isGlobalView
+                ? 'text-[var(--header-muted)]'
+                : 'text-text-muted'
+            }`}>
               {activeWorkspace === 'quicknotes' && 'Instant thoughts & fast color-coded cards'}
               {activeWorkspace === 'archive' && 'Hidden notes and projects'}
               {activeWorkspace === 'trash' && 'Soft-deleted items (auto-purged after 7 days)'}
@@ -438,7 +458,7 @@ export default function GridListPane() {
               <button
                 onClick={handleCreateNote}
                 aria-label="Create New Note"
-                className="flex items-center gap-1.5 px-3.5 py-2 bg-[var(--workspace-accent)] text-[var(--workspace-accent-text)] rounded-button text-xs font-semibold hover:opacity-90 active:scale-95 transition-all shadow-sm"
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-[var(--btn-bg,var(--workspace-accent))] text-[var(--btn-fg,var(--workspace-accent-text))] rounded-button text-xs font-semibold hover:opacity-90 active:scale-95 transition-all shadow-sm"
               >
                 <Plus className="w-4 h-4" />
                 <span>New Note</span>
@@ -448,7 +468,7 @@ export default function GridListPane() {
               <button
                 onClick={handleAutoOrganize}
                 disabled={isOrganizing}
-                className="flex items-center gap-1.5 px-3 py-2 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-button text-xs font-medium hover:bg-purple-500/20 transition-colors shadow-sm disabled:opacity-50"
+                className="flex items-center gap-1.5 px-3 py-2 bg-[var(--accent-soft)] text-[var(--accent-text)] border border-[var(--border)] rounded-button text-xs font-medium hover:bg-black/5 dark:hover:bg-white/10 transition-colors shadow-sm disabled:opacity-50"
                 title="Suggest Projects for these notes"
               >
                 {isOrganizing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
@@ -459,9 +479,9 @@ export default function GridListPane() {
         </div>
 
         {organizeSuggestion && (
-          <div className="mb-6 border border-purple-500/20 bg-purple-50/50 dark:bg-purple-900/10 rounded-card p-4">
+          <div className="mb-6 border border-[var(--border)] bg-card-default rounded-card p-4">
             <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2 text-purple-700 dark:text-purple-300 font-medium text-sm">
+              <div className="flex items-center gap-2 text-[var(--accent-text)] font-medium text-sm">
                 <Sparkles className="w-4 h-4" />
                 AI Auto-Organize Suggestion
               </div>
@@ -469,7 +489,7 @@ export default function GridListPane() {
                 <button onClick={() => setOrganizeSuggestion(null)} className="px-3 py-1.5 text-xs text-text-muted hover:bg-black/5 dark:hover:bg-white/10 rounded">
                   Discard
                 </button>
-                <button onClick={applyOrganization} className="flex items-center gap-1 px-3 py-1.5 text-xs bg-purple-600 text-white rounded hover:bg-purple-700">
+                <button onClick={applyOrganization} className="flex items-center gap-1 px-3 py-1.5 text-xs bg-[var(--btn-bg,var(--workspace-accent))] text-[var(--btn-fg,white)] rounded hover:opacity-90">
                   <Check className="w-3.5 h-3.5" />
                   Accept & Move Notes
                 </button>
@@ -500,9 +520,26 @@ export default function GridListPane() {
         archivedOrDeletedProjects.length === 0 &&
         archivedOrDeletedSubprojects.length === 0 ? (
           <div className="h-64 flex flex-col items-center justify-center text-text-muted border border-dashed border-black/10 dark:border-white/10 rounded-card p-8 text-center min-w-0">
-            <div className="w-12 h-12 rounded-2xl bg-[var(--workspace-accent-bg)] text-[var(--workspace-accent)] flex items-center justify-center mb-3">
-              <StickyNote className="w-6 h-6" />
-            </div>
+            {activeWorkspace === 'quicknotes' ? (
+              <div className="mb-3 relative w-16 h-16 flex items-center justify-center">
+                <svg className="w-14 h-14 drop-shadow-sm" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  {/* Tilted background note */}
+                  <rect x="14" y="16" width="36" height="36" rx="4" fill="var(--accent)" fillOpacity="0.18" transform="rotate(-6 32 34)" />
+                  {/* Foreground note paper */}
+                  <rect x="14" y="14" width="36" height="36" rx="4" fill="var(--paper)" stroke="var(--border)" strokeWidth="1.5" />
+                  {/* Sticky desk tape / pin */}
+                  <rect x="25" y="10" width="14" height="6" rx="1.5" fill="var(--accent)" fillOpacity="0.5" />
+                  {/* Note lines */}
+                  <line x1="20" y1="24" x2="44" y2="24" stroke="var(--text-muted)" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.5" />
+                  <line x1="20" y1="30" x2="40" y2="30" stroke="var(--text-muted)" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.5" />
+                  <line x1="20" y1="36" x2="34" y2="36" stroke="var(--text-muted)" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.5" />
+                </svg>
+              </div>
+            ) : (
+              <div className="w-12 h-12 rounded-2xl bg-[var(--workspace-accent-bg)] text-[var(--workspace-accent)] flex items-center justify-center mb-3">
+                <StickyNote className="w-6 h-6" />
+              </div>
+            )}
             <p className="text-sm font-medium text-text-primary">No items here yet</p>
             <p className="text-xs opacity-70 mt-1 max-w-xs">
               {activeWorkspace === 'quicknotes'
