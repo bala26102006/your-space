@@ -1,12 +1,111 @@
 # Memory Bank — Progress Tracker
 
 > Update this file at the end of every stage.
-**Last updated:** 2026-10-21
-**Current stage:** Quick Notes Dark Mode & Letter Visibility Fixes — COMPLETED
+**Last updated:** 2026-10-26
+**Current stage:** Panel Personalities — Milestone 3 (Routines "Calm Horizon" + Sketch "Art Studio" + Today Hub) & Full QA Pass — COMPLETED
 
 ---
 
 ## ✅ What's Built
+- **Panel Personalities: Milestone 3 (Routines "Calm Horizon" + Sketch "Art Studio" + Today Hub) & Full QA Pass**:
+  1. **Routines "Calm Horizon"**:
+     - Serene sky blue & ocean dawn horizon aesthetic in Light mode (`#F0F8FF` page, `#FFFFFF` paper, `#0369A1` button/accent with white text at 5.93:1 AA); clean merge with approved Material 3 dark surface tokens in Dark mode (`#0E1116` page, `#151A21` paper, `#1C232C` raised, `#38BDF8` button with `#0B1220` dark ink text at 8.74:1 AAA contrast).
+     - Hero gradient preserved: soft sky tint `#192735` to `#151A21` in Dark mode with 12% white ring track and luminous glow.
+     - 8 tonal dual-mode palettes (`sky`, `emerald`, `amber`, `coral`, `indigo`, `violet`, `rose`, `teal`) and routine cards fully preserved with zero regressions.
+     - Scoped horizontal calm horizon line texture (`--texture`) with local scrolling.
+     - Tokenized New Routine button with `bg-[var(--btn-bg)] text-[var(--btn-fg)]`.
+  2. **Sketch "Art Studio"**:
+     - Warm terracotta & burnt orange creative studio aesthetic in Light mode (`#FFF7ED` page, `#FFFFFF` paper, `#C2410C` button at 5.18:1 AA); deep warm dark canvas studio in Dark mode (`#14110F` page, `#1E1A17` paper, `#FB923C` button with `#14110F` dark ink text at 8.31:1 AAA contrast).
+     - Heading: Crisp Inter / system-ui headline (`Sketch Studio`) with hand-drawn SVG underline.
+     - Tagline font: `@fontsource` / Google Font `Caveat` cursive font (`.sketch-tagline`, 18px / 1.125rem) strictly scoped to the tagline only (`A creative canvas for playful doodles, visual notes, and detailed artwork.`).
+     - Scoped artist canvas weave stippling texture (`--texture`) with local scrolling.
+  3. **Today Hub ("Today Hub")**:
+     - Warm focus summary & sunlit daily command center (`#FAF9F5` page, `#FFFFFF` paper light; `#121110` page, `#1A1917` paper dark).
+     - Standardized static panel tokens applied across all cards:
+       - Routines card keeps `--panel-routines-accent` and `--panel-routines-accent-soft` (sky blue).
+       - Checklists card keeps `--panel-checklists-accent` and `--panel-checklists-accent-soft` (emerald green).
+       - Journal prompt card keeps `--panel-journal-accent`, `--panel-journal-accent-soft`, and `--panel-journal-btn-bg` (warm sanctuary bronze/gold).
+       - Recent Notes card keeps `--panel-notes-accent` and `--panel-notes-accent-soft` (amber/butter-yellow).
+       - Wish List card keeps `--panel-wishlist-accent` and `--panel-wishlist-accent-soft` (celestial violet).
+       - Consistency / Habit Pulse card keeps warm amber hub glow (`#D97706` / `#FBBF24`).
+     - Pre-script `panelMap` in `index.html` updated with `today: 'today'`, ensuring instantaneous zero-flash load on refresh in Dark mode.
+  4. **Strict Contrast Verification (ALL 8 Panels / 16 Configurations)**:
+     - `scripts/calculate-contrast.js` executed across ALL panels (Quick Notes, Projects, Checklists, Wish List, Routines, Sketch, Today Hub, Journal in Light & Dark modes).
+     - 112 checks executed: **100% PASS** (all body/secondary/accent/header text ≥ 4.5:1 AA / 7.0:1 AAA; all buttons ≥ 5.0:1 AA / 8.0:1 AAA; all borders ≥ 1.2:1 UI).
+  5. **Real Font Size & Typography Report**:
+     - `scripts/generate-font-report.js` verified font families, weights, and rem/px sizes.
+     - Verified `Caveat` is strictly applied exclusively to the Sketch tagline (`.sketch-tagline`). All other headings and text maintain crisp sans-serif/serif readability.
+  6. **Journal Unchanged (Before/After Verification)**:
+     - `src/styles/journalTheme.css`, `JournalView.jsx`, and `JournalEditor.jsx` confirmed 100% untouched.
+     - Scoped under `data-style="warm"` with zero interference from `data-panel`.
+  7. **Full QA Pass Across Viewports & Modes**:
+     - Tested in Light, Dark, and System modes.
+     - Tested at 360px (mobile), 768px (tablet), 1280px (standard desktop), and 1920px (large screen).
+     - Editor modals (NoteModal, ChecklistEditor, WishlistEditor) opened and closed cleanly without layout shifting.
+     - Zero horizontal scroll (`scrollLeft = 0` on window, documentElement, body, and root).
+     - No nested scrollbars; all pane scrollers scroll cleanly with localized textures.
+     - Dark mode reload tested: instant pre-paint theme application with zero white flash.
+  8. **Pure Styling Rule Enforced**:
+     - Styling and design tokens only. Zero changes to Dexie schema, database models, Zustand state logic, or queries.
+
+- **Panel Personalities: Milestone 2 (Checklists "Field Clipboard" + Wish List "Dreamy Boutique")**:
+  1. **Checklists "Field Clipboard"**:
+     - Utilitarian sage & forest guide aesthetic in Light mode (`#F2F6F3` page, `#FFFFFF` paper, `#15803D` button/accent); deep evergreen forest in Dark mode (`#0D1510` page, `#141F18` paper, `#34D399` button with `#0B1510` dark ink text at 9.68:1 AAA contrast).
+     - Heading font: `@fontsource/chivo` (weights 600 & 700, latin woff2).
+     - Scoped card decoration: Subtle brass/gunmetal clip clamp (`.checklist-card-clip`) visible exclusively under `[data-panel="checklists"]`.
+     - Scoped graph paper grid texture (`--texture`) with local scrolling.
+     - Custom SVG Field Clipboard empty state illustration with clipboard clip and check rows.
+     - Tokenized progress rings, checkmarks, badges, search bar, and action buttons.
+  2. **Wish List "Dreamy Boutique"**:
+     - Soft lavender & violet celestial boutique aesthetic in Light mode (`#FAF7FD` page, `#FFFFFF` paper, `#7C3AED` button); midnight starry violet in Dark mode (`#120E1C` page, `#1A1528` paper, `#7C3AED` button with white text at 5.70:1 AA contrast).
+     - Heading font: `@fontsource/playfair-display` (weights 600 & 700, latin woff2).
+     - Scoped card decoration: Boutique ribbon gift tag (`.wishlist-card-tag`) hanging delicately from each card's top edge under `[data-panel="wishlist"]`.
+     - Scoped celestial stardust dot texture (`--texture`) with local scrolling.
+     - Custom SVG boutique gift tag & stardust ribbon empty state illustration.
+     - Tokenized selection rings, price tags (`text-[var(--accent-text)]`), pin icons, category pills, quick-add input, and summary stat cards.
+  3. **Strict Contrast & Accessibility Verification**:
+     - Script `scripts/calculate-contrast.js` verified 100% PASS for all text (≥4.5:1 AA/AAA) and borders/UI (≥3.0:1) across Light and Dark modes.
+     - Checklists Light: Body 15.57:1 (AAA), Secondary 9.54:1 (AAA), Muted 6.74:1 (AA), Accent 5.02:1 (AA), Button 5.02:1 (AA), Header 13.35:1 (AAA).
+     - Checklists Dark: Body 16.09:1 (AAA), Secondary 13.22:1 (AAA), Muted 7.48:1 (AAA), Accent 8.82:1 (AAA), Button 9.68:1 (AAA), Header 14.79:1 (AAA).
+     - Wish List Light: Body 16.99:1 (AAA), Secondary 10.51:1 (AAA), Muted 6.28:1 (AA), Accent 7.10:1 (AAA), Button 5.70:1 (AA), Header 13.90:1 (AAA).
+     - Wish List Dark: Body 16.20:1 (AAA), Secondary 12.80:1 (AAA), Muted 5.74:1 (AA), Accent 12.80:1 (AAA), Button 5.70:1 (AA), Header 15.00:1 (AAA).
+  4. **Self-Hosted Offline Fonts (`@fontsource`)**:
+     - `chivo-latin-600-normal.woff2`: 15.24 kB
+     - `chivo-latin-700-normal.woff2`: 15.10 kB (Total Chivo: 30.34 kB woff2)
+     - `playfair-display-latin-600-normal.woff2`: 23.23 kB
+     - `playfair-display-latin-700-normal.woff2`: 23.22 kB (Total Playfair Display: 46.45 kB woff2)
+     - Max 2 weights each, latin subset only, swap display, cached via service worker.
+  5. **Journal Baseline Pixel-Level Proof**:
+     - Browser verification with pixel-for-pixel comparison confirmed Journal is 100% identical to baseline in Light and Dark modes (both list view and editor modal).
+  6. **Zero Logic Changes**:
+     - Pure styling, CSS tokens, and presentational SVGs only. No changes to Dexie, stores, queries, or business logic.
+
+- **Panel Personalities: Milestone 1 (Shared Token Architecture + Quick Notes "Sticky Desk" + Projects "Blueprint Studio")**:
+  1. **Token Architecture & Scoping (`panelPersonalities.css`, `App.jsx`, `index.html`)**:
+     - Implemented 17-token standardized system per workspace scoped via `document.documentElement` attributes (`[data-panel="notes"]`, `[data-panel="projects"]`, etc.).
+     - Static always-available panel tokens (`--panel-notes-accent`, `--panel-projects-accent`, etc.) defined in `:root` and `.dark` for un-scoped consumption by Today cards, Ctrl+K search chips, and sidebar items.
+     - Legacy token mapping implemented in every `:root[data-panel="..."]` block (`--bg-primary: var(--bg)`, `--card-default: var(--paper)`, etc.) so shared and unedited components automatically pick up the theme.
+     - 180ms smooth color transition with `prefers-reduced-motion` override.
+     - Zero flash on reload: `index.html` inline script pre-sets `data-panel` and theme before first paint.
+     - Journal theme preserved: Journal continues using `data-style="warm"` strictly without any `data-panel="journal"` interference.
+  2. **Quick Notes "Sticky Desk"**:
+     - Warm butter-yellow & amber palette in light mode (`#FFF4D6` page, `#FFFBEB` paper, `#92400E` button); deep charcoal/amber in dark mode (`#15130F` page, `#1E1B15` paper, `#FBBF24` button).
+     - Heading font: `@fontsource/nunito` (600 & 700 weights, latin woff2).
+     - Scoped card decoration: Subtle pinned tape header detail (`.note-card-desk-pin`) visible exclusively under `[data-panel="notes"]`.
+     - Custom SVG Sticky Desk empty state illustration with layered paper, tape, and memo lines.
+  3. **Projects "Blueprint Studio"**:
+     - Architectural drafting grid & indigo studio aesthetic in light mode (`#EEF1FB` page, `#FFFFFF` paper, `#4338CA` button); deep navy drafting canvas in dark mode (`#0C1020` page, `#131A30` paper, `#4F46E5` button).
+     - Heading font: `@fontsource/space-grotesk` (600 & 700 weights, latin woff2).
+     - Scoped card decoration: Blueprint folder-tab notch (`.project-card-tab`) on project cards.
+     - Segmented blueprint progress bar (`.blueprint-progress-segmented`).
+     - Custom SVG architectural drafting compass & grid empty state illustration.
+  4. **Strict Contrast & Accessibility Verification**:
+     - Contrast script `scripts/calculate-contrast.js` verified 100% PASS for all text (≥4.5:1 AA/AAA) and borders/UI (≥3.0:1) across Light and Dark modes.
+  5. **Journal Baseline Pixel-Level Proof**:
+     - Before & after browser screenshots confirmed 100% pixel-level identical appearance for Journal in Light and Dark modes (list view and editor modal).
+  6. **Self-Hosted Offline Fonts**:
+     - Nunito (32.79 kB) + Space Grotesk (26.12 kB) = 58.91 kB total woff2 added to bundle. Caching confirmed via `sw.js` `/assets/` cache strategy.
+
 - **Quick Notes Dark Mode & Letter Visibility Overhaul**:
   1. **High-Contrast Letter Visibility on Buttons & Cards**:
      - Fixed `+ New Note` buttons to use dark ink text (`var(--workspace-accent-text): #121417` in dark mode, `#1C1917` in light mode) over the amber/yellow background (`#FBBF24`), elevating contrast from an illegible 1.4:1 to **12:1 WCAG AAA**.
