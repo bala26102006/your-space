@@ -244,3 +244,100 @@ export function subscribeToMidnightRollover(onRollover) {
     if (timerId) clearTimeout(timerId);
   };
 }
+
+/**
+ * Returns array of 7 day objects for the week containing referenceDateStr.
+ * Strictly respects user week start setting (Monday or Sunday).
+ */
+export function getWeekDays(referenceDateStr = getTodayStr(), weekStart = getWeekStartSetting()) {
+  const ref = parseLocalDate(referenceDateStr);
+  const currentDay = ref.getDay(); // 0 = Sun, 1 = Mon ... 6 = Sat
+  const todayStr = getTodayStr();
+
+  let distanceToStart = 0;
+  if (weekStart === 'monday') {
+    distanceToStart = currentDay === 0 ? 6 : currentDay - 1;
+  } else {
+    distanceToStart = currentDay;
+  }
+
+  const startDate = new Date(ref);
+  startDate.setDate(ref.getDate() - distanceToStart);
+
+  const days = [];
+  const weekdayNames = weekStart === 'sunday' 
+    ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+    : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(startDate);
+    d.setDate(startDate.getDate() + i);
+    const dateStr = formatLocalDate(d);
+
+    days.push({
+      dateStr,
+      year: d.getFullYear(),
+      month: d.getMonth() + 1,
+      dayNumber: d.getDate(),
+      shortLabel: weekdayNames[i],
+      isToday: dateStr === todayStr,
+      isPast: dateStr < todayStr,
+      isFuture: dateStr > todayStr,
+      dayOfWeek: d.getDay(),
+      isoDay: d.getDay() === 0 ? 7 : d.getDay(),
+    });
+  }
+
+  return {
+    startDateStr: days[0].dateStr,
+    endDateStr: days[6].dateStr,
+    days
+  };
+}
+
+/**
+ * Builds the full 12-month matrix for the "Year in pixels" view.
+ */
+export function getYearMatrix(year) {
+  const todayStr = getTodayStr();
+  const months = [];
+
+  const monthNames = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+  ];
+
+  for (let m = 1; m <= 12; m++) {
+    const daysInMonth = new Date(year, m, 0).getDate();
+    const days = [];
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateObj = new Date(year, m - 1, d);
+      const dateStr = formatLocalDate(dateObj);
+
+      days.push({
+        dateStr,
+        dayNumber: d,
+        month: m,
+        year,
+        isToday: dateStr === todayStr,
+        isPast: dateStr < todayStr,
+        isFuture: dateStr > todayStr,
+        dayOfWeek: dateObj.getDay(),
+      });
+    }
+
+    months.push({
+      monthNumber: m,
+      monthName: monthNames[m - 1],
+      daysInMonth,
+      days
+    });
+  }
+
+  return {
+    year,
+    months
+  };
+}
+

@@ -2,11 +2,56 @@
 
 > Update this file at the end of every stage.
 **Last updated:** 2026-10-26
-**Current stage:** Calendar ("Life Lens") — Milestone 1 (Foundation + Month View) — COMPLETED
+**Current stage:** Calendar ("Life Lens") — Milestone 2 (More Views + Events CRUD + Countdowns + Quick Add + Rescheduling) — COMPLETED
 
 ---
 
 ## ✅ What's Built
+- **Calendar ("Life Lens"): Milestone 2 (More Views + Events CRUD + Countdowns + Quick Add + Rescheduling)**:
+  1. **Segmented View Switcher (`src/components/calendar/CalendarView.jsx`)**:
+     - View tabs: `[ Month | Week | Agenda | Year ]` persisted in `localStorage.getItem('calendar_active_view') || 'month'`.
+     - Harmonious styling with active teal pill, accessible `role="tablist"` and keyboard-friendly switching.
+     - Dynamic header navigation and dates formatting adapted for all 4 views (Month year, Week range, Agenda year, and Year number).
+  2. **Week View (`src/components/calendar/WeekView.jsx`)**:
+     - 7 columns of stacked items (anti-clutter, content-driven, not artificial time-slot grid).
+     - Column header with day number, weekday label, and quick `+` add button.
+     - Pointer drag-and-drop to reschedule items between days with live drag-over drop target indicator.
+     - Keyboard & touch accessible "Move to date..." button on every draggable item.
+  3. **Agenda View (`src/components/calendar/AgendaView.jsx`)**:
+     - Linear grouped stream: Overdue section (prominent soft red alert card), Today section, and Next 14 Days grouped by day.
+     - Ideal for narrow mobile viewports and rapid daily triage.
+     - Move to date buttons and direct one-click navigation to native panels.
+  4. **Year in Pixels View (`src/components/calendar/YearView.jsx`)**:
+     - 12 mini months grid (Jan to Dec) with clickable pixel cells.
+     - 3-mode switcher: `Activity Density` (teal heat map), `Journal Mood` (mood palette colors), and `Routine Completion` (emerald 100%, amber partial, soft red missed).
+     - Click any pixel to open that day's Life Lens detail panel.
+  5. **Lightweight Calendar Events CRUD (`src/components/calendar/EventModal.jsx`)**:
+     - Light dialog to create and edit events: title, date, optional end date, all-day toggle, start time, color picker (7 curated palette hues), notes, and countdown toggle.
+     - Soft-delete integration with confirm store (`openSoftDelete`).
+     - Stored cleanly in `db.notes` with `workspace_id = 'calendar'` and `note_type = 'event'` with complete leak isolation from Quick Notes, Archive, Trash, and Today recent notes.
+  6. **Upcoming Countdowns Strip (`src/components/calendar/CountdownsStrip.jsx`)**:
+     - Horizontal highlight strip displaying up to 3 upcoming countdown events (Exams, Birthdays, Trips).
+     - Relative badge labels ("Today!", "in 12 days") and pulsating indicator on today's events.
+     - Click countdown pill to open EventModal in edit mode.
+  7. **Quick Add Dialog (`src/components/calendar/QuickAddModal.jsx`)**:
+     - Rapid creation dialog for any selected date:
+       - Event: creates calendar event with default color.
+       - Task: adds a new checklist task with due date into a selected user checklist.
+       - Wish: adds a wish with target date and category into the Wish List.
+     - Accessible directly via `+ New` button in calendar header and `+ Add` button in Day Detail Panel.
+  8. **Accessible Rescheduling & Move Date Modal (`src/components/calendar/MoveDateModal.jsx`)**:
+     - Non-drag accessible reschedule dialog with quick jump chips ("Today", "Tomorrow", "In 3 days", "Next Monday") + date picker.
+     - Universal `rescheduleCalendarItem(item, newDateStr)` helper updating only `due_date` or `target_date` and `updated_at`.
+     - Non-draggable safety: Routine entries and journal entries are strictly non-draggable and cannot be rescheduled.
+     - Immediate Undo toast with 6-second countdown timer allowing instant reversal.
+  9. **Day Detail Panel Enhancements (`src/components/calendar/DayDetailPanel.jsx`)**:
+     - `+ Add` button in header to quickly add events/tasks/wishes for the selected date.
+     - "Move to date..." button on draggable items.
+     - Click on event opens `EventModal` in edit mode.
+     - Sticky positioning on wide viewports with responsive max-height and local scrolling.
+  10. **Zero Schema Changes & 100% Offline**:
+     - Pure additive queries on Dexie tables. Zero schema modifications.
+     - Zero new external packages.
 - **Calendar ("Life Lens"): Milestone 1 (Foundation + Month View — Read-Only)**:
   1. **Strict Local Date Engine (`src/lib/calendar/calendarUtils.js`)**:
      - Strict local-date arithmetic (no UTC offsets, zero `toISOString` day key shifts, DST-safe).

@@ -10,6 +10,8 @@ import { db } from '../db';
 import { getTodayStr, parseLocalDate, formatLocalDate } from './calendarUtils';
 import { isScheduledOn, isEntryComplete, resolveTonalPalette } from '../routines/routineUtils';
 import { getMoodConfig } from '../journal/journalUtils';
+import { generateUUID } from '../uuid';
+import { useToastStore } from '../../store/toastStore';
 
 // Layer definitions matching each panel's static tokens and icons
 export const CALENDAR_LAYERS = {
@@ -495,3 +497,212 @@ class CalendarCache {
 }
 
 export const calendarCache = new CalendarCache();
+
+/**
+ * Reschedules a calendar item (checklist task, wish, or event) to a new local date string.
+ * Strictly updates only date fields and updated_at, and shows an Undo toast.
+ * Routine entries and journal entries are NOT reschedulable.
+ */
+export async function rescheduleCalendarItem(item, newDateStr) {
+  if (!item || !newDateStr) return false;
+  if (item.source === 'routines' || item.source === 'journal' || item.source === 'sketch' || item.source === 'quicknotes') {
+    return false; // Not draggable or reschedulable per requirements
+  }
+
+  const oldDate = item.date;
+  if (oldDate === newDateStr) return true;
+
+  const now = new Date().toISOString();
+
+  try {
+    if (item.source === 'checklists') {
+      if (item.type === 'task') {
+        await db.checklist_items.update(item.id, {
+          due_date: newDateStr,
+        });
+      } else if (item.type === 'list_due') {
+        const note = await db.notes.get(item.id);
+        if (note) {
+          const content = { ...(note.content || {}), dueDate: newDateStr };
+          await db.notes.update(item.id, { content, updated_at: now });
+        }
+      }
+    } else if (item.source === 'wishlist') {
+      const note = await db.notes.get(item.id);
+      if (note) {
+        const content = typeof note.content === 'object' && note.content !== null ? { ...note.content, targetDate: newDateStr } : { targetDate: newDateStr };
+        await db.notes.update(item.id, {
+          target_date: newDateStr,
+          content,
+          updated_at: now,
+        });
+      }
+    } else if (item.source === 'events') {
+      const note = await db.notes.get(item.id);
+      if (note) {
+        const content = { ...(note.content || {}), date: newDateStr };
+        await db.notes.update(item.id, {
+          content,
+          updated_at: now,
+        });
+      }
+    }
+
+    // Trigger reactive clear of calendar cache
+    calendarCache.clear();
+
+    // Undo Toast
+    useToastStore.getState().showToast({
+      message: `Rescheduled "${item.title}" to ${newDateStr}`,
+      action: {
+        label: 'Undo',
+        onClick: async () => {
+          await rescheduleCalendarItem(item, oldDate);
+        }
+      },
+      duration: 6000,
+    });
+
+    return true;
+  } catch (err) {
+    console.error('Failed to reschedule calendar item:', err);
+    return false;
+  }
+}
+
+/**
+ * Creates a lightweight calendar event in db.notes.
+ */
+export async function createCalendarEvent({ title, date, endDate = null, isAllDay = true, startTime = '', color = '#0F766E', note = '', showCountdown = true }) {
+  const newId = generateUUID();
+  const now = new Date().toISOString();
+
+  await db.notes.add({
+    id: newId,
+    user_id: 'local_user',
+    workspace_id: 'calendar',
+    note_type: 'event',
+    title: title.trim() || 'Untitled Event',
+    content: {
+      date,
+      endDate: endDate || null,
+      isAllDay: Boolean(isAllDay),
+      startTime: startTime || '',
+      color: color || '#0F766E',
+      note: note || '',
+      showCountdown: Boolean(showCountdown),
+    },
+    color: 'default',
+    is_pinned: false,
+    is_archived: false,
+    is_deleted: false,
+    deleted_at: null,
+    sort_order: Date.now(),
+    created_at: now,
+    updated_at: now,
+  });
+
+  calendarCache.clear();
+  return newId;
+}
+
+/**
+ * Updates an existing calendar event.
+ */
+export async function updateCalendarEvent(id, { title, date, endDate = null, isAllDay = true, startTime = '', color = '#0F766E', note = '', showCountdown = true }) {
+  const now = new Date().toISOString();
+  const existing = await db.notes.get(id);
+  if (!existing) return;
+
+  await db.notes.update(id, {
+    title: title.trim() || 'Untitled Event',
+    content: {
+      ...(existing.content || {}),
+      date,
+      endDate: endDate || null,
+      isAllDay: Boolean(isAllDay),
+      startTime: startTime || '',
+      color: color || existing.content?.color || '#0F766E',
+      note: note !== undefined ? note : existing.content?.note || '',
+      showCountdown: showCountdown !== undefined ? Boolean(showCountdown) : true,
+    },
+    updated_at: now,
+  });
+
+  calendarCache.clear();
+}
+
+/**
+ * Fetches up to limit upcoming countdown events.
+ */
+export async function getUpcomingCountdowns(limit = 3) {
+  const todayStr = getTodayStr();
+  const notes = await db.notes
+    .where('workspace_id')
+    .equals('calendar')
+    .filter(n => !n.is_archived && !n.is_deleted && n.note_type === 'event')
+    .toArray()
+    .catch(() => []);
+
+  const upcoming = [];
+  notes.forEach(n => {
+    const d = n.content?.date;
+    if (d && d >= todayStr && n.content?.showCountdown !== false) {
+      upcoming.push({
+        id: n.id,
+        title: n.title,
+        date: d,
+        isToday: d === todayStr,
+        color: n.content?.color || '#0F766E',
+        raw: n,
+      });
+    }
+  });
+
+  return upcoming
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .slice(0, limit);
+}
+
+/**
+ * Returns summary data for the Year in pixels view for a given year.
+ */
+export async function getYearInPixelsData(year) {
+  const startStr = `${year}-01-01`;
+  const endStr = `${year}-12-31`;
+  const items = await getCalendarItemsForRange(startStr, endStr);
+
+  const dataByDate = {};
+  items.forEach(item => {
+    if (!dataByDate[item.date]) {
+      dataByDate[item.date] = {
+        items: [],
+        totalCount: 0,
+        mood: null,
+        moodEmoji: null,
+        moodColor: null,
+        routineTotal: 0,
+        routineDone: 0,
+      };
+    }
+    const d = dataByDate[item.date];
+    d.items.push(item);
+    d.totalCount++;
+
+    if (item.source === 'journal' && !d.mood) {
+      d.mood = item.subtitle;
+      d.moodColor = item.colorToken;
+      d.moodEmoji = item.moodEmoji;
+    }
+
+    if (item.source === 'routines') {
+      d.routineTotal++;
+      if (item.status === 'done') {
+        d.routineDone++;
+      }
+    }
+  });
+
+  return dataByDate;
+}
+

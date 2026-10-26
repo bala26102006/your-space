@@ -14,7 +14,9 @@ import {
   Palette,
   StickyNote,
   Calendar as CalendarIcon,
-  Smile
+  Smile,
+  Plus,
+  MoveRight
 } from 'lucide-react';
 import { 
   formatFullDayLabel, 
@@ -45,6 +47,9 @@ export default function DayDetailPanel({
   items = [],
   onClose,
   layerFilter = {},
+  onQuickAdd,
+  onEditEvent,
+  onMoveItem,
 }) {
   const { setActiveWorkspace, setSelectedNoteId, setSelectedProjectId, setSelectedSubprojectId } = useUIStore();
 
@@ -85,9 +90,17 @@ export default function DayDetailPanel({
     });
   };
 
+  const handleItemClick = (item) => {
+    if (item.source === 'events' && onEditEvent) {
+      onEditEvent(item.payload?.raw || item);
+      return;
+    }
+    handleOpenItem(item);
+  };
+
   return (
     <aside 
-      className="flex flex-col bg-card-default border border-[var(--border)] rounded-2xl shadow-card overflow-hidden w-full lg:w-80 xl:w-96 shrink-0 transition-all duration-200"
+      className="flex flex-col bg-card-default border border-[var(--border)] rounded-2xl shadow-card overflow-hidden w-full lg:w-80 xl:w-96 shrink-0 lg:sticky lg:top-4 lg:self-start lg:max-h-[calc(100vh-120px)] transition-all duration-200"
       aria-label={`Details for ${fullDateLabel}`}
     >
       {/* Panel Top Header */}
@@ -113,15 +126,29 @@ export default function DayDetailPanel({
           </h2>
         </div>
 
-        {/* Close Button */}
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Close day details"
-          className="p-2 rounded-xl text-text-muted hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors shrink-0 min-w-[40px] min-h-[40px] flex items-center justify-center active:scale-95"
-        >
-          <X className="w-4 h-4" />
-        </button>
+        {/* Actions: Add Button & Close Button */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          {onQuickAdd && (
+            <button
+              type="button"
+              onClick={() => onQuickAdd(selectedDate)}
+              aria-label={`Add item to ${fullDateLabel}`}
+              className="p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl border border-[var(--border)] bg-[var(--paper)] text-text-primary hover:border-[var(--accent)] hover:text-[var(--accent)] transition-all flex items-center gap-1 text-xs font-semibold min-h-[38px] active:scale-95 shadow-2xs"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Add</span>
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close day details"
+            className="p-2 rounded-xl text-text-muted hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors shrink-0 min-w-[38px] min-h-[38px] flex items-center justify-center active:scale-95"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {/* Panel Body: Items list or Empty state */}
@@ -171,18 +198,19 @@ export default function DayDetailPanel({
                     const isDone = item.status === 'done';
                     const isOverdue = item.status === 'overdue';
                     const isMissed = item.status === 'missed';
+                    const isDraggable = item.source === 'checklists' || item.source === 'wishlist' || item.source === 'events';
 
                     return (
                       <div
                         key={item.key}
-                        onClick={() => handleOpenItem(item)}
+                        onClick={() => handleItemClick(item)}
                         className="group flex items-center justify-between p-2.5 rounded-xl border border-black/5 dark:border-white/5 hover:border-[var(--accent)]/30 hover:bg-black/[0.02] dark:hover:bg-white/[0.04] transition-all cursor-pointer min-h-[44px]"
                         role="button"
                         tabIndex={0}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' || e.key === ' ') {
                             e.preventDefault();
-                            handleOpenItem(item);
+                            handleItemClick(item);
                           }
                         }}
                       >
@@ -215,8 +243,23 @@ export default function DayDetailPanel({
                           </div>
                         </div>
 
-                        {/* Open Action Arrow */}
-                        <ChevronRight className="w-3.5 h-3.5 text-text-muted opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity shrink-0 ml-1" />
+                        {/* Actions: Move to Date & Open Arrow */}
+                        <div className="flex items-center gap-1 shrink-0 ml-1">
+                          {isDraggable && onMoveItem && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onMoveItem(item);
+                              }}
+                              title="Reschedule to another date"
+                              className="p-1 rounded-lg text-text-muted hover:text-[var(--accent)] hover:bg-black/5 dark:hover:bg-white/10 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity"
+                            >
+                              <MoveRight className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                          <ChevronRight className="w-3.5 h-3.5 text-text-muted opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity" />
+                        </div>
                       </div>
                     );
                   })}

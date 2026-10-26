@@ -128,7 +128,7 @@ export default function MonthGrid({
       </div>
 
       {/* 6x7 Day Cells Grid */}
-      <div className="flex-1 min-h-0 grid grid-cols-7 auto-rows-fr divide-x divide-y divide-[var(--border)]">
+      <div className="flex-1 grid grid-cols-7 auto-rows-fr divide-x divide-y divide-[var(--border)]">
         {cells.map((cell, idx) => {
           const visibleItems = getVisibleItemsForDate(cell.dateStr);
           const hasItems = visibleItems.length > 0;
