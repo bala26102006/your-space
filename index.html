@@ -25,6 +25,24 @@
           } else {
             document.documentElement.classList.remove('dark');
           }
+
+          var lastWs = localStorage.getItem('activeWorkspace') || 'quicknotes';
+          var panelMap = {
+            quicknotes: 'notes',
+            projects: 'projects',
+            checklists: 'checklists',
+            wishlist: 'wishlist',
+            routines: 'routines',
+            sketch: 'sketch',
+            today: 'today'
+          };
+          var panel = panelMap[lastWs];
+          if (panel) {
+            document.documentElement.setAttribute('data-panel', panel);
+          }
+          if (lastWs === 'journal') {
+            document.documentElement.setAttribute('data-style', 'warm');
+          }
         } catch (e) {}
       })();
     </script>

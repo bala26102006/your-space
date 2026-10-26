@@ -1,0 +1,951 @@
+/* ===================================================================
+   PANEL PERSONALITIES DESIGN TOKENS
+   Themeable Design System for Your Space Workspaces.
+   Applied via [data-panel="..."] on document.documentElement.
+   Compatible with [data-style="warm"] (Journal reference is untouched).
+   All token pairs meet WCAG 2.1 AA (text >= 4.5:1, UI >= 3.0:1).
+   =================================================================== */
+
+/* -------------------------------------------------------------
+   1. STATIC ALWAYS-AVAILABLE PANEL TOKENS (:root and .dark)
+   Read by Today cards, Ctrl+K search chips, and sidebar items.
+   Does not depend on the active workspace.
+   ------------------------------------------------------------- */
+:root {
+  --panel-notes-accent: #B45309;
+  --panel-notes-accent-soft: rgba(180, 83, 9, 0.12);
+  --panel-notes-btn-bg: #92400E;
+  --panel-notes-btn-fg: #FFFFFF;
+
+  --panel-projects-accent: #4338CA;
+  --panel-projects-accent-soft: rgba(67, 56, 202, 0.12);
+  --panel-projects-btn-bg: #4338CA;
+  --panel-projects-btn-fg: #FFFFFF;
+
+  --panel-checklists-accent: #15803D;
+  --panel-checklists-accent-soft: rgba(21, 128, 61, 0.12);
+  --panel-checklists-btn-bg: #15803D;
+  --panel-checklists-btn-fg: #FFFFFF;
+
+  --panel-wishlist-accent: #7C3AED;
+  --panel-wishlist-accent-soft: rgba(124, 58, 237, 0.12);
+  --panel-wishlist-btn-bg: #7C3AED;
+  --panel-wishlist-btn-fg: #FFFFFF;
+
+  --panel-routines-accent: #0284C7;
+  --panel-routines-accent-soft: rgba(2, 132, 199, 0.12);
+  --panel-routines-btn-bg: #0369A1;
+  --panel-routines-btn-fg: #FFFFFF;
+
+  --panel-sketch-accent: #C2410C;
+  --panel-sketch-accent-soft: rgba(194, 65, 12, 0.12);
+  --panel-sketch-btn-bg: #C2410C;
+  --panel-sketch-btn-fg: #FFFFFF;
+
+  --panel-journal-accent: #8A5A1B;
+  --panel-journal-accent-soft: rgba(184, 137, 68, 0.16);
+  --panel-journal-btn-bg: #43332A;
+  --panel-journal-btn-fg: #FDF9EE;
+
+  /* Default theme transition */
+  --panel-transition-duration: 180ms;
+}
+
+.dark {
+  --panel-notes-accent: #FBBF24;
+  --panel-notes-accent-soft: rgba(251, 191, 36, 0.15);
+  --panel-notes-btn-bg: #FBBF24;
+  --panel-notes-btn-fg: #15130F;
+
+  --panel-projects-accent: #A5B4FC;
+  --panel-projects-accent-soft: rgba(165, 180, 252, 0.15);
+  --panel-projects-btn-bg: #4F46E5;
+  --panel-projects-btn-fg: #FFFFFF;
+
+  --panel-checklists-accent: #34D399;
+  --panel-checklists-accent-soft: rgba(52, 211, 153, 0.15);
+  --panel-checklists-btn-bg: #34D399;
+  --panel-checklists-btn-fg: #0B1510;
+
+  --panel-wishlist-accent: #C4B5FD;
+  --panel-wishlist-accent-soft: rgba(196, 181, 253, 0.15);
+  --panel-wishlist-btn-bg: #7C3AED;
+  --panel-wishlist-btn-fg: #FFFFFF;
+
+  --panel-routines-accent: #38BDF8;
+  --panel-routines-accent-soft: rgba(56, 189, 248, 0.15);
+  --panel-routines-btn-bg: #38BDF8;
+  --panel-routines-btn-fg: #0B1220;
+
+  --panel-sketch-accent: #FB923C;
+  --panel-sketch-accent-soft: rgba(251, 146, 60, 0.15);
+  --panel-sketch-btn-bg: #FB923C;
+  --panel-sketch-btn-fg: #14110F;
+
+  --panel-journal-accent: #E8B872;
+  --panel-journal-accent-soft: rgba(222, 175, 104, 0.18);
+  --panel-journal-btn-bg: #DEAF68;
+  --panel-journal-btn-fg: #19110B;
+}
+
+/* -------------------------------------------------------------
+   2. QUICK NOTES — "Sticky Desk"
+   Warm amber & butter-yellow desk aesthetic.
+   ------------------------------------------------------------- */
+:root[data-panel="notes"]:not(.dark) {
+  /* 17 Standard Personality Tokens */
+  --bg: #FFF4D6;
+  --paper: #FFFBEB;
+  --raised: #FDEBB9;
+  --border: #E8D2A4;
+  --border-soft: rgba(180, 83, 9, 0.08);
+  --text: #2C2013;              /* 15.31:1 AAA */
+  --text-2: #5F4B32;            /* 7.98:1 AAA */
+  --text-muted: #786246;        /* 5.57:1 AA */
+  --header-band: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+  --header-text: #351602;        /* 7.72:1 AAA */
+  --header-muted: #78350F;
+  --accent: #B45309;
+  --accent-soft: rgba(180, 83, 9, 0.12);
+  --accent-text: #8A3C04;       /* 7.42:1 AAA */
+  --btn-bg: #92400E;            /* 7.09:1 AAA */
+  --btn-fg: #FFFFFF;
+  --btn-hover: #78350F;
+  --radius-card: 14px;
+  --shadow-card: 0 4px 12px -2px rgba(146, 64, 14, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
+  --shadow-card-hover: 0 8px 20px -3px rgba(146, 64, 14, 0.14), 0 3px 6px rgba(0, 0, 0, 0.06);
+  --texture: radial-gradient(rgba(180, 83, 9, 0.035) 1px, transparent 1px);
+  --font-heading: 'Nunito', system-ui, -apple-system, sans-serif;
+
+  /* Legacy Token Mapping (Components keep picking up theme without edits) */
+  --bg-primary: var(--bg);
+  --bg-sidebar: #FAF1DC;
+  --bg-raised: var(--raised);
+  --card-default: var(--paper);
+  --surface-card: var(--paper);
+  --text-primary: var(--text);
+  --text-secondary: var(--text-2);
+  --border-color: var(--border);
+  --divider-color: var(--border-soft);
+  --workspace-accent: var(--accent);
+  --workspace-accent-bg: var(--accent-soft);
+  --workspace-accent-text: var(--btn-fg);
+  --selection-color: rgba(245, 158, 11, 0.25);
+
+  /* Note card pastel tones under Sticky Desk Light */
+  --card-yellow: #FEF9C3;
+  --card-red: #FFE4E6;
+  --card-blue: #E0F2FE;
+  --card-green: #DCFCE7;
+  --card-purple: #F3E8FF;
+}
+
+:root[data-panel="notes"].dark {
+  /* 17 Standard Personality Tokens */
+  --bg: #15130F;
+  --paper: #1E1B15;
+  --raised: #2A251D;
+  --border: #453E32;
+  --border-soft: rgba(251, 191, 36, 0.08);
+  --text: #F5EEDC;              /* 14.84:1 AAA */
+  --text-2: #D5C8B2;            /* 10.41:1 AAA */
+  --text-muted: #9E927E;        /* 5.62:1 AA */
+  --header-band: linear-gradient(135deg, #242019 0%, #1A1712 100%);
+  --header-text: #F5EEDC;
+  --header-muted: #D5C8B2;
+  --accent: #FBBF24;
+  --accent-soft: rgba(251, 191, 36, 0.15);
+  --accent-text: #FBBF24;       /* 10.29:1 AAA */
+  --btn-bg: #FBBF24;            /* 11.11:1 AAA */
+  --btn-fg: #15130F;
+  --btn-hover: #F59E0B;
+  --radius-card: 14px;
+  --shadow-card: 0 4px 14px -2px rgba(0, 0, 0, 0.5), inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+  --shadow-card-hover: 0 8px 24px -2px rgba(0, 0, 0, 0.65), inset 0 1px 0 0 rgba(251, 191, 36, 0.15);
+  --texture: radial-gradient(rgba(251, 191, 36, 0.035) 1px, transparent 1px);
+  --font-heading: 'Nunito', system-ui, -apple-system, sans-serif;
+
+  /* Legacy Token Mapping */
+  --bg-primary: var(--bg);
+  --bg-sidebar: #191712;
+  --bg-raised: var(--raised);
+  --card-default: var(--paper);
+  --surface-card: var(--paper);
+  --text-primary: var(--text);
+  --text-secondary: var(--text-2);
+  --border-color: var(--border);
+  --divider-color: var(--border-soft);
+  --workspace-accent: var(--accent);
+  --workspace-accent-bg: var(--accent-soft);
+  --workspace-accent-text: var(--btn-fg);
+  --selection-color: rgba(251, 191, 36, 0.30);
+
+  /* Note card deep pastel tones under Sticky Desk Dark */
+  --card-yellow: #2E2718;
+  --card-red: #2E1B1B;
+  --card-blue: #162636;
+  --card-green: #182A1E;
+  --card-purple: #271B33;
+}
+
+/* -------------------------------------------------------------
+   3. PROJECTS — "Blueprint Studio"
+   Architectural pale grid & indigo studio aesthetic.
+   ------------------------------------------------------------- */
+:root[data-panel="projects"]:not(.dark) {
+  /* 17 Standard Personality Tokens */
+  --bg: #EEF1FB;
+  --paper: #FFFFFF;
+  --raised: #E2E6F5;
+  --border: #C7D2FE;
+  --border-soft: rgba(67, 56, 202, 0.08);
+  --text: #1E1B4B;              /* 15.99:1 AAA */
+  --text-2: #3730A3;            /* 9.93:1 AAA */
+  --text-muted: #58538E;        /* 6.90:1 AA */
+  --header-band: linear-gradient(135deg, #4338CA 0%, #6366F1 100%);
+  --header-text: #FFFFFF;        /* 7.90:1 AAA */
+  --header-muted: #C7D2FE;
+  --accent: #4338CA;
+  --accent-soft: rgba(67, 56, 202, 0.12);
+  --accent-text: #3730A3;       /* 9.93:1 AAA */
+  --btn-bg: #4338CA;            /* 7.90:1 AAA */
+  --btn-fg: #FFFFFF;
+  --btn-hover: #3730A3;
+  --radius-card: 12px;
+  --shadow-card: 0 2px 8px -1px rgba(67, 56, 202, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
+  --shadow-card-hover: 0 6px 18px -2px rgba(67, 56, 202, 0.16), 0 2px 6px rgba(0, 0, 0, 0.05);
+  --texture: linear-gradient(to right, rgba(99, 102, 241, 0.035) 1px, transparent 1px),
+             linear-gradient(to bottom, rgba(99, 102, 241, 0.035) 1px, transparent 1px);
+  --font-heading: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+
+  /* Legacy Token Mapping */
+  --bg-primary: var(--bg);
+  --bg-sidebar: #E5E9F8;
+  --bg-raised: var(--raised);
+  --card-default: var(--paper);
+  --surface-card: var(--paper);
+  --text-primary: var(--text);
+  --text-secondary: var(--text-2);
+  --border-color: var(--border);
+  --divider-color: var(--border-soft);
+  --workspace-accent: var(--accent);
+  --workspace-accent-bg: var(--accent-soft);
+  --workspace-accent-text: var(--btn-fg);
+  --selection-color: rgba(99, 102, 241, 0.25);
+}
+
+:root[data-panel="projects"].dark {
+  /* 17 Standard Personality Tokens */
+  --bg: #0C1020;
+  --paper: #131A30;
+  --raised: #1C2442;
+  --border: #28345C;
+  --border-soft: rgba(129, 140, 248, 0.08);
+  --text: #EEF2FF;              /* 15.42:1 AAA */
+  --text-2: #C7D2FE;            /* 11.56:1 AAA */
+  --text-muted: #818CF8;        /* 5.78:1 AA */
+  --header-band: linear-gradient(135deg, #18203E 0%, #10162B 100%);
+  --header-text: #EEF2FF;
+  --header-muted: #9CA3AF;
+  --accent: #A5B4FC;
+  --accent-soft: rgba(165, 180, 252, 0.15);
+  --accent-text: #C7D2FE;       /* 11.56:1 AAA */
+  --btn-bg: #4F46E5;            /* 6.29:1 AA */
+  --btn-fg: #FFFFFF;
+  --btn-hover: #4338CA;
+  --radius-card: 12px;
+  --shadow-card: 0 4px 14px -2px rgba(0, 0, 0, 0.6), inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
+  --shadow-card-hover: 0 8px 24px -2px rgba(0, 0, 0, 0.75), inset 0 1px 0 0 rgba(165, 180, 252, 0.18);
+  --texture: linear-gradient(to right, rgba(129, 140, 248, 0.05) 1px, transparent 1px),
+             linear-gradient(to bottom, rgba(129, 140, 248, 0.05) 1px, transparent 1px);
+  --font-heading: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+
+  /* Legacy Token Mapping */
+  --bg-primary: var(--bg);
+  --bg-sidebar: #0F1428;
+  --bg-raised: var(--raised);
+  --card-default: var(--paper);
+  --surface-card: var(--paper);
+  --text-primary: var(--text);
+  --text-secondary: var(--text-2);
+  --border-color: var(--border);
+  --divider-color: var(--border-soft);
+  --workspace-accent: var(--accent);
+  --workspace-accent-bg: var(--accent-soft);
+  --workspace-accent-text: var(--btn-fg);
+  --selection-color: rgba(129, 140, 248, 0.30);
+}
+
+/* -------------------------------------------------------------
+   4. PRESENTATIONAL TEXTURES (<= 4% opacity, local/scroll attachment)
+   No background-attachment: fixed on scroll containers.
+   ------------------------------------------------------------- */
+[data-panel="notes"] .pane-scroller,
+[data-panel="notes"] .panel-texture-overlay {
+  background-image: var(--texture);
+  background-size: 20px 20px;
+  background-attachment: local;
+}
+
+[data-panel="projects"] .pane-scroller,
+[data-panel="projects"] .panel-texture-overlay {
+  background-image: var(--texture);
+  background-size: 24px 24px;
+  background-attachment: local;
+}
+
+/* -------------------------------------------------------------
+   5. DECORATIONS: SCOPED TO SPECIFIC PANELS ONLY
+   Never bleed into other workspaces.
+   ------------------------------------------------------------- */
+
+/* Quick Notes: CSS-only tape/pin detail on paper note cards */
+.note-card-desk-pin {
+  display: none;
+}
+
+[data-panel="notes"] .note-card-desk-pin {
+  display: block;
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 28px;
+  height: 6px;
+  background-color: rgba(217, 119, 6, 0.22);
+  border: 1px dashed rgba(180, 83, 9, 0.35);
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+:root[data-panel="notes"].dark .note-card-desk-pin {
+  background-color: rgba(251, 191, 36, 0.15);
+  border-color: rgba(251, 191, 36, 0.35);
+}
+
+/* Projects: Folder-Tab header notch on cards */
+[data-panel="projects"] .project-card-tab {
+  position: relative;
+}
+
+[data-panel="projects"] .project-card-tab::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 14px;
+  width: 52px;
+  height: 4px;
+  background-color: var(--accent);
+  border-bottom-left-radius: 3px;
+  border-bottom-right-radius: 3px;
+  pointer-events: none;
+}
+
+/* Projects: Segmented Progress Bar */
+.blueprint-progress-segmented {
+  display: flex;
+  gap: 3px;
+  width: 100%;
+}
+
+.blueprint-progress-segment {
+  flex: 1;
+  height: 6px;
+  border-radius: 2px;
+  background-color: var(--border-soft);
+  transition: background-color 200ms ease;
+}
+
+.blueprint-progress-segment.is-active {
+  background-color: var(--accent);
+}
+
+/* -------------------------------------------------------------
+   6. TRANSITIONS & PREFERS-REDUCED-MOTION
+   150-200ms smooth panel color transitions.
+   ------------------------------------------------------------- */
+body,
+aside,
+main,
+header,
+[data-panel] {
+  transition: background-color var(--panel-transition-duration) ease,
+              border-color var(--panel-transition-duration) ease,
+              color var(--panel-transition-duration) ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body,
+  aside,
+  main,
+  header,
+  [data-panel],
+  .blueprint-progress-segment {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* -------------------------------------------------------------
+   7. FONT APPLICATION SCOPE
+   Heading fonts applied to headings and brand titles only.
+   Body and UI copy preserve readability.
+   ------------------------------------------------------------- */
+[data-panel="notes"] h1,
+[data-panel="notes"] .font-heading {
+  font-family: var(--font-heading);
+}
+
+[data-panel="projects"] h1,
+[data-panel="projects"] h2,
+[data-panel="projects"] .font-heading {
+  font-family: var(--font-heading);
+}
+
+/* -------------------------------------------------------------
+   8. CHECKLISTS — "Field Clipboard"
+   Utilitarian sage & forest green field guide aesthetic.
+   ------------------------------------------------------------- */
+:root[data-panel="checklists"]:not(.dark) {
+  /* 17 Standard Personality Tokens */
+  --bg: #F2F6F3;
+  --paper: #FFFFFF;
+  --raised: #E4EBE6;
+  --border: #CBDCD0;
+  --border-soft: rgba(21, 128, 61, 0.08);
+  --text: #14281B;              /* 15.57:1 AAA */
+  --text-2: #284D34;            /* 9.54:1 AAA */
+  --text-muted: #41634D;        /* 6.74:1 AA */
+  --header-band: linear-gradient(135deg, #E6F0E9 0%, #D8E7DC 100%);
+  --header-text: #14281B;        /* 13.35:1 AAA */
+  --header-muted: #284D34;
+  --accent: #15803D;
+  --accent-soft: rgba(21, 128, 61, 0.12);
+  --accent-text: #15803D;       /* 5.02:1 AA */
+  --btn-bg: #15803D;            /* 5.02:1 AA */
+  --btn-fg: #FFFFFF;
+  --btn-hover: #166534;
+  --radius-card: 14px;
+  --shadow-card: 0 2px 8px -1px rgba(21, 128, 61, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
+  --shadow-card-hover: 0 6px 18px -2px rgba(21, 128, 61, 0.15), 0 2px 6px rgba(0, 0, 0, 0.05);
+  --texture: linear-gradient(to right, rgba(21, 128, 61, 0.03) 1px, transparent 1px),
+             linear-gradient(to bottom, rgba(21, 128, 61, 0.03) 1px, transparent 1px);
+  --font-heading: 'Chivo', system-ui, -apple-system, sans-serif;
+
+  /* Legacy Token Mapping */
+  --bg-primary: var(--bg);
+  --bg-sidebar: #E8EFEA;
+  --bg-raised: var(--raised);
+  --card-default: var(--paper);
+  --surface-card: var(--paper);
+  --text-primary: var(--text);
+  --text-secondary: var(--text-2);
+  --border-color: var(--border);
+  --divider-color: var(--border-soft);
+  --workspace-accent: var(--accent);
+  --workspace-accent-bg: var(--accent-soft);
+  --workspace-accent-text: var(--btn-fg);
+  --selection-color: rgba(21, 128, 61, 0.25);
+}
+
+:root[data-panel="checklists"].dark {
+  /* 17 Standard Personality Tokens */
+  --bg: #0D1510;
+  --paper: #141F18;
+  --raised: #1C2A21;
+  --border: #2A4032;
+  --border-soft: rgba(52, 211, 153, 0.08);
+  --text: #ECFDF5;              /* 16.09:1 AAA */
+  --text-2: #A7F3D0;            /* 13.22:1 AAA */
+  --text-muted: #82B89A;        /* 7.48:1 AAA */
+  --header-band: linear-gradient(135deg, #18271E 0%, #111B15 100%);
+  --header-text: #ECFDF5;        /* 14.79:1 AAA */
+  --header-muted: #A7F3D0;
+  --accent: #34D399;
+  --accent-soft: rgba(52, 211, 153, 0.15);
+  --accent-text: #34D399;       /* 8.82:1 AAA */
+  --btn-bg: #34D399;            /* 9.68:1 AAA */
+  --btn-fg: #0B1510;
+  --btn-hover: #10B981;
+  --radius-card: 14px;
+  --shadow-card: 0 4px 14px -2px rgba(0, 0, 0, 0.6), inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
+  --shadow-card-hover: 0 8px 24px -2px rgba(0, 0, 0, 0.75), inset 0 1px 0 0 rgba(52, 211, 153, 0.18);
+  --texture: linear-gradient(to right, rgba(52, 211, 153, 0.04) 1px, transparent 1px),
+             linear-gradient(to bottom, rgba(52, 211, 153, 0.04) 1px, transparent 1px);
+  --font-heading: 'Chivo', system-ui, -apple-system, sans-serif;
+
+  /* Legacy Token Mapping */
+  --bg-primary: var(--bg);
+  --bg-sidebar: #0F1A13;
+  --bg-raised: var(--raised);
+  --card-default: var(--paper);
+  --surface-card: var(--paper);
+  --text-primary: var(--text);
+  --text-secondary: var(--text-2);
+  --border-color: var(--border);
+  --divider-color: var(--border-soft);
+  --workspace-accent: var(--accent);
+  --workspace-accent-bg: var(--accent-soft);
+  --workspace-accent-text: var(--btn-fg);
+  --selection-color: rgba(52, 211, 153, 0.30);
+}
+
+/* Checklists Textures and Scoped Clip */
+[data-panel="checklists"] .pane-scroller,
+[data-panel="checklists"] .panel-texture-overlay {
+  background-image: var(--texture);
+  background-size: 20px 20px;
+  background-attachment: local;
+}
+
+.checklist-card-clip {
+  display: none;
+}
+
+[data-panel="checklists"] .checklist-card-clip {
+  display: block;
+  position: absolute;
+  top: -3px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 44px;
+  height: 6px;
+  background: linear-gradient(180deg, #A3A3A3 0%, #737373 100%);
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  border-radius: 2px 2px 3px 3px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  z-index: 10;
+  pointer-events: none;
+}
+
+:root[data-panel="checklists"].dark .checklist-card-clip {
+  background: linear-gradient(180deg, #525252 0%, #262626 100%);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+[data-panel="checklists"] h1,
+[data-panel="checklists"] h2,
+[data-panel="checklists"] .font-heading {
+  font-family: var(--font-heading);
+}
+
+/* -------------------------------------------------------------
+   9. WISH LIST — "Dreamy Boutique"
+   Soft lavender & violet celestial boutique aesthetic.
+   ------------------------------------------------------------- */
+:root[data-panel="wishlist"]:not(.dark) {
+  /* 17 Standard Personality Tokens */
+  --bg: #FAF7FD;
+  --paper: #FFFFFF;
+  --raised: #F1EBF9;
+  --border: #DED2F3;
+  --border-soft: rgba(124, 58, 237, 0.08);
+  --text: #231538;              /* 16.99:1 AAA */
+  --text-2: #4C3270;            /* 10.51:1 AAA */
+  --text-muted: #6D558F;        /* 6.28:1 AA */
+  --header-band: linear-gradient(135deg, #EDE5F9 0%, #E3D4F7 100%);
+  --header-text: #231538;        /* 13.90:1 AAA */
+  --header-muted: #4C3270;
+  --accent: #7C3AED;
+  --accent-soft: rgba(124, 58, 237, 0.12);
+  --accent-text: #6D28D9;       /* 7.10:1 AAA */
+  --btn-bg: #7C3AED;            /* 5.70:1 AA */
+  --btn-fg: #FFFFFF;
+  --btn-hover: #6D28D9;
+  --radius-card: 16px;
+  --shadow-card: 0 4px 14px -2px rgba(124, 58, 237, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
+  --shadow-card-hover: 0 8px 24px -3px rgba(124, 58, 237, 0.16), 0 2px 6px rgba(0, 0, 0, 0.05);
+  --texture: radial-gradient(rgba(124, 58, 237, 0.04) 1px, transparent 1px);
+  --font-heading: 'Playfair Display', Georgia, serif;
+
+  /* Legacy Token Mapping */
+  --bg-primary: var(--bg);
+  --bg-sidebar: #F3EDFB;
+  --bg-raised: var(--raised);
+  --card-default: var(--paper);
+  --surface-card: var(--paper);
+  --text-primary: var(--text);
+  --text-secondary: var(--text-2);
+  --border-color: var(--border);
+  --divider-color: var(--border-soft);
+  --workspace-accent: var(--accent);
+  --workspace-accent-bg: var(--accent-soft);
+  --workspace-accent-text: var(--btn-fg);
+  --selection-color: rgba(124, 58, 237, 0.25);
+}
+
+:root[data-panel="wishlist"].dark {
+  /* 17 Standard Personality Tokens */
+  --bg: #120E1C;
+  --paper: #1A1528;
+  --raised: #241E36;
+  --border: #3B3156;
+  --border-soft: rgba(196, 181, 253, 0.08);
+  --text: #F5F3FF;              /* 16.20:1 AAA */
+  --text-2: #DDD6FE;            /* 12.80:1 AAA */
+  --text-muted: #9B8BB8;        /* 5.74:1 AA */
+  --header-band: linear-gradient(135deg, #221B35 0%, #171224 100%);
+  --header-text: #F5F3FF;        /* 15.00:1 AAA */
+  --header-muted: #DDD6FE;
+  --accent: #C4B5FD;
+  --accent-soft: rgba(196, 181, 253, 0.15);
+  --accent-text: #DDD6FE;       /* 12.80:1 AAA */
+  --btn-bg: #7C3AED;            /* 5.70:1 AA */
+  --btn-fg: #FFFFFF;
+  --btn-hover: #6D28D9;
+  --radius-card: 16px;
+  --shadow-card: 0 4px 16px -2px rgba(0, 0, 0, 0.6), inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
+  --shadow-card-hover: 0 8px 24px -2px rgba(0, 0, 0, 0.75), inset 0 1px 0 0 rgba(196, 181, 253, 0.2);
+  --texture: radial-gradient(rgba(196, 181, 253, 0.045) 1px, transparent 1px);
+  --font-heading: 'Playfair Display', Georgia, serif;
+
+  /* Legacy Token Mapping */
+  --bg-primary: var(--bg);
+  --bg-sidebar: #161122;
+  --bg-raised: var(--raised);
+  --card-default: var(--paper);
+  --surface-card: var(--paper);
+  --text-primary: var(--text);
+  --text-secondary: var(--text-2);
+  --border-color: var(--border);
+  --divider-color: var(--border-soft);
+  --workspace-accent: var(--accent);
+  --workspace-accent-bg: var(--accent-soft);
+  --workspace-accent-text: var(--btn-fg);
+  --selection-color: rgba(196, 181, 253, 0.30);
+}
+
+/* Wish List Textures and Scoped Tag */
+[data-panel="wishlist"] .pane-scroller,
+[data-panel="wishlist"] .panel-texture-overlay {
+  background-image: var(--texture);
+  background-size: 24px 24px;
+  background-attachment: local;
+}
+
+.wishlist-card-tag {
+  display: none;
+}
+
+[data-panel="wishlist"] .wishlist-card-tag {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 24px;
+  width: 14px;
+  height: 4px;
+  border-bottom-left-radius: 3px;
+  border-bottom-right-radius: 3px;
+  background: var(--accent);
+  opacity: 0.65;
+  pointer-events: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+:root[data-panel="wishlist"].dark .wishlist-card-tag {
+  opacity: 0.85;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+[data-panel="wishlist"] h1,
+[data-panel="wishlist"] h2,
+[data-panel="wishlist"] .font-heading {
+  font-family: var(--font-heading);
+}
+
+/* -------------------------------------------------------------
+   10. ROUTINES — "Calm Horizon"
+   Serene sky blue & ocean dawn horizon aesthetic.
+   Seamlessly harmonized with Material 3 dark surface tokens.
+   ------------------------------------------------------------- */
+:root[data-panel="routines"]:not(.dark) {
+  /* 17 Standard Personality Tokens */
+  --bg: #F0F8FF;
+  --paper: #FFFFFF;
+  --raised: #E4EFF7;
+  --border: #BAE6FD;
+  --border-soft: rgba(2, 132, 199, 0.08);
+  --text: #0F172A;              /* 17.85:1 AAA */
+  --text-2: #334155;            /* 10.35:1 AAA */
+  --text-muted: #475569;        /* 7.58:1 AAA */
+  --header-band: linear-gradient(135deg, #E0F2FE 0%, #BAE6FD 100%);
+  --header-text: #0369A1;        /* 5.17:1 AA */
+  --header-muted: #0284C7;
+  --accent: #0284C7;
+  --accent-soft: rgba(2, 132, 199, 0.12);
+  --accent-text: #0369A1;       /* 5.93:1 AA */
+  --btn-bg: #0369A1;            /* 5.93:1 AA */
+  --btn-fg: #FFFFFF;
+  --btn-hover: #0284C7;
+  --radius-card: 20px;
+  --shadow-card: 0 2px 8px -1px rgba(2, 132, 199, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
+  --shadow-card-hover: 0 8px 24px -2px rgba(2, 132, 199, 0.16), 0 2px 6px rgba(0, 0, 0, 0.05);
+  --texture: linear-gradient(to bottom, rgba(2, 132, 199, 0.035) 1px, transparent 1px);
+  --font-heading: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* Legacy Token Mapping */
+  --bg-primary: var(--bg);
+  --bg-sidebar: #E5F1FA;
+  --bg-raised: var(--raised);
+  --card-default: var(--paper);
+  --surface-card: var(--paper);
+  --text-primary: var(--text);
+  --text-secondary: var(--text-2);
+  --border-color: var(--border);
+  --divider-color: var(--border-soft);
+  --workspace-accent: var(--accent);
+  --workspace-accent-bg: var(--accent-soft);
+  --workspace-accent-text: var(--btn-fg);
+  --selection-color: rgba(2, 132, 199, 0.25);
+}
+
+:root[data-panel="routines"].dark {
+  /* 17 Standard Personality Tokens (Material 3 Dark System Preserved) */
+  --bg: #0E1116;
+  --paper: #151A21;
+  --raised: #1C232C;
+  --border: #232E3C;
+  --border-soft: rgba(255, 255, 255, 0.05);
+  --text: #E8EDF3;              /* 14.85:1 AAA */
+  --text-2: #AEB8C5;            /* 8.71:1 AAA */
+  --text-muted: #7F8B9A;        /* 5.04:1 AA */
+  --header-band: linear-gradient(135deg, #192735 0%, #151A21 100%);
+  --header-text: #E8EDF3;        /* 12.90:1 AAA */
+  --header-muted: #AEB8C5;
+  --accent: #38BDF8;
+  --accent-soft: rgba(56, 189, 248, 0.15);
+  --accent-text: #BAE6FD;       /* 13.17:1 AAA */
+  --btn-bg: #38BDF8;            /* 8.74:1 AAA */
+  --btn-fg: #0B1220;
+  --btn-hover: #0284C7;
+  --radius-card: 20px;
+  --shadow-card: 0 4px 14px -2px rgba(0, 0, 0, 0.6), inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
+  --shadow-card-hover: 0 8px 24px -2px rgba(0, 0, 0, 0.75), inset 0 1px 0 0 rgba(56, 189, 248, 0.2);
+  --texture: linear-gradient(to bottom, rgba(56, 189, 248, 0.04) 1px, transparent 1px);
+  --font-heading: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* Legacy Token Mapping */
+  --bg-primary: var(--bg);
+  --bg-sidebar: #12161D;
+  --bg-raised: var(--raised);
+  --card-default: var(--paper);
+  --surface-card: var(--paper);
+  --hover-bg: #1C232C;
+  --text-primary: var(--text);
+  --text-secondary: var(--text-2);
+  --border-color: var(--border);
+  --divider-color: var(--border-soft);
+  --workspace-accent: var(--accent);
+  --workspace-accent-bg: var(--accent-soft);
+  --workspace-accent-text: var(--btn-fg);
+  --selection-color: rgba(56, 189, 248, 0.30);
+}
+
+/* Routines Texture */
+[data-panel="routines"] .pane-scroller,
+[data-panel="routines"] .panel-texture-overlay {
+  background-image: var(--texture);
+  background-size: 100% 28px;
+  background-attachment: local;
+}
+
+/* -------------------------------------------------------------
+   11. SKETCH — "Art Studio"
+   Warm terracotta & burnt orange creative studio aesthetic.
+   ------------------------------------------------------------- */
+:root[data-panel="sketch"]:not(.dark) {
+  /* 17 Standard Personality Tokens */
+  --bg: #FFF7ED;
+  --paper: #FFFFFF;
+  --raised: #FFEDD5;
+  --border: #FED7AA;
+  --border-soft: rgba(194, 65, 12, 0.08);
+  --text: #2A160A;              /* 17.25:1 AAA */
+  --text-2: #6C391B;            /* 9.38:1 AAA */
+  --text-muted: #875338;        /* 6.32:1 AA */
+  --header-band: linear-gradient(135deg, #FFEDD5 0%, #FED7AA 100%);
+  --header-text: #2A160A;        /* 15.05:1 AAA */
+  --header-muted: #6C391B;
+  --accent: #C2410C;
+  --accent-soft: rgba(194, 65, 12, 0.12);
+  --accent-text: #9A3412;       /* 7.31:1 AAA */
+  --btn-bg: #C2410C;            /* 5.18:1 AA */
+  --btn-fg: #FFFFFF;
+  --btn-hover: #9A3412;
+  --radius-card: 16px;
+  --shadow-card: 0 2px 8px -1px rgba(194, 65, 12, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
+  --shadow-card-hover: 0 6px 18px -2px rgba(194, 65, 12, 0.16), 0 2px 6px rgba(0, 0, 0, 0.05);
+  --texture: radial-gradient(rgba(194, 65, 12, 0.035) 1px, transparent 1px);
+  --font-heading: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* Legacy Token Mapping */
+  --bg-primary: var(--bg);
+  --bg-sidebar: #FDF1E3;
+  --bg-raised: var(--raised);
+  --card-default: var(--paper);
+  --surface-card: var(--paper);
+  --text-primary: var(--text);
+  --text-secondary: var(--text-2);
+  --border-color: var(--border);
+  --divider-color: var(--border-soft);
+  --workspace-accent: var(--accent);
+  --workspace-accent-bg: var(--accent-soft);
+  --workspace-accent-text: var(--btn-fg);
+  --selection-color: rgba(194, 65, 12, 0.25);
+}
+
+:root[data-panel="sketch"].dark {
+  /* 17 Standard Personality Tokens */
+  --bg: #14110F;
+  --paper: #1E1A17;
+  --raised: #29231F;
+  --border: #42362E;
+  --border-soft: rgba(251, 146, 60, 0.08);
+  --text: #FDF2E9;              /* 15.68:1 AAA */
+  --text-2: #E8C9B5;            /* 11.07:1 AAA */
+  --text-muted: #B58E77;        /* 5.84:1 AA */
+  --header-band: linear-gradient(135deg, #261F1B 0%, #1A1513 100%);
+  --header-text: #FDF2E9;        /* 14.72:1 AAA */
+  --header-muted: #E8C9B5;
+  --accent: #FB923C;
+  --accent-soft: rgba(251, 146, 60, 0.15);
+  --accent-text: #FB923C;       /* 7.63:1 AAA */
+  --btn-bg: #FB923C;            /* 8.31:1 AAA */
+  --btn-fg: #14110F;
+  --btn-hover: #F97316;
+  --radius-card: 16px;
+  --shadow-card: 0 4px 14px -2px rgba(0, 0, 0, 0.6), inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
+  --shadow-card-hover: 0 8px 24px -2px rgba(0, 0, 0, 0.75), inset 0 1px 0 0 rgba(251, 146, 60, 0.2);
+  --texture: radial-gradient(rgba(251, 146, 60, 0.04) 1px, transparent 1px);
+  --font-heading: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* Legacy Token Mapping */
+  --bg-primary: var(--bg);
+  --bg-sidebar: #181412;
+  --bg-raised: var(--raised);
+  --card-default: var(--paper);
+  --surface-card: var(--paper);
+  --hover-bg: #29231F;
+  --text-primary: var(--text);
+  --text-secondary: var(--text-2);
+  --border-color: var(--border);
+  --divider-color: var(--border-soft);
+  --workspace-accent: var(--accent);
+  --workspace-accent-bg: var(--accent-soft);
+  --workspace-accent-text: var(--btn-fg);
+  --selection-color: rgba(251, 146, 60, 0.30);
+}
+
+/* Sketch Texture */
+[data-panel="sketch"] .pane-scroller,
+[data-panel="sketch"] .panel-texture-overlay {
+  background-image: var(--texture);
+  background-size: 22px 22px;
+  background-attachment: local;
+}
+
+/* Sketch Tagline font: Caveat cursive exclusively for tagline */
+.sketch-tagline {
+  font-family: 'Caveat', cursive, system-ui, -apple-system, sans-serif !important;
+  font-size: 1.125rem !important; /* 18px */
+  letter-spacing: 0.015em;
+  line-height: 1.4;
+}
+
+/* -------------------------------------------------------------
+   12. TODAY HUB — "Today Hub"
+   Warm focus summary & sunlit daily command center.
+   ------------------------------------------------------------- */
+:root[data-panel="today"]:not(.dark) {
+  /* 17 Standard Personality Tokens */
+  --bg: #FAF9F5;
+  --paper: #FFFFFF;
+  --raised: #F3EFE6;
+  --border: #E5E0D5;
+  --border-soft: rgba(217, 119, 6, 0.08);
+  --text: #1C1917;              /* 17.49:1 AAA */
+  --text-2: #44403C;            /* 10.27:1 AAA */
+  --text-muted: #78716C;        /* 4.80:1 AA */
+  --header-band: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+  --header-text: #351602;        /* 14.88:1 AAA */
+  --header-muted: #78350F;
+  --accent: #B45309;
+  --accent-soft: rgba(217, 119, 6, 0.12);
+  --accent-text: #B45309;       /* 5.02:1 AA */
+  --btn-bg: #92400E;            /* 7.09:1 AAA */
+  --btn-fg: #FFFFFF;
+  --btn-hover: #78350F;
+  --radius-card: 18px;
+  --shadow-card: 0 2px 8px -1px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.03);
+  --shadow-card-hover: 0 6px 18px -2px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.04);
+  --texture: radial-gradient(rgba(217, 119, 6, 0.03) 1px, transparent 1px);
+  --font-heading: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* Legacy Token Mapping */
+  --bg-primary: var(--bg);
+  --bg-sidebar: #F4F1E8;
+  --bg-raised: var(--raised);
+  --card-default: var(--paper);
+  --surface-card: var(--paper);
+  --text-primary: var(--text);
+  --text-secondary: var(--text-2);
+  --border-color: var(--border);
+  --divider-color: var(--border-soft);
+  --workspace-accent: var(--accent);
+  --workspace-accent-bg: var(--accent-soft);
+  --workspace-accent-text: var(--btn-fg);
+  --selection-color: rgba(217, 119, 6, 0.25);
+}
+
+:root[data-panel="today"].dark {
+  /* 17 Standard Personality Tokens */
+  --bg: #121110;
+  --paper: #1A1917;
+  --raised: #24221F;
+  --border: #35322D;
+  --border-soft: rgba(251, 191, 36, 0.08);
+  --text: #F5F5F4;              /* 16.10:1 AAA */
+  --text-2: #D6D3D1;            /* 11.79:1 AAA */
+  --text-muted: #9E9790;        /* 6.09:1 AA */
+  --header-band: linear-gradient(135deg, #242019 0%, #1A1712 100%);
+  --header-text: #F5F5F4;        /* 14.86:1 AAA */
+  --header-muted: #D6D3D1;
+  --accent: #FBBF24;
+  --accent-soft: rgba(251, 191, 36, 0.15);
+  --accent-text: #FBBF24;       /* 10.52:1 AAA */
+  --btn-bg: #FBBF24;            /* 11.30:1 AAA */
+  --btn-fg: #121110;
+  --btn-hover: #F59E0B;
+  --radius-card: 18px;
+  --shadow-card: 0 4px 14px -2px rgba(0, 0, 0, 0.6), inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
+  --shadow-card-hover: 0 8px 24px -2px rgba(0, 0, 0, 0.75), inset 0 1px 0 0 rgba(251, 191, 36, 0.18);
+  --texture: radial-gradient(rgba(251, 191, 36, 0.04) 1px, transparent 1px);
+  --font-heading: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* Legacy Token Mapping */
+  --bg-primary: var(--bg);
+  --bg-sidebar: #171514;
+  --bg-raised: var(--raised);
+  --card-default: var(--paper);
+  --surface-card: var(--paper);
+  --hover-bg: #24221F;
+  --text-primary: var(--text);
+  --text-secondary: var(--text-2);
+  --border-color: var(--border);
+  --divider-color: var(--border-soft);
+  --workspace-accent: var(--accent);
+  --workspace-accent-bg: var(--accent-soft);
+  --workspace-accent-text: var(--btn-fg);
+  --selection-color: rgba(251, 191, 36, 0.30);
+}
+
+/* Today Hub Texture */
+[data-panel="today"] .pane-scroller,
+[data-panel="today"] .panel-texture-overlay {
+  background-image: var(--texture);
+  background-size: 24px 24px;
+  background-attachment: local;
+}
+
