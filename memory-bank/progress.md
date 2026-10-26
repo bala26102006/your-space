@@ -2,11 +2,27 @@
 
 > Update this file at the end of every stage.
 **Last updated:** 2026-10-26
-**Current stage:** Calendar ("Life Lens") — Milestones 1, 2, 3 (Full Feature) — COMPLETED
+**Current stage:** Calendar ("Life Lens") — All Milestones & Comprehensive Bug Fixes Pass — COMPLETED & VERIFIED
 
 ---
 
 ## ✅ What's Built
+- **Calendar ("Life Lens"): Final Verification & Bug Fixes Pass**:
+  1. **Event Click Routing Across All Views**:
+     - `WeekView.jsx` and `AgendaView.jsx` now route event clicks directly to `onEditEvent(item.payload?.raw || item, item.date)` opening `EventModal` in edit mode rather than attempting redundant workspace switches.
+     - `DayDetailPanel.jsx` now properly forwards `item.date` to `onEditEvent`.
+  2. **Modal State Synchronization**:
+     - `MoveDateModal.jsx` now uses `useEffect` on `[isOpen, item, todayStr]` to always synchronize `selectedDate` when reopened for different items without remounting.
+  3. **Cache Invalidation on Event Deletion**:
+     - `EventModal.jsx` now invokes `calendarCache.clear()` inside `softDeleteItem`'s `onConfirm` callback, preventing stale event entries in month/week view after deletion.
+  4. **Non-blocking Quick Add UX**:
+     - Replaced blocking `alert()` with `showToast()` in `QuickAddModal.jsx` when no checklist is selected.
+  5. **Smart Batch Reschedule Undo Toast Refinement**:
+     - `rescheduleCalendarItem` accepts `showToastNotification` flag (defaults to `true`). In `smartBatchRescheduleOverdue`, undo loop sets this to `false` and triggers a single unified batch undo toast notification.
+  6. **100% WCAG AA/AAA Pass & Clean Production Build**:
+     - Verified with `node scripts/calculate-contrast.js` (100% pass across all 16 theme configurations).
+     - Verified with `npm run build` (vite v6.4.3 production build passes with 0 errors).
+     - Verified end-to-end in real browser subagent session.
 - **Calendar ("Life Lens"): Milestone 3 (Calendar Intelligence + Smart Reschedule + .ics Export)**:
   1. **Load Awareness Capacity Hints**:
      - Evaluated via `getCapacityLevel(itemCount)`: 0–2 Calm pace (clean display), 3–5 Balanced flow (subtle badge), 6+ Active day (gentle capacity pip). Never loud or scolding.
