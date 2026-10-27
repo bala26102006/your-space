@@ -31,6 +31,12 @@
      - 100% WCAG AA/AAA contrast pass across 16 theme configurations.
      - Full automated browser subagent walkthrough: Today tab stability, calendar navigation, responsive 1280x720 layout, day detail panel, more menu, event creation with countdown, light/dark themes.
      - Clean Vite production build (`npm run build`) and clean ESLint (`npm run lint`).
+  7. **Bug Fix & Polish Pass (Commit `7c0eacd`)**:
+     - `MoveDateModal.jsx`: Enforced strict local-date math using `parseLocalDate(todayStr)` for quick suggestions ('Tomorrow', 'In 3 days', 'Next Monday').
+     - `OverdueReviewModal.jsx`: Unified batch spread rescheduling and undo via `rescheduleCalendarItem(item, targetDate, false)` with full cache invalidation and atomic restoration, plus added support for marking overdue wishes as `got_it`.
+     - `MonthGrid.jsx`: Added `onDragEnd` listener to cleanly reset drop target highlight on drag cancellation.
+     - `CalendarView.jsx`: Upgraded header button touch targets to >= 40px for full accessibility compliance.
+     - `calendarService.js`: Removed dead unreferenced `getYearInPixelsData` helper.
 - **Calendar ("Life Lens"): Final Verification & Bug Fixes Pass**:
   1. **Event Click Routing Across All Views**:
      - `WeekView.jsx` and `AgendaView.jsx` now route event clicks directly to `onEditEvent(item.payload?.raw || item, item.date)` opening `EventModal` in edit mode rather than attempting redundant workspace switches.
