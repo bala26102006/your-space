@@ -344,19 +344,10 @@ export default function CalendarView() {
 
   return (
     <div className="calendar-container @container flex-1 min-w-0 flex flex-col select-none relative pb-8">
-      {/* 1. Tear-Off Header with CSS Binder Holes */}
+      {/* 1. Tear-Off Header with Slim Decorative Strip */}
       <div className="bg-card-default border border-[var(--border)] rounded-2xl shadow-card overflow-hidden mb-3 shrink-0 calendar-tearoff-header">
-        {/* CSS-Only Binder Holes Bar */}
-        <div className="calendar-binder-track" aria-hidden="true">
-          <div className="calendar-binder-ring" />
-          <div className="calendar-binder-ring" />
-          <div className="calendar-binder-ring" />
-          <div className="calendar-binder-ring" />
-          <div className="calendar-binder-ring hidden sm:block" />
-          <div className="calendar-binder-ring hidden sm:block" />
-          <div className="calendar-binder-ring hidden md:block" />
-          <div className="calendar-binder-ring hidden md:block" />
-        </div>
+        {/* Slim decorative strip (12-14px) */}
+        <div className="h-3.5 bg-[var(--raised)] border-b border-[var(--border)]" aria-hidden="true" />
 
         {/* Main Controls Row */}
         <div className="p-3.5 sm:p-4 flex flex-wrap items-center justify-between gap-3 bg-[var(--header-band)]">
@@ -453,34 +444,8 @@ export default function CalendarView() {
             </button>
           </div>
 
-          {/* Center / Right: View Switcher + Quick Add + More Options */}
+          {/* Center / Right: Quick Add + More Options */}
           <div className="flex items-center gap-2 sm:gap-3">
-            {/* View Switcher Tabs: Month | Week | Agenda | Year */}
-            <div 
-              className="flex items-center p-0.5 rounded-xl border border-[var(--border)] bg-[var(--paper)] shadow-2xs"
-              role="tablist"
-              aria-label="Calendar view switcher"
-            >
-              {VIEW_TABS.map((tab) => {
-                const isActive = activeView === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    role="tab"
-                    aria-selected={isActive}
-                    onClick={() => handleViewChange(tab.id)}
-                    className={`px-2.5 sm:px-3 py-1 text-xs font-semibold rounded-lg transition-all active:scale-95 min-h-[30px] ${
-                      isActive
-                        ? 'bg-[var(--accent)] text-[var(--btn-fg)] shadow-xs font-bold'
-                        : 'text-text-muted hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/5'
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                );
-              })}
-            </div>
 
             {/* Quick Add Button */}
             <button
@@ -530,62 +495,15 @@ export default function CalendarView() {
                     {weekStart === 'sunday' && <Check className="w-3.5 h-3.5 text-[var(--accent)]" />}
                   </button>
 
-                  {/* Offline .ics Calendar Export */}
-                  <div className="my-1 border-t border-[var(--border)]" />
-                  <button
-                    type="button"
-                    onClick={handleExportICalendar}
-                    className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-xl hover:bg-black/5 dark:hover:bg-white/5 text-text-primary transition-colors text-left font-medium"
-                    title="Export events and tasks to .ics file"
-                  >
-                    <Download className="w-3.5 h-3.5 text-[var(--accent)]" />
-                    <span>Export to .ics (iCal)</span>
-                  </button>
+        {/* Offline .ics Calendar Export was removed from UI */}
                 </div>
               )}
             </div>
           </div>
         </div>
-
-        {/* Layer Filter Chips Row */}
-        <div className="px-3.5 py-2.5 border-t border-[var(--border)] bg-[var(--paper)] flex flex-wrap items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar">
-          <span className="text-[11px] font-semibold text-text-muted uppercase tracking-wider mr-1 hidden sm:inline">
-            Layers:
-          </span>
-
-          {Object.values(CALENDAR_LAYERS).map((layer) => {
-            const Icon = SOURCE_ICON_COMPONENTS[layer.id] || CheckSquare;
-            const isActive = layerFilter[layer.id] !== false;
-
-            return (
-              <button
-                key={layer.id}
-                type="button"
-                onClick={() => toggleLayer(layer.id)}
-                aria-pressed={isActive}
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold transition-all shadow-xs border select-none active:scale-95 ${
-                  isActive
-                    ? 'border-transparent text-text-primary'
-                    : 'opacity-40 border-dashed border-[var(--border)] bg-transparent text-text-muted'
-                }`}
-                style={{
-                  backgroundColor: isActive ? layer.bgToken : 'transparent',
-                }}
-              >
-                <span style={{ color: layer.colorToken }} className="shrink-0">
-                  <Icon className="w-3.5 h-3.5" />
-                </span>
-                <span className="truncate">{layer.label}</span>
-              </button>
-            );
-          })}
-        </div>
       </div>
 
-      {/* 2. Fresh Start Card (Mondays or start of month) */}
-      <FreshStartCard />
-
-      {/* 3. Countdowns Strip (Exams, Birthdays, Trips) */}
+      {/* 2. Countdowns Strip (Exams, Birthdays, Trips) */}
       <CountdownsStrip
         events={upcomingCountdowns}
         onSelectEvent={(evt) => {
@@ -593,36 +511,11 @@ export default function CalendarView() {
         }}
       />
 
-      {/* 4. Main Content Area based on activeView */}
+      {/* 3. Main Month Grid & Day Panel */}
       <div className="flex-1 flex flex-col lg:flex-row gap-4 items-stretch">
-        {activeView === 'month' && (
-          <div className="flex-1 min-w-0 flex flex-col gap-3">
-            {overdueItems.length > 0 && (
-              <SmartRescheduleCard overdueItems={overdueItems} />
-            )}
-            <MonthGrid
-              gridData={gridData}
-              itemsByDate={itemsByDate}
-              selectedDate={selectedDate}
-              onSelectDate={(d) => {
-                setSelectedDate(d);
-                setIsDayDetailOpen(true);
-              }}
-              onOpenDayDetail={(d) => {
-                setSelectedDate(d);
-                setIsDayDetailOpen(true);
-              }}
-              onPrevMonth={handlePrev}
-              onNextMonth={handleNext}
-              weekStart={weekStart}
-              layerFilter={layerFilter}
-            />
-          </div>
-        )}
-
-        {activeView === 'week' && (
-          <WeekView
-            referenceDate={selectedDate}
+        <div className="flex-1 min-w-0 flex flex-col gap-3">
+          <MonthGrid
+            gridData={gridData}
             itemsByDate={itemsByDate}
             selectedDate={selectedDate}
             onSelectDate={(d) => {
@@ -633,44 +526,12 @@ export default function CalendarView() {
               setSelectedDate(d);
               setIsDayDetailOpen(true);
             }}
-            onQuickAdd={(d) => handleOpenQuickAdd(d)}
-            onMoveItem={(item) => handleOpenMoveModal(item)}
-            onEditEvent={handleOpenEventModal}
+            onPrevMonth={handlePrev}
+            onNextMonth={handleNext}
             weekStart={weekStart}
             layerFilter={layerFilter}
           />
-        )}
-
-        {activeView === 'agenda' && (
-          <AgendaView
-            visibleItems={visibleItems}
-            onSelectDate={(d) => {
-              setSelectedDate(d);
-              setIsDayDetailOpen(true);
-            }}
-            onOpenDayDetail={(d) => {
-              setSelectedDate(d);
-              setIsDayDetailOpen(true);
-            }}
-            onMoveItem={(item) => handleOpenMoveModal(item)}
-            onEditEvent={handleOpenEventModal}
-            layerFilter={layerFilter}
-          />
-        )}
-
-        {activeView === 'year' && (
-          <YearView
-            year={currentYear}
-            onSelectDate={(d) => {
-              setSelectedDate(d);
-              setIsDayDetailOpen(true);
-            }}
-            onOpenDayDetail={(d) => {
-              setSelectedDate(d);
-              setIsDayDetailOpen(true);
-            }}
-          />
-        )}
+        </div>
 
         {/* Day Detail Panel */}
         {isDayDetailOpen && (

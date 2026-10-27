@@ -180,36 +180,23 @@ export default function MonthGrid({
                   {cell.dayNumber}
                 </span>
 
-                <div className="flex items-center gap-1">
-                  {/* Load awareness capacity indicator: 6+ items */}
-                  {visibleItems.length >= 6 && (
-                    <span 
-                      title={`${visibleItems.length} items (active day)`}
-                      className="w-1.5 h-1.5 rounded-full bg-amber-500/80 shrink-0"
-                    />
-                  )}
-
-                  {/* Overdue Pip */}
-                  {hasOverdue && (
-                    <span 
-                      title="Contains overdue items"
-                      className="flex items-center justify-center w-2 h-2 rounded-full bg-red-500 ring-2 ring-[var(--paper)] shrink-0"
-                    />
-                  )}
-                </div>
+                {/* Capacity hints and busy-day pips removed from UI */}
               </div>
 
               {/* Day Content: Compact Chips on wide panes / Dots on narrow panes */}
               <div className="flex-1 min-h-0 flex flex-col justify-start gap-1 overflow-hidden">
-                {/* 1. Desktop / Wide view: Compact Chips (up to 3 items) */}
+                {/* 1. Desktop / Wide view: Compact Chips (up to 3 items, excluding routines, sketches, notes) */}
                 <div className="hidden @[480px]:flex flex-col gap-1 overflow-hidden">
-                  {visibleItems.slice(0, 3).map((item) => (
+                  {visibleItems
+                    .filter(item => item.source !== 'routines' && item.source !== 'sketch' && item.source !== 'quicknotes')
+                    .slice(0, 3)
+                    .map((item) => (
                     <div
                       key={item.key}
                       style={{ borderLeftColor: item.colorToken }}
                       className={`text-[10.5px] leading-tight px-1.5 py-0.5 rounded border-l-2 truncate transition-opacity ${
                         item.status === 'done'
-                          ? 'opacity-60 line-through bg-black/[0.03] dark:bg-white/[0.03] text-text-muted'
+                          ? 'opacity-60 bg-black/[0.03] dark:bg-white/[0.03] text-text-muted'
                           : item.status === 'overdue'
                           ? 'bg-red-500/10 text-red-700 dark:text-red-400 font-medium'
                           : 'bg-black/[0.04] dark:bg-white/[0.06] text-text-primary'
@@ -220,9 +207,9 @@ export default function MonthGrid({
                     </div>
                   ))}
 
-                  {visibleItems.length > 3 && (
+                  {visibleItems.filter(item => item.source !== 'routines' && item.source !== 'sketch' && item.source !== 'quicknotes').length > 3 && (
                     <span className="text-[9.5px] font-semibold text-text-muted px-1 mt-auto">
-                      +{visibleItems.length - 3} more
+                      +{visibleItems.filter(item => item.source !== 'routines' && item.source !== 'sketch' && item.source !== 'quicknotes').length - 3} more
                     </span>
                   )}
                 </div>

@@ -109,7 +109,6 @@ export default function DayDetailPanel({
       {/* Panel Top Header */}
       <div className="p-4 border-b border-[var(--border)] bg-[var(--raised)] flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="flex items-center gap-1.5 flex-wrap mb-1">
             <span className={`text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
               isToday
                 ? 'bg-[var(--accent)] text-[var(--btn-fg)]'
@@ -118,9 +117,6 @@ export default function DayDetailPanel({
                 : 'bg-[var(--accent-soft)] text-[var(--accent-text)]'
             }`}>
               {relativeLabel || (isPast ? 'Past' : 'Upcoming')}
-            </span>
-            <span className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full border ${capacity.badgeClass}`}>
-              {capacity.label}
             </span>
           </div>
 
@@ -234,7 +230,7 @@ export default function DayDetailPanel({
 
                           <div className="min-w-0 flex-1">
                             <p className={`text-xs font-medium truncate ${
-                              isDone ? 'line-through opacity-60 text-text-muted' : 'text-text-primary'
+                              isDone ? 'opacity-70 text-text-muted font-normal' : 'text-text-primary'
                             }`}>
                               {item.title}
                             </p>
@@ -271,9 +267,7 @@ export default function DayDetailPanel({
             );
           })
         )}
-
-        {/* Historical Traces from Previous Years / Months */}
-        <OnThisDaySection selectedDate={selectedDate} />
+      </div>
       </div>
     </aside>
   );
