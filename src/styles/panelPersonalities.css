@@ -1058,42 +1058,4 @@ header,
   background-attachment: local;
 }
 
-/* Wall Calendar Tear-Off Binder Holes (CSS-Only) */
-.calendar-binder-track {
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  padding: 6px 16px 2px 16px;
-  background: var(--raised);
-  border-bottom: 1px dashed var(--border);
-  position: relative;
-  overflow: hidden;
-}
-
-.calendar-binder-ring {
-  width: 13px;
-  height: 13px;
-  border-radius: 50%;
-  background: var(--bg);
-  border: 1.5px solid var(--border);
-  box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.25), 0 1px 0 rgba(255, 255, 255, 0.2);
-  position: relative;
-  flex-shrink: 0;
-}
-
-.calendar-binder-ring::after {
-  content: '';
-  position: absolute;
-  top: -6px;
-  left: 3.5px;
-  width: 3.5px;
-  height: 7px;
-  background: linear-gradient(180deg, #94A3B8, #475569);
-  border-radius: 2px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-}
-
-.dark .calendar-binder-ring::after {
-  background: linear-gradient(180deg, #475569, #1E293B);
-}
 
