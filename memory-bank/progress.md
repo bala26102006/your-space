@@ -1,12 +1,36 @@
 # Memory Bank — Progress Tracker
 
 > Update this file at the end of every stage.
-**Last updated:** 2026-10-26
-**Current stage:** Calendar ("Life Lens") — All Milestones & Comprehensive Bug Fixes Pass — COMPLETED & VERIFIED
+**Last updated:** 2026-10-27
+**Current stage:** Simple Calm Month Calendar ("Wall Calendar") — Replacement, 2 Core Features (Events + Reschedule), Dead-Code Cleanup & Verification — COMPLETED & VERIFIED
 
 ---
 
 ## ✅ What's Built
+- **Simple Calm Month Calendar ("Wall Calendar") — Replacement, 2 Features & Cleanup (2026-10-27)**:
+  1. **Clean Architectural Simplification & Overbuilt Feature Removal (Commit 1 `aa2d37d`)**:
+     - Removed complex multi-view tabs (Week, Agenda, Year), redundant Quick Add modal, Fresh Start cards, Smart Reschedule cards, On This Day historical section, and .ics export.
+     - Preserved clean separation: UI-only refactor, 0 schema changes, 0 data mutations, Sidebar completely untouched.
+  2. **Calm Single-Month Grid & Wall Calendar Design (Commit 2 `5bb11b7`)**:
+     - Compact single-row header: Month + Year title, compact Prev/Next/Today buttons, `+ Add` button, dynamic `N overdue` chip, and streamlined `...` More menu (Week start preference and filter toggles only).
+     - Slim Upcoming Countdown strip: displays future/today events with relative countdown ("Today", "in N days") and accent-colored indicators.
+     - 7-column Month grid (Mon-first default, Sun-first option) fitting viewport without page scrollbars (verified at 1280x720).
+     - Day cell calm hierarchy: today filled teal circle, past days show subtle status dots only (no text clutter), today/future days show up to 2 items with colored left border, single mood dot for journal, and weekend subtle tint.
+     - Day Detail panel: opens on click (slide-in on desktop, modal on small viewports) grouping Events, Due tasks, Wishes, Journal, and a quiet single line for past routines without strikethroughs on completed items.
+  3. **Core Feature 1: Events + Countdown**:
+     - `+ Add` and clicking empty day cells opens `EventModal` (title, date, optional end date, time/all-day, 6 palette colors, countdown toggle).
+     - Events feed directly into Upcoming strip with countdowns. Full Edit, Delete with confirm, and Trash recovery supported. Leak-isolated from other panels.
+  4. **Core Feature 2: Rescheduling & Overdue Review**:
+     - Drag & drop due checklist items or wishes across days with drop highlighting and instant Undo toast.
+     - Accessible "Move to date..." modal for touch and keyboard users.
+     - Overdue Review modal opened via `N overdue` chip: grouped by checklist, item-by-item actions (Today, Tomorrow, Pick date, Mark done), and "Spread evenly" across next 14 days (max 5 items/day) with interactive preview, confirmation, and Undo.
+  5. **Dead-Code Cleanup (Commit 3 `f31c271`)**:
+     - Verified no dangling imports and safely deleted 7 unreferenced components: `AgendaView.jsx`, `FreshStartCard.jsx`, `OnThisDaySection.jsx`, `QuickAddModal.jsx`, `SmartRescheduleCard.jsx`, `WeekView.jsx`, `YearView.jsx`.
+     - Removed dead helper functions and cleaned up CSS classes.
+  6. **Comprehensive Verification**:
+     - 100% WCAG AA/AAA contrast pass across 16 theme configurations.
+     - Full automated browser subagent walkthrough: Today tab stability, calendar navigation, responsive 1280x720 layout, day detail panel, more menu, event creation with countdown, light/dark themes.
+     - Clean Vite production build (`npm run build`) and clean ESLint (`npm run lint`).
 - **Calendar ("Life Lens"): Final Verification & Bug Fixes Pass**:
   1. **Event Click Routing Across All Views**:
      - `WeekView.jsx` and `AgendaView.jsx` now route event clicks directly to `onEditEvent(item.payload?.raw || item, item.date)` opening `EventModal` in edit mode rather than attempting redundant workspace switches.
