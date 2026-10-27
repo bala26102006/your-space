@@ -228,9 +228,15 @@ export default function TodayDashboard() {
     : 0;
 
   return (
-    <div className="flex-1 min-w-0 h-full overflow-y-auto p-3 sm:p-4 lg:p-6 bg-bg-primary text-text-primary no-scrollbar">
+    <div className={`flex-1 min-w-0 h-full bg-bg-primary text-text-primary no-scrollbar ${
+      activeTab === 'calendar'
+        ? 'flex flex-col min-h-0 overflow-hidden p-2 sm:p-3 lg:p-4'
+        : 'overflow-y-auto p-3 sm:p-4 lg:p-6'
+    }`}>
       {/* Top Tab Bar: Today | Calendar */}
-      <div className="flex items-center gap-1.5 p-1 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 w-fit mb-4 sm:mb-6 shadow-xs select-none shrink-0">
+      <div className={`flex items-center gap-1.5 p-1 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 w-fit shadow-xs select-none shrink-0 ${
+        activeTab === 'calendar' ? 'mb-2 sm:mb-2.5' : 'mb-4 sm:mb-6'
+      }`}>
         <button
           type="button"
           onClick={() => handleTabChange('today')}

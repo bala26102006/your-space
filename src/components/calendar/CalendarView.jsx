@@ -3,31 +3,20 @@ import {
   ChevronLeft, 
   ChevronRight, 
   Calendar as CalendarIcon, 
-  Filter, 
-  Settings2, 
-  CheckSquare, 
-  Repeat, 
-  BookOpen, 
-  Sparkles, 
-  Palette, 
-  StickyNote,
   MoreVertical,
   Check,
   Plus,
-  Download
+  AlertCircle
 } from 'lucide-react';
 import { 
   getMonthGrid, 
-  getWeekDays,
   formatMonthYearTitle, 
   getTodayStr, 
   parseLocalDate, 
   formatLocalDate,
   getWeekStartSetting, 
   setWeekStartSetting,
-  subscribeToMidnightRollover,
-  generateICalendarData,
-  downloadICalendarFile
+  subscribeToMidnightRollover
 } from '../../lib/calendar/calendarUtils';
 import { 
   CALENDAR_LAYERS, 
@@ -38,79 +27,43 @@ import {
   calendarCache 
 } from '../../lib/calendar/calendarService';
 import MonthGrid from './MonthGrid';
-import WeekView from './WeekView';
-import AgendaView from './AgendaView';
-import YearView from './YearView';
 import DayDetailPanel from './DayDetailPanel';
 import CountdownsStrip from './CountdownsStrip';
-import QuickAddModal from './QuickAddModal';
 import EventModal from './EventModal';
 import MoveDateModal from './MoveDateModal';
-import FreshStartCard from './FreshStartCard';
-import SmartRescheduleCard from './SmartRescheduleCard';
+import OverdueReviewModal from './OverdueReviewModal';
 import { useLiveQuery } from '../../hooks/useLiveQuery';
-import { useToastStore } from '../../store/toastStore';
-
-const SOURCE_ICON_COMPONENTS = {
-  checklists: CheckSquare,
-  routines: Repeat,
-  journal: BookOpen,
-  wishlist: Sparkles,
-  sketch: Palette,
-  quicknotes: StickyNote,
-  events: CalendarIcon,
-};
-
-const VIEW_TABS = [
-  { id: 'month', label: 'Month' },
-  { id: 'week', label: 'Week' },
-  { id: 'agenda', label: 'Agenda' },
-  { id: 'year', label: 'Year' },
-];
 
 /**
- * CalendarView ("Life Lens")
- * Wall Calendar personality with tear-off binder holes, unified multi-panel lens,
- * layer filters, view switcher (Month, Week, Agenda, Year), and Quick Add / Rescheduling.
+ * CalendarView
+ * Simple, calm month calendar:
+ * - One compact header row
+ * - Slim upcoming events countdown strip
+ * - Single month grid fitting 1280x720 without page scroll
+ * - Responsive Day Panel
+ * - Full keyboard navigation and offline support
  */
 export default function CalendarView() {
   const todayStr = getTodayStr();
   const todayObj = parseLocalDate(todayStr);
 
-  // Active view: 'month' | 'week' | 'agenda' | 'year'
-  const [activeView, setActiveView] = useState(() => {
-    try {
-      return localStorage.getItem('calendar_active_view') || 'month';
-    } catch {
-      return 'month';
-    }
-  });
-
-  const handleViewChange = (view) => {
-    setActiveView(view);
-    try {
-      localStorage.setItem('calendar_active_view', view);
-    } catch {}
-  };
-
   // Current viewed month/year
   const [currentYear, setCurrentYear] = useState(todayObj.getFullYear());
   const [currentMonth, setCurrentMonth] = useState(todayObj.getMonth() + 1); // 1-12
 
-  // Selected date for day detail & week reference
+  // Selected date for day detail
   const [selectedDate, setSelectedDate] = useState(todayStr);
   const [isDayDetailOpen, setIsDayDetailOpen] = useState(false);
 
-  // Modal states
-  const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
-  const [quickAddDate, setQuickAddDate] = useState(todayStr);
-
+  // Modals state
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
   const [eventModalDate, setEventModalDate] = useState(todayStr);
 
   const [isMoveModalOpen, setIsMoveModalOpen] = useState(false);
   const [movingItem, setMovingItem] = useState(null);
+
+  const [isOverdueReviewOpen, setIsOverdueReviewOpen] = useState(false);
 
   // Settings & Filter states
   const [weekStart, setWeekStart] = useState(() => getWeekStartSetting());
@@ -130,39 +83,13 @@ export default function CalendarView() {
     return getMonthGrid(currentYear, currentMonth, weekStart);
   }, [currentYear, currentMonth, weekStart]);
 
-  // Query range calculation based on active view
-  const queryRange = useMemo(() => {
-    if (activeView === 'agenda') {
-      const now = parseLocalDate(todayStr);
-      const past45 = new Date(now);
-      past45.setDate(now.getDate() - 45); // 45 days back to include overdue items
-      const future30 = new Date(now);
-      future30.setDate(now.getDate() + 30);
-      return {
-        startDateStr: formatLocalDate(past45),
-        endDateStr: formatLocalDate(future30),
-      };
-    }
-    if (activeView === 'week') {
-      const week = getWeekDays(selectedDate, weekStart);
-      return {
-        startDateStr: week.startDateStr,
-        endDateStr: week.endDateStr,
-      };
-    }
-    return {
-      startDateStr: gridData.startDateStr,
-      endDateStr: gridData.endDateStr,
-    };
-  }, [activeView, todayStr, selectedDate, weekStart, gridData.startDateStr, gridData.endDateStr]);
-
   // Fetch normalized items across the visible range
   const visibleItems = useLiveQuery(
     async () => {
-      const items = await getCalendarItemsForRange(queryRange.startDateStr, queryRange.endDateStr);
+      const items = await getCalendarItemsForRange(gridData.startDateStr, gridData.endDateStr);
       return items;
     },
-    [queryRange.startDateStr, queryRange.endDateStr]
+    [gridData.startDateStr, gridData.endDateStr]
   ) || [];
 
   // Fetch upcoming countdowns
@@ -185,23 +112,21 @@ export default function CalendarView() {
     return map;
   }, [visibleItems]);
 
-  // Selected day's items - if present in itemsByDate use that, else query selectedDate specifically
-  const selectedDateSpecificItems = useLiveQuery(
-    async () => {
-      if (!selectedDate) return [];
-      if (selectedDate >= queryRange.startDateStr && selectedDate <= queryRange.endDateStr) {
-        return itemsByDate[selectedDate] || [];
-      }
-      return await getCalendarItemsForRange(selectedDate, selectedDate);
-    },
-    [selectedDate, queryRange.startDateStr, queryRange.endDateStr, itemsByDate]
-  ) || [];
+  // Selected day items
+  const selectedDayItems = useMemo(() => {
+    return itemsByDate[selectedDate] || [];
+  }, [itemsByDate, selectedDate]);
 
-  const selectedDayItems = (selectedDate >= queryRange.startDateStr && selectedDate <= queryRange.endDateStr)
-    ? (itemsByDate[selectedDate] || [])
-    : selectedDateSpecificItems;
+  // Genuine overdue checklist tasks and target wishes (strictly excluding routines, past events, sketches, notes)
+  const overdueItems = useMemo(() => {
+    return visibleItems.filter(i => {
+      if (i.status === 'done' || i.status === 'info') return false;
+      if (i.source === 'routines' || i.source === 'events' || i.source === 'sketch' || i.source === 'quicknotes') return false;
+      return i.date < todayStr;
+    });
+  }, [visibleItems, todayStr]);
 
-  // Month names for picker & title
+  // Month names for picker
   const monthNames = [
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
@@ -209,56 +134,20 @@ export default function CalendarView() {
 
   // Navigation handlers
   const handlePrev = () => {
-    if (activeView === 'year') {
+    if (currentMonth === 1) {
+      setCurrentMonth(12);
       setCurrentYear(y => y - 1);
-    } else if (activeView === 'week') {
-      const cur = parseLocalDate(selectedDate);
-      cur.setDate(cur.getDate() - 7);
-      const newDateStr = formatLocalDate(cur);
-      setSelectedDate(newDateStr);
-      setCurrentYear(cur.getFullYear());
-      setCurrentMonth(cur.getMonth() + 1);
-    } else if (activeView === 'agenda') {
-      const cur = parseLocalDate(selectedDate);
-      cur.setDate(cur.getDate() - 14);
-      const newDateStr = formatLocalDate(cur);
-      setSelectedDate(newDateStr);
-      setCurrentYear(cur.getFullYear());
-      setCurrentMonth(cur.getMonth() + 1);
     } else {
-      if (currentMonth === 1) {
-        setCurrentMonth(12);
-        setCurrentYear(y => y - 1);
-      } else {
-        setCurrentMonth(m => m - 1);
-      }
+      setCurrentMonth(m => m - 1);
     }
   };
 
   const handleNext = () => {
-    if (activeView === 'year') {
+    if (currentMonth === 12) {
+      setCurrentMonth(1);
       setCurrentYear(y => y + 1);
-    } else if (activeView === 'week') {
-      const cur = parseLocalDate(selectedDate);
-      cur.setDate(cur.getDate() + 7);
-      const newDateStr = formatLocalDate(cur);
-      setSelectedDate(newDateStr);
-      setCurrentYear(cur.getFullYear());
-      setCurrentMonth(cur.getMonth() + 1);
-    } else if (activeView === 'agenda') {
-      const cur = parseLocalDate(selectedDate);
-      cur.setDate(cur.getDate() + 14);
-      const newDateStr = formatLocalDate(cur);
-      setSelectedDate(newDateStr);
-      setCurrentYear(cur.getFullYear());
-      setCurrentMonth(cur.getMonth() + 1);
     } else {
-      if (currentMonth === 12) {
-        setCurrentMonth(1);
-        setCurrentYear(y => y + 1);
-      } else {
-        setCurrentMonth(m => m + 1);
-      }
+      setCurrentMonth(m => m + 1);
     }
   };
 
@@ -269,7 +158,7 @@ export default function CalendarView() {
     setSelectedDate(getTodayStr());
   };
 
-  // Toggle layer chip
+  // Toggle layer checkbox in More menu
   const toggleLayer = (layerId) => {
     setLayerFilter(prev => {
       const next = { ...prev, [layerId]: !prev[layerId] };
@@ -285,14 +174,15 @@ export default function CalendarView() {
     setShowMoreMenu(false);
   };
 
-  // Action callbacks for modals
-  const handleOpenQuickAdd = (targetDate = selectedDate || todayStr) => {
-    setQuickAddDate(targetDate);
-    setIsQuickAddOpen(true);
+  // Action callbacks
+  const handleOpenAddEvent = (targetDate = selectedDate || todayStr) => {
+    setEditingEvent(null);
+    setEventModalDate(targetDate);
+    setIsEventModalOpen(true);
   };
 
-  const handleOpenEventModal = (existing = null, targetDate = selectedDate || todayStr) => {
-    setEditingEvent(existing);
+  const handleOpenEditEvent = (evt, targetDate = selectedDate || todayStr) => {
+    setEditingEvent(evt);
     setEventModalDate(targetDate);
     setIsEventModalOpen(true);
   };
@@ -302,65 +192,41 @@ export default function CalendarView() {
     setIsMoveModalOpen(true);
   };
 
-  // Overdue items across visible range
-  const overdueItems = useMemo(() => {
-    return visibleItems.filter(i => i.status === 'overdue' || (i.date < todayStr && i.status !== 'done' && i.status !== 'info'));
-  }, [visibleItems, todayStr]);
-
-  // Export to .ics format
-  const handleExportICalendar = () => {
-    setShowMoreMenu(false);
-    const icsContent = generateICalendarData(visibleItems, 'Your Space — Life Lens');
-    const filename = `YourSpace-Calendar-${currentYear}.ics`;
-    const success = downloadICalendarFile(filename, icsContent);
-    if (success) {
-      useToastStore.getState().showToast({
-        message: `Exported ${visibleItems.length} calendar items to ${filename}`,
-      });
-    }
-  };
-
-  // Header Title based on view
-  const title = useMemo(() => {
-    if (activeView === 'year') {
-      return `${currentYear}`;
-    }
-    if (activeView === 'week') {
-      const week = getWeekDays(selectedDate, weekStart);
-      const startObj = parseLocalDate(week.startDateStr);
-      const endObj = parseLocalDate(week.endDateStr);
-      const startM = monthNames[startObj.getMonth()].slice(0, 3);
-      const endM = monthNames[endObj.getMonth()].slice(0, 3);
-      if (startM === endM) {
-        return `${startM} ${startObj.getDate()} – ${endObj.getDate()}, ${startObj.getFullYear()}`;
+  // Close menus on Escape key
+  useEffect(() => {
+    const handleGlobalKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setShowMoreMenu(false);
+        setShowMonthPicker(false);
+        setIsDayDetailOpen(false);
       }
-      return `${startM} ${startObj.getDate()} – ${endM} ${endObj.getDate()}, ${startObj.getFullYear()}`;
-    }
-    if (activeView === 'agenda') {
-      return `Agenda — ${currentYear}`;
-    }
-    return formatMonthYearTitle(currentYear, currentMonth);
-  }, [activeView, currentYear, currentMonth, selectedDate, weekStart]);
+    };
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, []);
+
+  const headerTitle = formatMonthYearTitle(currentYear, currentMonth);
 
   return (
-    <div className="calendar-container @container flex-1 min-w-0 flex flex-col select-none relative pb-8">
-      {/* 1. Tear-Off Header with Slim Decorative Strip */}
-      <div className="bg-card-default border border-[var(--border)] rounded-2xl shadow-card overflow-hidden mb-3 shrink-0 calendar-tearoff-header">
+    <div className="calendar-container @container flex-1 min-h-0 flex flex-col select-none relative pb-2 overflow-hidden">
+      {/* 1. Tear-Off Header with Slim Strip */}
+      <div className="bg-card-default border border-[var(--border)] rounded-2xl shadow-card overflow-visible mb-2.5 shrink-0 calendar-tearoff-header">
         {/* Slim decorative strip (12-14px) */}
-        <div className="h-3.5 bg-[var(--raised)] border-b border-[var(--border)]" aria-hidden="true" />
+        <div className="h-3.5 bg-[var(--raised)] border-b border-[var(--border)] rounded-t-2xl" aria-hidden="true" />
 
-        {/* Main Controls Row */}
-        <div className="p-3.5 sm:p-4 flex flex-wrap items-center justify-between gap-3 bg-[var(--header-band)]">
-          {/* Left: Title + Navigation Arrows + Today Button */}
-          <div className="flex items-center gap-2 sm:gap-3">
+        {/* Main Header Controls Row: EXACTLY ONE COMPACT ROW */}
+        <div className="px-3.5 py-2.5 sm:px-4 sm:py-3 flex flex-wrap items-center justify-between gap-2.5 bg-[var(--header-band)]">
+          {/* Left: Month/Year Title & Picker + Nav Arrows + Today + Overdue chip */}
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setShowMonthPicker(v => !v)}
-                className="font-heading text-xl sm:text-2xl font-bold text-text-primary tracking-tight hover:text-[var(--accent)] transition-colors flex items-center gap-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded-lg px-1.5 py-0.5"
+                className="font-heading text-lg sm:text-xl font-bold text-text-primary tracking-tight hover:text-[var(--accent)] transition-colors flex items-center gap-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded-lg px-1 py-0.5"
                 title="Change month or year"
+                aria-expanded={showMonthPicker}
               >
-                <span>{title}</span>
+                <span>{headerTitle}</span>
                 <span className="text-xs text-text-muted font-normal opacity-70">▾</span>
               </button>
 
@@ -376,13 +242,13 @@ export default function CalendarView() {
                     <div className="flex gap-1">
                       <button 
                         onClick={() => setCurrentYear(y => y - 1)}
-                        className="p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 text-text-muted"
+                        className="p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 text-text-muted text-xs"
                       >
                         -1y
                       </button>
                       <button 
                         onClick={() => setCurrentYear(y => y + 1)}
-                        className="p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 text-text-muted"
+                        className="p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 text-text-muted text-xs"
                       >
                         +1y
                       </button>
@@ -415,20 +281,20 @@ export default function CalendarView() {
             </div>
 
             {/* Prev / Next Buttons */}
-            <div className="flex items-center rounded-xl border border-[var(--border)] bg-[var(--paper)] p-0.5 shadow-xs">
+            <div className="flex items-center rounded-xl border border-[var(--border)] bg-[var(--paper)] p-0.5 shadow-2xs">
               <button
                 type="button"
                 onClick={handlePrev}
-                aria-label="Previous"
-                className="p-1.5 sm:p-2 rounded-lg text-text-muted hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center active:scale-95"
+                aria-label="Previous month"
+                className="p-1 sm:p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors min-w-[34px] min-h-[34px] flex items-center justify-center active:scale-95"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <button
                 type="button"
                 onClick={handleNext}
-                aria-label="Next"
-                className="p-1.5 sm:p-2 rounded-lg text-text-muted hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center active:scale-95"
+                aria-label="Next month"
+                className="p-1 sm:p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors min-w-[34px] min-h-[34px] flex items-center justify-center active:scale-95"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -438,33 +304,46 @@ export default function CalendarView() {
             <button
               type="button"
               onClick={handleJumpToToday}
-              className="px-3 py-1.5 rounded-xl border border-[var(--border)] bg-[var(--paper)] hover:border-[var(--accent)] text-xs font-semibold text-text-primary hover:text-[var(--accent)] shadow-xs transition-all active:scale-95 min-h-[36px] flex items-center justify-center"
+              className="px-3 py-1.5 rounded-xl border border-[var(--border)] bg-[var(--paper)] hover:border-[var(--accent)] text-xs font-semibold text-text-primary hover:text-[var(--accent)] shadow-2xs transition-all active:scale-95 min-h-[34px] flex items-center justify-center"
             >
               Today
             </button>
+
+            {/* Small "N overdue" chip (ONLY when overdue items exist) */}
+            {overdueItems.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setIsOverdueReviewOpen(true)}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/25 hover:bg-amber-500/25 transition-all active:scale-95 min-h-[28px]"
+                title="Review overdue tasks"
+              >
+                <AlertCircle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+                <span>{overdueItems.length} overdue</span>
+              </button>
+            )}
           </div>
 
-          {/* Center / Right: Quick Add + More Options */}
-          <div className="flex items-center gap-2 sm:gap-3">
-
-            {/* Quick Add Button */}
+          {/* Right: + Add Button + More Menu */}
+          <div className="flex items-center gap-2">
+            {/* + Add Button */}
             <button
               type="button"
-              onClick={() => handleOpenQuickAdd(selectedDate || todayStr)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--btn-bg)] text-[var(--btn-fg)] hover:opacity-90 text-xs font-semibold shadow-xs transition-all active:scale-95 min-h-[36px]"
-              title="Add event, task, or wish"
+              onClick={() => handleOpenAddEvent(selectedDate || todayStr)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--btn-bg)] text-[var(--btn-fg)] hover:opacity-90 text-xs font-semibold shadow-xs transition-all active:scale-95 min-h-[34px]"
+              title="Add new event"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">New</span>
+              <span>Add</span>
             </button>
 
-            {/* More Menu (Week start settings) */}
+            {/* More Menu: Only "Week starts on" & "Show on calendar" */}
             <div className="relative flex items-center">
               <button
                 type="button"
                 onClick={() => setShowMoreMenu(v => !v)}
-                aria-label="Calendar options"
-                className="p-2 rounded-xl border border-[var(--border)] bg-[var(--paper)] text-text-muted hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors min-w-[38px] min-h-[38px] flex items-center justify-center shadow-xs"
+                aria-label="Calendar settings and layers"
+                aria-expanded={showMoreMenu}
+                className="p-1.5 sm:p-2 rounded-xl border border-[var(--border)] bg-[var(--paper)] text-text-muted hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors min-w-[34px] min-h-[34px] flex items-center justify-center shadow-2xs"
               >
                 <MoreVertical className="w-4 h-4" />
               </button>
@@ -472,7 +351,7 @@ export default function CalendarView() {
               {/* More Menu Dropdown */}
               {showMoreMenu && (
                 <div 
-                  className="absolute right-0 top-full mt-1.5 z-50 bg-[var(--paper)] border border-[var(--border)] rounded-2xl p-2 shadow-xl w-52"
+                  className="absolute right-0 top-full mt-1.5 z-50 bg-[var(--paper)] border border-[var(--border)] rounded-2xl p-2.5 shadow-xl w-60"
                   role="menu"
                 >
                   <div className="text-[11px] font-bold text-text-muted uppercase tracking-wider px-2 py-1 mb-1">
@@ -481,7 +360,7 @@ export default function CalendarView() {
                   <button
                     type="button"
                     onClick={() => handleToggleWeekStart('monday')}
-                    className="w-full flex items-center justify-between px-2.5 py-1.5 text-xs rounded-xl hover:bg-black/5 dark:hover:bg-white/5 text-text-primary transition-colors text-left"
+                    className="w-full flex items-center justify-between px-2.5 py-1.5 text-xs rounded-xl hover:bg-black/5 dark:hover:bg-white/5 text-text-primary transition-colors text-left font-medium"
                   >
                     <span>Monday (Default)</span>
                     {weekStart === 'monday' && <Check className="w-3.5 h-3.5 text-[var(--accent)]" />}
@@ -489,13 +368,42 @@ export default function CalendarView() {
                   <button
                     type="button"
                     onClick={() => handleToggleWeekStart('sunday')}
-                    className="w-full flex items-center justify-between px-2.5 py-1.5 text-xs rounded-xl hover:bg-black/5 dark:hover:bg-white/5 text-text-primary transition-colors text-left"
+                    className="w-full flex items-center justify-between px-2.5 py-1.5 text-xs rounded-xl hover:bg-black/5 dark:hover:bg-white/5 text-text-primary transition-colors text-left font-medium"
                   >
                     <span>Sunday</span>
                     {weekStart === 'sunday' && <Check className="w-3.5 h-3.5 text-[var(--accent)]" />}
                   </button>
 
-        {/* Offline .ics Calendar Export was removed from UI */}
+                  <div className="my-1.5 border-t border-[var(--border)]" />
+
+                  <div className="text-[11px] font-bold text-text-muted uppercase tracking-wider px-2 py-1 mb-1">
+                    Show on Calendar
+                  </div>
+                  <div className="space-y-0.5">
+                    {Object.values(CALENDAR_LAYERS).map((layer) => {
+                      const isChecked = layerFilter[layer.id] !== false;
+                      return (
+                        <label
+                          key={layer.id}
+                          className="flex items-center justify-between px-2.5 py-1.5 text-xs rounded-xl hover:bg-black/5 dark:hover:bg-white/5 text-text-primary cursor-pointer select-none"
+                        >
+                          <div className="flex items-center gap-2">
+                            <span 
+                              style={{ backgroundColor: layer.colorToken }}
+                              className="w-2 h-2 rounded-full shrink-0"
+                            />
+                            <span>{layer.label}</span>
+                          </div>
+                          <input 
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => toggleLayer(layer.id)}
+                            className="rounded border-[var(--border)] text-[var(--accent)] focus:ring-[var(--accent)]"
+                          />
+                        </label>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </div>
@@ -503,35 +411,41 @@ export default function CalendarView() {
         </div>
       </div>
 
-      {/* 2. Countdowns Strip (Exams, Birthdays, Trips) */}
+      {/* 2. Upcoming Strip (Slim row under header, hidden when 0 events) */}
       <CountdownsStrip
         events={upcomingCountdowns}
         onSelectEvent={(evt) => {
-          handleOpenEventModal(evt.raw || evt, evt.date);
+          handleOpenEditEvent(evt.raw || evt, evt.date);
         }}
       />
 
-      {/* 3. Main Month Grid & Day Panel */}
-      <div className="flex-1 flex flex-col lg:flex-row gap-4 items-stretch">
-        <div className="flex-1 min-w-0 flex flex-col gap-3">
-          <MonthGrid
-            gridData={gridData}
-            itemsByDate={itemsByDate}
-            selectedDate={selectedDate}
-            onSelectDate={(d) => {
+      {/* 3. Main Month Grid & Day Panel: Fits 1280x720 */}
+      <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-3 items-stretch overflow-hidden">
+        <MonthGrid
+          gridData={gridData}
+          itemsByDate={itemsByDate}
+          selectedDate={selectedDate}
+          onSelectDate={(d) => {
+            if (d) {
               setSelectedDate(d);
               setIsDayDetailOpen(true);
-            }}
-            onOpenDayDetail={(d) => {
+            } else {
+              setIsDayDetailOpen(false);
+            }
+          }}
+          onOpenDayDetail={(d) => {
+            if (d) {
               setSelectedDate(d);
               setIsDayDetailOpen(true);
-            }}
-            onPrevMonth={handlePrev}
-            onNextMonth={handleNext}
-            weekStart={weekStart}
-            layerFilter={layerFilter}
-          />
-        </div>
+            } else {
+              setIsDayDetailOpen(false);
+            }
+          }}
+          onPrevMonth={handlePrev}
+          onNextMonth={handleNext}
+          weekStart={weekStart}
+          layerFilter={layerFilter}
+        />
 
         {/* Day Detail Panel */}
         {isDayDetailOpen && (
@@ -540,20 +454,14 @@ export default function CalendarView() {
             items={selectedDayItems}
             onClose={() => setIsDayDetailOpen(false)}
             layerFilter={layerFilter}
-            onQuickAdd={handleOpenQuickAdd}
-            onEditEvent={handleOpenEventModal}
+            onAddEvent={handleOpenAddEvent}
+            onEditEvent={handleOpenEditEvent}
             onMoveItem={handleOpenMoveModal}
           />
         )}
       </div>
 
       {/* 4. Modals */}
-      <QuickAddModal
-        isOpen={isQuickAddOpen}
-        onClose={() => setIsQuickAddOpen(false)}
-        targetDate={quickAddDate}
-      />
-
       <EventModal
         isOpen={isEventModalOpen}
         onClose={() => {
@@ -572,7 +480,12 @@ export default function CalendarView() {
         }}
         item={movingItem}
       />
+
+      <OverdueReviewModal
+        isOpen={isOverdueReviewOpen}
+        onClose={() => setIsOverdueReviewOpen(false)}
+        overdueItems={overdueItems}
+      />
     </div>
   );
 }
-

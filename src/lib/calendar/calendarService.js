@@ -96,17 +96,26 @@ export function getLayerFilterPreferences() {
   try {
     const saved = localStorage.getItem(LAYER_PREF_KEY);
     if (saved) {
-      return JSON.parse(saved);
+      const parsed = JSON.parse(saved);
+      return {
+        checklists: parsed.checklists !== false,
+        wishlist: parsed.wishlist !== false,
+        events: parsed.events !== false,
+        journal: parsed.journal !== false,
+        routines: Boolean(parsed.routines),
+        sketch: Boolean(parsed.sketch),
+        quicknotes: Boolean(parsed.quicknotes),
+      };
     }
   } catch (e) {}
   return {
     checklists: true,
-    routines: true,
-    journal: true,
     wishlist: true,
-    sketch: true,
-    quicknotes: true,
     events: true,
+    journal: true,
+    routines: false,
+    sketch: false,
+    quicknotes: false,
   };
 }
 

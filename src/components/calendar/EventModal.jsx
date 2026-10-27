@@ -12,7 +12,6 @@ const EVENT_COLORS = [
   { id: '#D97706', name: 'Amber' },
   { id: '#DC2626', name: 'Coral' },
   { id: '#059669', name: 'Emerald' },
-  { id: '#DB2777', name: 'Rose' },
 ];
 
 /**
