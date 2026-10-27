@@ -27,7 +27,7 @@ export default function MoveDateModal({
   // Quick jump suggestions
   const getQuickSuggestions = () => {
     const list = [];
-    const now = new Date();
+    const now = parseLocalDate(todayStr);
 
     // Today
     list.push({ label: 'Today', date: todayStr });

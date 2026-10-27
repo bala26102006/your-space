@@ -675,47 +675,5 @@ export async function getUpcomingCountdowns(limit = 3) {
     .slice(0, limit);
 }
 
-/**
- * Returns summary data for the Year in pixels view for a given year.
- */
-export async function getYearInPixelsData(year) {
-  const startStr = `${year}-01-01`;
-  const endStr = `${year}-12-31`;
-  const items = await getCalendarItemsForRange(startStr, endStr);
-
-  const dataByDate = {};
-  items.forEach(item => {
-    if (!dataByDate[item.date]) {
-      dataByDate[item.date] = {
-        items: [],
-        totalCount: 0,
-        mood: null,
-        moodEmoji: null,
-        moodColor: null,
-        routineTotal: 0,
-        routineDone: 0,
-      };
-    }
-    const d = dataByDate[item.date];
-    d.items.push(item);
-    d.totalCount++;
-
-    if (item.source === 'journal' && !d.mood) {
-      d.mood = item.subtitle;
-      d.moodColor = item.colorToken;
-      d.moodEmoji = item.moodEmoji;
-    }
-
-    if (item.source === 'routines') {
-      d.routineTotal++;
-      if (item.status === 'done') {
-        d.routineDone++;
-      }
-    }
-  });
-
-  return dataByDate;
-}
-
 
 

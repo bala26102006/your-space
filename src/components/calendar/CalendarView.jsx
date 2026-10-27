@@ -286,7 +286,7 @@ export default function CalendarView() {
                 type="button"
                 onClick={handlePrev}
                 aria-label="Previous month"
-                className="p-1 sm:p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors min-w-[34px] min-h-[34px] flex items-center justify-center active:scale-95"
+                className="p-1 sm:p-2 rounded-lg text-text-muted hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center active:scale-95"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -294,7 +294,7 @@ export default function CalendarView() {
                 type="button"
                 onClick={handleNext}
                 aria-label="Next month"
-                className="p-1 sm:p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors min-w-[34px] min-h-[34px] flex items-center justify-center active:scale-95"
+                className="p-1 sm:p-2 rounded-lg text-text-muted hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center active:scale-95"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -304,7 +304,7 @@ export default function CalendarView() {
             <button
               type="button"
               onClick={handleJumpToToday}
-              className="px-3 py-1.5 rounded-xl border border-[var(--border)] bg-[var(--paper)] hover:border-[var(--accent)] text-xs font-semibold text-text-primary hover:text-[var(--accent)] shadow-2xs transition-all active:scale-95 min-h-[34px] flex items-center justify-center"
+              className="px-3.5 py-2 rounded-xl border border-[var(--border)] bg-[var(--paper)] hover:border-[var(--accent)] text-xs font-semibold text-text-primary hover:text-[var(--accent)] shadow-2xs transition-all active:scale-95 min-h-[40px] flex items-center justify-center"
             >
               Today
             </button>
@@ -314,7 +314,7 @@ export default function CalendarView() {
               <button
                 type="button"
                 onClick={() => setIsOverdueReviewOpen(true)}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/25 hover:bg-amber-500/25 transition-all active:scale-95 min-h-[28px]"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/25 hover:bg-amber-500/25 transition-all active:scale-95 min-h-[36px] sm:min-h-[40px]"
                 title="Review overdue tasks"
               >
                 <AlertCircle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
@@ -329,7 +329,7 @@ export default function CalendarView() {
             <button
               type="button"
               onClick={() => handleOpenAddEvent(selectedDate || todayStr)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--btn-bg)] text-[var(--btn-fg)] hover:opacity-90 text-xs font-semibold shadow-xs transition-all active:scale-95 min-h-[34px]"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[var(--btn-bg)] text-[var(--btn-fg)] hover:opacity-90 text-xs font-semibold shadow-xs transition-all active:scale-95 min-h-[40px]"
               title="Add new event"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -343,7 +343,7 @@ export default function CalendarView() {
                 onClick={() => setShowMoreMenu(v => !v)}
                 aria-label="Calendar settings and layers"
                 aria-expanded={showMoreMenu}
-                className="p-1.5 sm:p-2 rounded-xl border border-[var(--border)] bg-[var(--paper)] text-text-muted hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors min-w-[34px] min-h-[34px] flex items-center justify-center shadow-2xs"
+                className="p-2 rounded-xl border border-[var(--border)] bg-[var(--paper)] text-text-muted hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center shadow-2xs"
               >
                 <MoreVertical className="w-4 h-4" />
               </button>

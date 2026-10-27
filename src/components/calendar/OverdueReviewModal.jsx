@@ -99,6 +99,26 @@ export default function OverdueReviewModal({
       useToastStore.getState().showToast({
         message: `Completed "${item.title}"`,
       });
+    } else if (item.source === 'wishlist') {
+      const now = new Date().toISOString();
+      const note = await db.notes.get(item.id);
+      if (note) {
+        const existingContent = note.content && typeof note.content === 'object' ? note.content : {};
+        await db.notes.update(item.id, {
+          status: 'got_it',
+          is_completed: true,
+          got_it_at: now,
+          content: {
+            ...existingContent,
+            status: 'got_it',
+            gotIt: true,
+          },
+          updated_at: now,
+        });
+        useToastStore.getState().showToast({
+          message: `Marked "${item.title}" as Got it!`,
+        });
+      }
     }
   };
 
@@ -146,22 +166,7 @@ export default function OverdueReviewModal({
     try {
       for (const entry of previewPlan) {
         previousStates.push({ item: entry.item, oldDate: entry.item.date });
-        if (entry.item.source === 'checklists') {
-          await db.checklist_items.update(entry.item.id, {
-            due_date: entry.targetDate,
-            updated_at: new Date().toISOString(),
-          });
-        } else if (entry.item.source === 'wishlist') {
-          const note = await db.notes.get(entry.item.id);
-          if (note) {
-            const content = typeof note.content === 'object' && note.content !== null ? { ...note.content, targetDate: entry.targetDate } : { targetDate: entry.targetDate };
-            await db.notes.update(entry.item.id, {
-              target_date: entry.targetDate,
-              content,
-              updated_at: new Date().toISOString(),
-            });
-          }
-        }
+        await rescheduleCalendarItem(entry.item, entry.targetDate, false);
       }
 
       useToastStore.getState().showToast({
@@ -170,11 +175,7 @@ export default function OverdueReviewModal({
           label: 'Undo',
           onClick: async () => {
             for (const prev of previousStates) {
-              if (prev.item.source === 'checklists') {
-                await db.checklist_items.update(prev.item.id, { due_date: prev.oldDate });
-              } else if (prev.item.source === 'wishlist') {
-                await db.notes.update(prev.item.id, { target_date: prev.oldDate });
-              }
+              await rescheduleCalendarItem(prev.item, prev.oldDate, false);
             }
           }
         },

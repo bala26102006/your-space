@@ -365,6 +365,7 @@ export default function MonthGrid({
                           key={item.key}
                           draggable={isDraggable}
                           onDragStart={(e) => handleDragStart(e, item)}
+                          onDragEnd={() => setDropTargetDate(null)}
                           style={{ borderLeftColor: item.colorToken }}
                           className={`text-[10px] leading-tight px-1.5 py-0.5 rounded border-l-2 truncate transition-all select-none ${
                             isDraggable ? 'cursor-grab active:cursor-grabbing' : ''
