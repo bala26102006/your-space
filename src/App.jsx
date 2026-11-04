@@ -69,6 +69,7 @@ export default function App() {
       routines: 'routines',
       sketch: 'sketch',
       today: 'today',
+      calendar: 'calendar',
     };
     let panelValue = panelMap[activeWorkspace];
     if (activeWorkspace === 'today') {

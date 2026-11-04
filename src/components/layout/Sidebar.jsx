@@ -28,6 +28,7 @@ import { generateUUID } from '../../lib/uuid';
 
 const WORKSPACE_NAV_ITEMS = [
   { id: 'today', label: 'Today', icon: Sun },
+  { id: 'calendar', label: 'Calendar', icon: Calendar },
   { id: 'quicknotes', label: 'Quick Notes', icon: StickyNote },
   { id: 'projects', label: 'Projects', icon: FolderKanban },
   { id: 'journal', label: 'Journal', icon: BookOpen },

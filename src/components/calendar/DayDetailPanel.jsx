@@ -68,13 +68,12 @@ export default function DayDetailPanel({
     const payload = item.payload || {};
     const workspace = payload.workspace || item.source;
 
-    useUIStore.setState({
-      activeWorkspace: workspace,
-      selectedProjectId: payload.projectId || null,
-      selectedSubprojectId: payload.subprojectId || null,
-      selectedNoteId: payload.noteId || item.id,
-      searchQuery: '',
-      activeTagId: null,
+    useUIStore.getState().navigateToItem({
+      workspace,
+      projectId: payload.projectId || null,
+      subprojectId: payload.subprojectId || null,
+      noteId: payload.noteId || item.id,
+      category: payload.category || null,
     });
   };
 

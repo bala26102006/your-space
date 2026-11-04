@@ -88,6 +88,13 @@ input:-webkit-autofill:active{
   --accent-sketch-hover: rgba(249, 115, 22, 0.20);
   --accent-sketch-text: #FFFFFF;
 
+  --accent-calendar: #0F766E;
+  --accent-calendar-rgb: 15, 118, 110;
+  --accent-calendar-bg: rgba(15, 118, 110, 0.12);
+  --accent-calendar-hover: rgba(15, 118, 110, 0.20);
+  --accent-calendar-text: #FFFFFF;
+
+
   --accent-archive: #78716C;
   --accent-archive-rgb: 120, 113, 108;
   --accent-archive-bg: rgba(120, 113, 108, 0.12);
@@ -188,6 +195,13 @@ input:-webkit-autofill:active{
   --accent-sketch-hover: rgba(251, 146, 60, 0.25);
   --accent-sketch-text: #ECEEF2;
 
+  --accent-calendar: #2DD4BF;
+  --accent-calendar-rgb: 45, 212, 191;
+  --accent-calendar-bg: rgba(45, 212, 191, 0.15);
+  --accent-calendar-hover: rgba(45, 212, 191, 0.25);
+  --accent-calendar-text: #0B1716;
+
+
   --accent-archive: #A8A29E;
   --accent-archive-rgb: 168, 162, 158;
   --accent-archive-bg: rgba(168, 162, 158, 0.15);
@@ -208,6 +222,14 @@ input:-webkit-autofill:active{
 }
 
 /* Dynamic Workspace Context Selectors */
+[data-workspace="calendar"] {
+  --workspace-accent: var(--accent-calendar);
+  --workspace-accent-rgb: var(--accent-calendar-rgb);
+  --workspace-accent-bg: var(--accent-calendar-bg);
+  --workspace-accent-hover: var(--accent-calendar-hover);
+  --workspace-accent-text: var(--accent-calendar-text);
+}
+
 [data-workspace="today"] {
   --workspace-accent: var(--accent-today);
   --workspace-accent-rgb: var(--accent-today-rgb);

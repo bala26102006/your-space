@@ -9,6 +9,7 @@ const DEFAULT_WORKSPACE_VIEW_MODES = {
   wishlist: 'grid',
   routines: 'grid',
   sketch: 'grid',
+  calendar: 'grid',
   archive: 'grid',
   trash: 'grid',
 };
@@ -16,7 +17,7 @@ const DEFAULT_WORKSPACE_VIEW_MODES = {
 export const useUIStore = create(
   persist(
     (set, get) => ({
-      activeWorkspace: 'quicknotes',
+      activeWorkspace: (typeof window !== 'undefined' && localStorage.getItem('activeWorkspace')) || 'today',
       activePane: 'grid', // 'sidebar', 'grid', 'editor'
       viewMode: 'grid',
       notesViewMode: 'grid',
@@ -77,6 +78,29 @@ export const useUIStore = create(
 
       setSelectedChecklistCategory: (category) => set({ selectedChecklistCategory: category }),
       setSelectedWishlistFolderId: (id) => set({ selectedWishlistFolderId: id }),
+      navigateToItem: ({ workspace, projectId = null, subprojectId = null, noteId = null, category = null, folderId = null }) => {
+        try { localStorage.setItem('activeWorkspace', workspace); } catch (e) {}
+        return set((state) => {
+          const modes = state.workspaceViewModes || DEFAULT_WORKSPACE_VIEW_MODES;
+          let mode = modes[workspace] || 'grid';
+          if (workspace !== 'sketch' && mode === 'wall') {
+            mode = 'grid';
+          }
+          return {
+            activeWorkspace: workspace,
+            viewMode: mode,
+            notesViewMode: mode === 'wall' ? 'grid' : mode,
+            selectedProjectId: projectId,
+            selectedSubprojectId: subprojectId,
+            selectedNoteId: noteId,
+            selectedChecklistCategory: category,
+            selectedWishlistFolderId: folderId,
+            searchQuery: '',
+            activeTagId: null,
+          };
+        });
+      },
+
       setSortBy: (sortBy) => set({ sortBy }),
       setSortOrder: (sortOrder) => set({ sortOrder }),
       setViewMode: (mode) =>

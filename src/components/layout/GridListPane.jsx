@@ -14,6 +14,7 @@ import SketchView from '../sketch/SketchView';
 import ArchiveView from '../archive/ArchiveView';
 import TrashView from '../trash/TrashView';
 import TodayDashboard from './TodayDashboard';
+import CalendarView from '../calendar/CalendarView';
 import TopBar from './TopBar';
 
 import { autoOrganize } from '../../lib/ai/autoOrganize';
@@ -389,6 +390,7 @@ export default function GridListPane() {
 
   const renderContent = () => {
     if (activeWorkspace === 'today' && !isGlobalView) return <TodayDashboard />;
+    if (activeWorkspace === 'calendar' && !isGlobalView) return <CalendarView />;
     if (activeWorkspace === 'projects' && !isGlobalView) return <ProjectsView />;
 
     if (activeWorkspace === 'journal' && !isGlobalView) return <JournalView />;

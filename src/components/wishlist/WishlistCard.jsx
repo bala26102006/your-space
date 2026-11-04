@@ -13,6 +13,7 @@ import {
   Film,
   MapPin,
   Tag,
+  ExternalLink,
 } from 'lucide-react';
 import { COLOR_OPTIONS } from '../shared/ColorPicker';
 
@@ -190,6 +191,22 @@ export default function WishlistCard({
               )}
             </div>
 
+                        {/* External Source Link */}
+            {(wish.link || wish.content?.link || wish.content?.url) && (
+              <a
+                href={(wish.link || wish.content?.link || wish.content?.url).startsWith('http')
+                  ? (wish.link || wish.content?.link || wish.content?.url)
+                  : `https://${wish.link || wish.content?.link || wish.content?.url}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                title="Open source link"
+                aria-label="Open source link"
+                className="w-7 h-7 sm:w-8 sm:h-8 min-w-[28px] min-h-[28px] sm:min-w-[32px] sm:min-h-[32px] flex items-center justify-center rounded-lg text-text-muted hover:text-[var(--accent)] hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            )}
             {/* Pin */}
             <button
               type="button"

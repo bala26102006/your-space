@@ -1,5 +1,6 @@
 import React from 'react';
-import { 
+import {
+  ExternalLink, 
   Sun, 
   Flame, 
   CheckCircle, 
@@ -46,6 +47,10 @@ export default function TodayDashboard() {
   });
 
   const handleTabChange = (newTab) => {
+    if (newTab === 'calendar') {
+      setActiveWorkspace('calendar');
+      return;
+    }
     setActiveTab(newTab);
     try {
       localStorage.setItem('today_active_tab', newTab);
@@ -213,13 +218,12 @@ export default function TodayDashboard() {
         subprojectId = note.subproject_id;
       }
     }
-    useUIStore.setState({
-      activeWorkspace: note.workspace_id,
-      selectedProjectId: projectId,
-      selectedSubprojectId: subprojectId,
-      selectedNoteId: note.id,
-      searchQuery: '',
-      activeTagId: null,
+    useUIStore.getState().navigateToItem({
+      workspace: note.workspace_id,
+      projectId,
+      subprojectId,
+      noteId: note.id,
+      category: note.category || null,
     });
   };
 
@@ -625,8 +629,10 @@ export default function TodayDashboard() {
                   <div
                     key={wish.id}
                     onClick={() => {
-                      setActiveWorkspace('wishlist');
-                      setSelectedNoteId(wish.id);
+                      useUIStore.getState().navigateToItem({
+                        workspace: 'wishlist',
+                        noteId: wish.id,
+                      });
                     }}
                     className="p-2.5 rounded-xl border border-black/5 dark:border-white/5 hover:border-[var(--panel-wishlist-accent)]/30 hover:bg-black/5 dark:hover:bg-white/5 transition-all cursor-pointer flex items-center justify-between gap-2"
                   >
@@ -640,11 +646,28 @@ export default function TodayDashboard() {
                         <span>Due {new Date(wish.target_date).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
                       </div>
                     </div>
-                    {wish.estimated_price && (
-                      <span className="text-xs font-bold shrink-0 text-[var(--panel-wishlist-accent)]">
-                        ₹{wish.estimated_price}
-                      </span>
-                    )}
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {(wish.link || wish.content?.link || wish.content?.url) && (
+                        <a
+                          href={(wish.link || wish.content?.link || wish.content?.url).startsWith('http') 
+                            ? (wish.link || wish.content?.link || wish.content?.url) 
+                            : 'https://' + (wish.link || wish.content?.link || wish.content?.url)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          title="Open source link"
+                          aria-label="Open source link"
+                          className="p-1 rounded-md text-text-muted hover:text-[var(--panel-wishlist-accent)] hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </a>
+                      )}
+                      {wish.estimated_price && (
+                        <span className="text-xs font-bold text-[var(--panel-wishlist-accent)]">
+                          ₹{wish.estimated_price}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -679,22 +702,32 @@ export default function TodayDashboard() {
             </div>
 
             <div className="grid grid-cols-2 gap-2 mb-3">
-              <div className="p-3 rounded-xl bg-black/5 dark:bg-white/5 text-center">
-                <div className="text-2xl font-extrabold text-text-primary font-mono">
+              <button
+                type="button"
+                onClick={() => setActiveWorkspace('routines')}
+                className="p-3 rounded-xl bg-black/5 dark:bg-white/5 text-center hover:bg-black/10 dark:hover:bg-white/10 transition-colors cursor-pointer group"
+                title="View Routines streak"
+              >
+                <div className="text-2xl font-extrabold text-text-primary font-mono group-hover:text-[var(--panel-routines-accent)] transition-colors">
                   {streakInfo.routineStreak}
                 </div>
                 <div className="text-[10px] text-text-muted uppercase font-semibold mt-0.5">
                   Habit Streak
                 </div>
-              </div>
-              <div className="p-3 rounded-xl bg-black/5 dark:bg-white/5 text-center">
-                <div className="text-2xl font-extrabold text-text-primary font-mono">
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveWorkspace('journal')}
+                className="p-3 rounded-xl bg-black/5 dark:bg-white/5 text-center hover:bg-black/10 dark:hover:bg-white/10 transition-colors cursor-pointer group"
+                title="View Journal streak"
+              >
+                <div className="text-2xl font-extrabold text-text-primary font-mono group-hover:text-[var(--panel-journal-accent)] transition-colors">
                   {streakInfo.journalStreak}
                 </div>
                 <div className="text-[10px] text-text-muted uppercase font-semibold mt-0.5">
                   Journal Streak
                 </div>
-              </div>
+              </button>
             </div>
 
             <div className="p-2.5 rounded-xl bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/20 text-[11px] text-text-secondary">

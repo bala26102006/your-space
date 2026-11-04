@@ -80,19 +80,27 @@ export default function TopBar() {
     });
   };
 
-  switch (activeWorkspace) {
+    switch (activeWorkspace) {
     case 'today':
       addWorkspaceCrumb('Today');
       break;
+    case 'calendar':
+      addWorkspaceCrumb('Calendar');
+      break;
     case 'quicknotes':
       addWorkspaceCrumb('Quick Notes');
+      if (activeNote) {
+        breadcrumbs.push({
+          label: activeNote.title || 'Untitled Note',
+          onClick: null
+        });
+      }
       break;
-
     case 'projects':
       addWorkspaceCrumb('Projects');
       if (activeProject) {
         breadcrumbs.push({
-          label: activeProject.title,
+          label: activeProject.title || 'Untitled Project',
           onClick: () => {
             setSelectedSubprojectId(null);
             setSelectedNoteId(null);
@@ -101,19 +109,37 @@ export default function TopBar() {
       }
       if (activeSubproject) {
         breadcrumbs.push({
-          label: activeSubproject.title,
-          onClick: null // Last item
+          label: activeSubproject.title || 'Untitled Subproject',
+          onClick: activeNote ? () => setSelectedNoteId(null) : null
+        });
+      }
+      if (activeNote) {
+        breadcrumbs.push({
+          label: activeNote.title || 'Untitled Note',
+          onClick: null
         });
       }
       break;
     case 'journal':
       addWorkspaceCrumb('Journal');
+      if (activeNote) {
+        breadcrumbs.push({
+          label: activeNote.title || (activeNote.entry_date ? `Entry (${activeNote.entry_date})` : 'Daily Entry'),
+          onClick: null
+        });
+      }
       break;
     case 'checklists':
       addWorkspaceCrumb('Checklists');
       if (selectedChecklistCategory) {
         breadcrumbs.push({
           label: selectedChecklistCategory,
+          onClick: activeNote ? () => setSelectedNoteId(null) : null
+        });
+      }
+      if (activeNote) {
+        breadcrumbs.push({
+          label: activeNote.title || 'Untitled Checklist',
           onClick: null
         });
       }
@@ -122,16 +148,34 @@ export default function TopBar() {
       addWorkspaceCrumb('Wish List');
       if (activeWishlistFolder) {
         breadcrumbs.push({
-          label: activeWishlistFolder.name,
+          label: activeWishlistFolder.name || 'Folder',
+          onClick: activeNote ? () => setSelectedNoteId(null) : null
+        });
+      }
+      if (activeNote) {
+        breadcrumbs.push({
+          label: activeNote.title || 'Untitled Wish',
           onClick: null
         });
       }
       break;
     case 'routines':
       addWorkspaceCrumb('Routines');
+      if (activeNote) {
+        breadcrumbs.push({
+          label: activeNote.title || 'Routine',
+          onClick: null
+        });
+      }
       break;
     case 'sketch':
       addWorkspaceCrumb('Sketch');
+      if (activeNote) {
+        breadcrumbs.push({
+          label: activeNote.title || 'Sketch Artwork',
+          onClick: null
+        });
+      }
       break;
     case 'archive':
       addWorkspaceCrumb('Archive');
@@ -139,9 +183,14 @@ export default function TopBar() {
     case 'trash':
       addWorkspaceCrumb('Trash');
       break;
+    case 'settings':
+      addWorkspaceCrumb('Settings');
+      break;
     default:
       addWorkspaceCrumb(activeWorkspace);
   }
+
+  const hideViewControls = activeWorkspace === 'today' || activeWorkspace === 'calendar' || activeWorkspace === 'settings';
 
   return (
     <div className="flex-shrink-0 h-14 bg-bg-primary border-b border-black/5 dark:border-white/10 flex items-center justify-between px-6 sticky top-0 z-20">
