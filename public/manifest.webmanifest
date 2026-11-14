@@ -2,8 +2,8 @@
   "name": "Your Space — Anti-Clutter Workspace",
   "short_name": "Your Space",
   "description": "Anti-clutter creative workspace, notes, doodle studio, routines, and daily journal.",
-  "start_url": "/",
-  "scope": "/",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "orientation": "any",
   "background_color": "#0F1115",
@@ -11,19 +11,19 @@
   "categories": ["productivity", "utilities"],
   "icons": [
     {
-      "src": "/icon.svg",
+      "src": "./icon.svg",
       "sizes": "192x192 512x512",
       "type": "image/svg+xml",
       "purpose": "any maskable"
     },
     {
-      "src": "/favicon.svg",
+      "src": "./favicon.svg",
       "sizes": "any",
       "type": "image/svg+xml"
     }
   ],
   "share_target": {
-    "action": "/?share-target=true",
+    "action": "./?share-target=true",
     "method": "POST",
     "enctype": "multipart/form-data",
     "params": {

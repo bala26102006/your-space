@@ -1,0 +1,3 @@
+# User-agent rules for Your Space
+User-agent: *
+Allow: /
