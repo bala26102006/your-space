@@ -26,7 +26,7 @@
             document.documentElement.classList.remove('dark');
           }
 
-          var lastWs = localStorage.getItem('activeWorkspace') || 'quicknotes';
+          var lastWs = localStorage.getItem('activeWorkspace') || 'today';
           var panelMap = {
             quicknotes: 'notes',
             projects: 'projects',
@@ -34,7 +34,8 @@
             wishlist: 'wishlist',
             routines: 'routines',
             sketch: 'sketch',
-            today: 'today'
+            today: 'today',
+            calendar: 'calendar'
           };
           var panel = panelMap[lastWs];
           if (lastWs === 'today' && localStorage.getItem('today_active_tab') === 'calendar') {
