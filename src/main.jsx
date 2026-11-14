@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import ErrorBoundary from './components/shared/ErrorBoundary';
 import './styles/tokens.css';
 import '@fontsource/lora/latin-400.css';
 import '@fontsource/lora/latin-500.css';
@@ -40,17 +41,34 @@ if (typeof window !== 'undefined') {
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <App />
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   </React.StrictMode>
 );
 
-// PWA Service Worker Registration
-if ('serviceWorker' in navigator && process.env.NODE_ENV !== 'development') {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch((err) => {
-      console.log('SW registration note:', err);
+// PWA Service Worker Registration & Dev Cleanup
+if ('serviceWorker' in navigator) {
+  const isLocalhost = Boolean(
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '[::1]' ||
+    window.location.hostname.match(/^127(?:\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}$/)
+  );
+
+  if (import.meta.env.DEV || isLocalhost) {
+    // Unregister any active service worker during development to avoid stale caching
+    navigator.serviceWorker.getRegistrations().then((registrations) => {
+      for (const registration of registrations) {
+        registration.unregister();
+      }
     });
-  });
+  } else if (import.meta.env.PROD) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').catch((err) => {
+        console.log('SW registration note:', err);
+      });
+    });
+  }
 }
 
 // Web Share Target Receiver: Handles photos shared from phone gallery into Your Space
@@ -122,4 +140,3 @@ if (typeof window !== 'undefined' && 'caches' in window) {
     });
   }
 }
-

@@ -2,8 +2,8 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 
-export default defineConfig({
-  base: './',
+export default defineConfig(({ command }) => ({
+  base: command === 'build' ? './' : '/',
   plugins: [react()],
   resolve: {
     alias: {
@@ -12,9 +12,10 @@ export default defineConfig({
   },
   server: {
     port: 3000,
+    host: true,
   },
   build: {
-    chunkSizeWarningLimit: 2000,
+    chunkSizeWarningLimit: 2500,
     rollupOptions: {
       output: {
         manualChunks: {
@@ -24,4 +25,4 @@ export default defineConfig({
       }
     }
   }
-});
+}));
